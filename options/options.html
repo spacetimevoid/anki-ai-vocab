@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings - Anki AI Vocab</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+
+  <!-- Single-Column Centered Layout -->
+  <div class="settings-shell">
+
+    <!-- Header -->
+    <header class="settings-header">
+      <div class="header-brand-row">
+        <div class="brand-identity">
+          <div class="brand-icon-box" title="Anki AI Vocab">
+            <svg class="brand-icon" viewBox="0 0 28 28" fill="none">
+              <defs>
+                <linearGradient id="optBrandBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1E1F28"/>
+                  <stop offset="100%" stop-color="#090A0E"/>
+                </linearGradient>
+              </defs>
+              <!-- Squircle Base -->
+              <rect width="28" height="28" rx="7" fill="url(#optBrandBg)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+              <!-- Back Deck Card -->
+              <rect x="8" y="5" width="12" height="16" rx="2" fill="none" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.8" transform="rotate(-6 14 13)"/>
+              <!-- Front Deck Card -->
+              <rect x="7.5" y="6" width="13" height="16.5" rx="2.5" fill="#14151C" stroke="rgba(255, 255, 255, 0.2)" stroke-width="1"/>
+              <!-- Minimalist Card Line -->
+              <line x1="9.5" y1="9" x2="18.5" y2="9" stroke="rgba(255, 255, 255, 0.22)" stroke-width="0.8" stroke-linecap="round"/>
+              <!-- AI Sparkle Center -->
+              <path d="M14 10.5 C14 12.8, 12.2 14.2, 10 14.2 C12.2 14.2, 14 15.6, 14 18 C14 15.6, 15.8 14.2, 18 14.2 C15.8 14.2, 14 12.8, 14 10.5 Z" fill="#FFFFFF"/>
+              <!-- Satellite Micro-Sparkle -->
+              <path d="M19 6 C19 7, 18.2 7.8, 17.2 7.8 C18.2 7.8, 19 8.6, 19 9.6 C19 8.6, 19.8 7.8, 20.8 7.8 C19.8 7.8, 19 7, 19 6 Z" fill="#38BDF8"/>
+            </svg>
+          </div>
+          <div class="brand-text-block">
+            <h1 class="page-title">Settings</h1>
+            <p class="page-subtitle">Configure AI provider, Anki sync, and learning preferences</p>
+          </div>
+        </div>
+
+        <!-- Light / Dark Mode Toggle Capsule -->
+        <div class="theme-switch-capsule" role="radiogroup" aria-label="Theme mode">
+          <button type="button" class="theme-btn" id="theme-btn-light" title="Light mode" aria-label="Light mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </button>
+          <button type="button" class="theme-btn active" id="theme-btn-dark" title="Dark mode" aria-label="Dark mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Settings Form -->
+    <form id="settings-form" class="settings-form" autocomplete="off">
+
+      <!-- =========================================================
+           SECTION 1: AI Provider
+           ========================================================= -->
+      <section class="settings-section" id="section-ai">
+        <div class="section-header">
+          <h2 class="section-title">AI Provider</h2>
+          <p class="section-desc">Select your translation provider, enter your API key, and configure model engines.</p>
+        </div>
+
+        <!-- Provider Segmented Control -->
+        <div class="form-row">
+          <label class="field-label">AI Engine Provider</label>
+          <div class="provider-pill-group" role="radiogroup">
+            <label class="provider-pill">
+              <input type="radio" name="apiProvider" id="provider-gemini" value="gemini" checked>
+              <span class="pill-inner">
+                <span class="pill-title">Google Gemini</span>
+                <span class="pill-badge-rec">Recommended</span>
+              </span>
+            </label>
+            <label class="provider-pill">
+              <input type="radio" name="apiProvider" id="provider-openai" value="openai">
+              <span class="pill-inner">
+                <span class="pill-title">OpenAI</span>
+              </span>
+            </label>
+            <label class="provider-pill">
+              <input type="radio" name="apiProvider" id="provider-custom" value="custom">
+              <span class="pill-inner">
+                <span class="pill-title">Custom / Ollama</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Two Column: Target Language & Tags -->
+        <div class="form-row two-cols">
+          <div class="form-col">
+            <label class="field-label" for="targetLanguage">Target Language</label>
+            <input type="text" id="targetLanguage" class="custom-input" value="Vietnamese" placeholder="Vietnamese">
+          </div>
+          <div class="form-col">
+            <label class="field-label" for="tags">Anki Tags (Comma-separated)</label>
+            <input type="text" id="tags" class="custom-input" value="anki-ai-vocab" placeholder="anki-ai-vocab, reading">
+          </div>
+        </div>
+
+        <!-- Full-width: API Key with Eye Toggle -->
+        <div class="form-row">
+          <div class="label-with-aside">
+            <label class="field-label" for="apiKey">API Key</label>
+            <span id="api-key-link" class="aside-link">
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Get Free Google AI Key ↗</a>
+            </span>
+          </div>
+          <div class="input-with-action">
+            <input type="password" id="apiKey" class="custom-input focus-electric" placeholder="Paste your API key here (AIzaSy...)" autocomplete="off" spellcheck="false">
+            <button type="button" id="btn-toggle-key" class="input-inline-btn" title="Toggle password visibility" aria-label="Toggle password visibility">
+              <svg id="eye-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              <svg id="eye-off-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            </button>
+          </div>
+          <p class="field-caption">Your API key is securely encrypted and stored locally in your browser extension storage.</p>
+        </div>
+
+        <!-- Gemini Model Selection Group -->
+        <div class="form-row" id="group-gemini-model">
+          <label class="field-label" for="geminiModel">Google Gemini Model</label>
+          <div class="custom-select-wrap">
+            <select id="geminiModel" class="custom-select">
+              <option value="gemini-2.5-flash">gemini-2.5-flash (Recommended • 0.4s Latency, Zero Thinking, Ultra-stable)</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash (Highest Speed, TTFT 200ms)</option>
+              <option value="gemini-3.5-flash-lite" selected>gemini-3.5-flash-lite (Flash-Lite 3.5 • Thinking LOW)</option>
+              <option value="gemini-3.8-flash">gemini-3.8-flash (Latest 3.8 Generation)</option>
+              <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Fallback Model)</option>
+            </select>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+          <div class="quota-tip-box">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span><strong>Free Tier:</strong> 500 requests/day, 15 RPM. Automatic failover to backup model during network congestion.</span>
+          </div>
+        </div>
+
+        <!-- OpenAI Model Group (hidden by default) -->
+        <div class="form-row" id="group-openai-model" style="display:none;">
+          <label class="field-label" for="openaiModel">OpenAI Model Name</label>
+          <input type="text" list="openai-model-list" id="openaiModel" class="custom-input" value="gpt-4o-mini" placeholder="gpt-4o-mini">
+          <datalist id="openai-model-list">
+            <option value="gpt-4o-mini">gpt-4o-mini (Recommended • Fast & Cost-effective)</option>
+            <option value="o3-mini">o3-mini (Reasoning model)</option>
+            <option value="gpt-4o">gpt-4o (High intelligence flagship)</option>
+          </datalist>
+        </div>
+
+        <!-- Custom API Group (hidden by default) -->
+        <div class="form-row two-cols" id="group-custom-model" style="display:none;">
+          <div class="form-col">
+            <label class="field-label" for="customBaseUrl">Custom Endpoint Base URL</label>
+            <input type="text" id="customBaseUrl" class="custom-input" placeholder="http://localhost:11434/v1">
+          </div>
+          <div class="form-col">
+            <label class="field-label" for="customModel">Custom Model Name</label>
+            <input type="text" id="customModel" class="custom-input" placeholder="llama3-8b-8192">
+          </div>
+        </div>
+
+        <!-- Test AI Button & Feedback Row -->
+        <div class="form-row action-row">
+          <button type="button" id="btn-test-ai" class="btn-secondary-custom">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+            </svg>
+            <span>Test API Key</span>
+          </button>
+          <div id="ai-test-status" class="inline-status-chip" style="display:none;"></div>
+        </div>
+      </section>
+
+
+      <!-- =========================================================
+           SECTION 2: Anki Desktop Configuration
+           ========================================================= -->
+      <section class="settings-section" id="section-anki">
+        <div class="section-header">
+          <div class="section-header-row">
+            <div>
+              <h2 class="section-title">Anki Desktop Sync</h2>
+              <p class="section-desc">Connect directly to local AnkiConnect HTTP port 8765 to create and synchronize vocabulary cards.</p>
+            </div>
+            <!-- Live Anki Status Indicator -->
+            <div class="anki-status-card" id="anki-live-badge">
+              <span class="status-indicator-dot dot-checking"></span>
+              <span class="status-card-text">Checking Anki...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Anki URL & Key -->
+        <div class="form-row two-cols">
+          <div class="form-col">
+            <label class="field-label" for="ankiUrl">AnkiConnect URL</label>
+            <input type="text" id="ankiUrl" class="custom-input" value="http://127.0.0.1:8765">
+          </div>
+          <div class="form-col">
+            <label class="field-label" for="ankiApiKey">AnkiConnect API Key (Optional)</label>
+            <input type="password" id="ankiApiKey" class="custom-input" placeholder="Leave blank if no key configured">
+          </div>
+        </div>
+
+        <!-- Deck & Model Selection Dropdowns -->
+        <div class="form-row two-cols">
+          <div class="form-col">
+            <div class="label-with-aside">
+              <label class="field-label" for="deckName">Default Target Deck</label>
+              <button type="button" id="btn-refresh-decks" class="link-refresh" title="Refresh deck list from Anki">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                <span>Refresh</span>
+              </button>
+            </div>
+            <div class="custom-select-wrap">
+              <select id="deckName" class="custom-select">
+                <option value="Default">Default</option>
+              </select>
+              <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="form-col">
+            <label class="field-label" for="noteType">Target Note Type</label>
+            <div class="custom-select-wrap">
+              <select id="noteType" class="custom-select">
+                <option value="Basic">Basic</option>
+                <option value="Anki AI Vocab">Anki AI Vocab</option>
+              </select>
+              <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Connection Button -->
+        <div class="form-row action-row">
+          <button type="button" id="btn-test-anki" class="btn-secondary-custom">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="M7 15h0M2 9.5h20"/>
+            </svg>
+            <span>Check Anki Connection</span>
+          </button>
+          <div id="anki-test-message" class="inline-status-chip" style="display:none;"></div>
+        </div>
+
+        <!-- Collapsible CORS Snippet -->
+        <div class="cors-accordion">
+          <div class="cors-accordion-head">
+            <span class="cors-head-title">AnkiConnect CORS Configuration (Required once)</span>
+            <button type="button" id="btn-copy-anki-config" class="btn-mini-copy">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span id="copy-btn-text">Copy JSON</span>
+            </button>
+          </div>
+          <p class="field-caption">In Anki: <strong>Tools → Add-ons → AnkiConnect → Config</strong>, add <code>"*"</code> to <code>webCorsOriginList</code>:</p>
+          <pre class="code-block" id="anki-cors-snippet">{
+  "apiKey": null,
+  "webBindAddress": "127.0.0.1",
+  "webBindPort": 8765,
+  "webCorsOriginList": [
+    "*"
+  ]
+}</pre>
+        </div>
+
+        <!-- Field Mapping Sub-Block -->
+        <div class="mapping-block">
+          <div class="mapping-header">
+            <div>
+              <h3 class="mapping-title">Card Field Mapping</h3>
+              <p class="field-caption">Map AI-extracted vocabulary tokens into target Anki Note Type fields.</p>
+            </div>
+            <button type="button" id="btn-reset-mapping" class="btn-subtle-reset">
+              <span>Reset to Default</span>
+            </button>
+          </div>
+
+          <div class="variables-tag-bar">
+            <span class="var-badge"><code>{{word}}</code></span>
+            <span class="var-badge"><code>{{phonetic}}</code></span>
+            <span class="var-badge"><code>{{pos}}</code></span>
+            <span class="var-badge"><code>{{meaning_vi}}</code></span>
+            <span class="var-badge"><code>{{definition_en}}</code></span>
+            <span class="var-badge"><code>{{example_sentence}}</code></span>
+            <span class="var-badge"><code>{{example_translation}}</code></span>
+            <span class="var-badge"><code>{{audio}}</code></span>
+          </div>
+
+          <div id="field-mapping-container" class="mapping-table-wrap">
+            <div class="table-loading-spinner">Loading field structure from Anki...</div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- =========================================================
+           SECTION 3: Preferences & Performance
+           ========================================================= -->
+      <section class="settings-section" id="section-preferences">
+        <div class="section-header">
+          <h2 class="section-title">Preferences & Performance</h2>
+          <p class="section-desc">Calibrate token budgets, automated popover timing, and interaction behaviors.</p>
+        </div>
+
+        <!-- Slider 1: Token Budget -->
+        <div class="slider-row">
+          <div class="slider-header">
+            <span class="slider-title">Desired output token budget:</span>
+            <span class="slider-value-pill" id="token-budget-val">250 tokens</span>
+          </div>
+          <div class="slider-control-wrap">
+            <input type="range" id="maxOutputTokens" min="150" max="800" step="25" value="250" class="custom-range-slider">
+          </div>
+          <p class="field-caption">Hard-capping output tokens stops model generation immediately once the JSON structure is complete, reducing latency by 80%.</p>
+        </div>
+
+        <!-- Slider 2: Auto Close Delay -->
+        <div class="slider-row" style="margin-top: 24px;">
+          <div class="slider-header">
+            <span class="slider-title">Auto-dismiss card timer:</span>
+            <span class="slider-value-pill" id="autoclose-delay-val">1.4s</span>
+          </div>
+          <div class="slider-control-wrap">
+            <input type="range" id="autoCloseDelaySlider" min="600" max="3000" step="200" value="1400" class="custom-range-slider">
+          </div>
+          <p class="field-caption">Duration before the popover card automatically dismisses after successfully adding to Anki.</p>
+        </div>
+
+        <!-- Interaction Switches -->
+        <div class="switch-rows-container" style="margin-top: 28px;">
+          
+          <!-- Switch 1 -->
+          <div class="switch-row-item">
+            <div class="switch-meta">
+              <span class="switch-title">Quick Add Floating Trigger</span>
+              <span class="switch-desc">Display a small floating icon near the cursor when text is selected on any web page.</span>
+            </div>
+            <label class="modern-switch" aria-label="Quick Add Trigger">
+              <input type="checkbox" id="showQuickTooltip" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Switch 2 -->
+          <div class="switch-row-item">
+            <div class="switch-meta">
+              <span class="switch-title">Auto-Pronounce on Lookup</span>
+              <span class="switch-desc">Automatically pronounce the target word (Web Speech API) as soon as the popover finishes loading.</span>
+            </div>
+            <label class="modern-switch" aria-label="Auto Pronounce">
+              <input type="checkbox" id="autoPronounce">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Switch 3 -->
+          <div class="switch-row-item">
+            <div class="switch-meta">
+              <span class="switch-title">Auto-Close on Success</span>
+              <span class="switch-desc">Automatically dismiss the floating popover after the card is successfully created in Anki.</span>
+            </div>
+            <label class="modern-switch" aria-label="Auto Close">
+              <input type="checkbox" id="autoCloseOnSuccess" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <!-- Switch 4 -->
+          <div class="switch-row-item">
+            <div class="switch-meta">
+              <span class="switch-title">Close Only via Close Button ('×')</span>
+              <span class="switch-desc">Keep popover open when clicking outside on the page. Only dismiss when clicking the '×' button or pressing Esc.</span>
+            </div>
+            <label class="modern-switch" aria-label="Close Only via Close Button">
+              <input type="checkbox" id="closeOnlyOnX">
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+        </div>
+
+        <!-- Audio Pronunciation Voice Selection -->
+        <div class="field-item" style="margin-top: 24px;">
+          <label class="field-label" for="audioVoice">Audio Pronunciation Voice</label>
+          <div class="custom-select-wrap">
+            <select id="audioVoice" class="custom-select">
+              <option value="random">Random (Male or Female)</option>
+              <option value="male">Male Voice (Giọng Nam)</option>
+              <option value="female">Female Voice (Giọng Nữ)</option>
+            </select>
+            <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+          <p class="field-caption">Select voice gender when generating audio pronunciations to store in Anki flashcards.</p>
+        </div>
+
+        <!-- System Prompt -->
+        <div class="prompt-block" style="margin-top: 32px;">
+          <div class="label-with-aside">
+            <label class="field-label" for="customPrompt">System Prompt</label>
+            <button type="button" id="btn-reset-prompt" class="btn-subtle-reset">
+              <span>Reset Prompt</span>
+            </button>
+          </div>
+          <textarea id="customPrompt" class="custom-textarea" rows="6" spellcheck="false"></textarea>
+          <p class="field-caption">Keep JSON schema field names intact to ensure the extension accurately parses word properties.</p>
+        </div>
+      </section>
+
+    </form>
+
+  </div>
+
+  <!-- FLOATING SAVE STATUS BAR (BOTTOM) -->
+  <footer class="app-floating-bar">
+    <div class="bar-inner">
+      <div class="bar-status-text" id="save-status-msg">
+        <span class="status-ready-dot"></span>
+        <span>Ready to save</span>
+      </div>
+      <div class="bar-actions">
+        <button type="button" id="btn-save-settings" class="btn-primary-action">
+          <span>Save Changes</span>
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <script src="options.js" type="module"></script>
+</body>
+</html>
