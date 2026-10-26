@@ -86,30 +86,82 @@ export const DEFAULT_CONFIG = {
 };
 
 /**
- * Load user settings with fallback to defaults
+ * Load user settings with dual fallback (local + sync) to defaults
+ * Ensures complete reliability, prevents storage quota failures, and guarantees non-empty prompts
  */
 export async function getConfig() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(DEFAULT_CONFIG, (items) => {
-      const merged = { ...DEFAULT_CONFIG, ...items };
+    const readArea = (area) => {
+      return new Promise((res) => {
+        try {
+          if (!area || typeof area.get !== 'function') return res({});
+          area.get(null, (items) => {
+            if (chrome.runtime.lastError || !items) {
+              res({});
+            } else {
+              res(items);
+            }
+          });
+        } catch {
+          res({});
+        }
+      });
+    };
+
+    Promise.all([
+      readArea(chrome.storage.local),
+      readArea(chrome.storage.sync)
+    ]).then(([localItems, syncItems]) => {
+      // Hierarchy: DEFAULT_CONFIG < syncItems < localItems (local takes precedence as high-capacity source of truth)
+      const merged = { ...DEFAULT_CONFIG, ...syncItems, ...localItems };
+
       merged.fieldMappings = {
         ...DEFAULT_CONFIG.fieldMappings,
-        ...(items.fieldMappings || {})
+        ...(syncItems?.fieldMappings || {}),
+        ...(localItems?.fieldMappings || {})
       };
+
+      // Strict safeguard: customPrompt must never be blank or whitespace
+      if (!merged.customPrompt || typeof merged.customPrompt !== 'string' || !merged.customPrompt.trim()) {
+        merged.customPrompt = DEFAULT_PROMPT;
+      }
+
       resolve(merged);
+    }).catch(() => {
+      resolve({ ...DEFAULT_CONFIG });
     });
   });
 }
 
 /**
- * Save configuration to storage
+ * Save configuration to storage (Dual persistence: guaranteed local + best-effort sync)
  */
 export async function saveConfig(newConfig) {
+  const safeConfig = { ...newConfig };
+
+  // Safeguard: Ensure customPrompt is never saved as blank or empty whitespace
+  if (!safeConfig.customPrompt || typeof safeConfig.customPrompt !== 'string' || !safeConfig.customPrompt.trim()) {
+    safeConfig.customPrompt = DEFAULT_PROMPT;
+  }
+
   return new Promise((resolve, reject) => {
-    chrome.storage.sync.set(newConfig, () => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
+    // 1. Primary write to chrome.storage.local (10MB quota, high reliability)
+    chrome.storage.local.set(safeConfig, () => {
+      const localErr = chrome.runtime.lastError;
+      if (localErr) {
+        return reject(localErr);
+      }
+
+      // 2. Best-effort mirror to chrome.storage.sync (cross-device sync)
+      try {
+        chrome.storage.sync.set(safeConfig, () => {
+          const syncErr = chrome.runtime.lastError;
+          if (syncErr) {
+            console.warn('[Storage] Sync storage quota notice (data safely persisted in local storage):', syncErr.message);
+          }
+          resolve();
+        });
+      } catch {
         resolve();
       }
     });

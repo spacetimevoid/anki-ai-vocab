@@ -4,7 +4,7 @@
  * 100% English Language Adherence
  */
 
-import { DEFAULT_PROMPT, DEFAULT_CONFIG } from '../background/config.js';
+import { DEFAULT_PROMPT, DEFAULT_CONFIG, getConfig } from '../background/config.js';
 
 // DOM Elements
 const providerGemini = document.getElementById('provider-gemini');
@@ -75,17 +75,72 @@ let currentModelFields = [];
 let statusFadeTimeout = null;
 
 /**
+ * Recalculate dynamic track fill percentage for smooth modern range slider
+ */
+function updateSliderProgress(slider) {
+  if (!slider) return;
+  const min = parseFloat(slider.min) || 0;
+  const max = parseFloat(slider.max) || 100;
+  const val = parseFloat(slider.value) || 0;
+  const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+  slider.style.setProperty('--slider-progress', `${pct}%`);
+}
+
+/**
+ * Updates UI and slider accessibility based on Auto token mode
+ */
+function updateTokenBudgetUI(isAuto) {
+  if (autoTokenBudgetCheckbox) autoTokenBudgetCheckbox.checked = isAuto;
+  if (maxOutputTokensSlider) {
+    maxOutputTokensSlider.disabled = isAuto;
+    const wrap = document.getElementById('token-slider-wrap') || maxOutputTokensSlider.parentElement;
+    if (wrap) {
+      wrap.style.opacity = isAuto ? '0.38' : '1';
+      wrap.style.filter = isAuto ? 'grayscale(0.4)' : 'none';
+      wrap.style.pointerEvents = isAuto ? 'none' : 'auto';
+    }
+    updateSliderProgress(maxOutputTokensSlider);
+  }
+  if (tokenBudgetVal) {
+    tokenBudgetVal.textContent = isAuto ? 'Auto' : `${maxOutputTokensSlider?.value || 500} tokens`;
+    tokenBudgetVal.style.color = isAuto ? 'var(--accent-blue)' : 'var(--text-primary)';
+  }
+  if (tokenBudgetCaption) {
+    tokenBudgetCaption.textContent = isAuto
+      ? 'Auto dynamically allocates token headroom, preventing definitions, meanings, and examples from being truncated. Click Auto to set a manual cap.'
+      : 'Fixed token budget. Values below 400 may cause long Vietnamese translations or English definitions to be cut off.';
+  }
+}
+
+/**
  * 1. Initialize Options Page
+ * Synchronously populates defaults first, then hydrates from stored config
  */
 async function init() {
   setupEventListeners();
 
-  // Load stored settings from Background
+  // 1. Immediately populate form synchronously with DEFAULT_CONFIG
+  // Guarantees UI is never blank or missing fields on initial paint or reload
+  populateForm(DEFAULT_CONFIG);
+
+  // 2. Hydrate from storage (direct getConfig API with background fallback)
+  try {
+    const storedConfig = await getConfig();
+    if (storedConfig) {
+      currentConfig = storedConfig;
+      populateForm(currentConfig);
+      await checkAndFetchAnki(false);
+      return;
+    }
+  } catch (err) {
+    console.warn('[Options] Direct getConfig failed, falling back to message dispatch:', err);
+  }
+
+  // 3. Fallback: message service worker
   chrome.runtime.sendMessage({ action: 'GET_CONFIG' }, async (res) => {
     if (res?.success && res.config) {
       currentConfig = res.config;
       populateForm(currentConfig);
-      // Auto-check Anki connection non-intrusively
       await checkAndFetchAnki(false);
     }
   });
@@ -102,44 +157,30 @@ function setupEventListeners() {
   }
 
   // Token Budget Auto Toggle
-  function updateTokenBudgetUI(isAuto) {
-    if (autoTokenBudgetCheckbox) autoTokenBudgetCheckbox.checked = isAuto;
-    if (maxOutputTokensSlider) {
-      maxOutputTokensSlider.disabled = isAuto;
-      const wrap = document.getElementById('token-slider-wrap') || maxOutputTokensSlider.parentElement;
-      if (wrap) {
-        wrap.style.opacity = isAuto ? '0.45' : '1';
-        wrap.style.pointerEvents = isAuto ? 'none' : 'auto';
-      }
-    }
-    if (tokenBudgetVal) {
-      tokenBudgetVal.textContent = isAuto ? 'Auto' : `${maxOutputTokensSlider?.value || 500} tokens`;
-    }
-    if (tokenBudgetCaption) {
-      tokenBudgetCaption.textContent = isAuto
-        ? 'Auto dynamically allocates token headroom, preventing definitions, meanings, and examples from being truncated. Uncheck to set a manual cap.'
-        : 'Fixed token budget. Values below 400 may cause long Vietnamese translations or English definitions to be cut off.';
-    }
-  }
-
   if (autoTokenBudgetCheckbox) {
     autoTokenBudgetCheckbox.addEventListener('change', (e) => {
       updateTokenBudgetUI(e.target.checked);
     });
   }
 
-  // Sliders Live Update
-  if (maxOutputTokensSlider && tokenBudgetVal) {
+  // Sliders Live Update & Smooth Track Progression
+  if (maxOutputTokensSlider) {
+    updateSliderProgress(maxOutputTokensSlider);
     maxOutputTokensSlider.addEventListener('input', (e) => {
-      if (!autoTokenBudgetCheckbox?.checked) {
+      updateSliderProgress(e.target);
+      if (!autoTokenBudgetCheckbox?.checked && tokenBudgetVal) {
         tokenBudgetVal.textContent = `${e.target.value} tokens`;
       }
     });
   }
 
-  if (autoCloseDelaySlider && autocloseDelayVal) {
+  if (autoCloseDelaySlider) {
+    updateSliderProgress(autoCloseDelaySlider);
     autoCloseDelaySlider.addEventListener('input', (e) => {
-      autocloseDelayVal.textContent = `${(e.target.value / 1000).toFixed(1)}s`;
+      updateSliderProgress(e.target);
+      if (autocloseDelayVal) {
+        autocloseDelayVal.textContent = `${(e.target.value / 1000).toFixed(1)}s`;
+      }
     });
   }
 
@@ -265,12 +306,14 @@ function populateForm(config) {
   const tokens = config.maxOutputTokens || 500;
   if (maxOutputTokensSlider) {
     maxOutputTokensSlider.value = tokens;
+    updateSliderProgress(maxOutputTokensSlider);
   }
   updateTokenBudgetUI(isAutoTokens);
 
   if (autoCloseDelaySlider && autocloseDelayVal) {
     const delay = config.autoCloseDelayMs || 1400;
     autoCloseDelaySlider.value = delay;
+    updateSliderProgress(autoCloseDelaySlider);
     autocloseDelayVal.textContent = `${(delay / 1000).toFixed(1)}s`;
   }
 
@@ -283,7 +326,10 @@ function populateForm(config) {
   if (closeOnlyOnXInput) {
     closeOnlyOnXInput.checked = config.closeOnlyOnX === true;
   }
-  customPromptInput.value = config.customPrompt || DEFAULT_PROMPT;
+  const promptVal = (config.customPrompt && typeof config.customPrompt === 'string' && config.customPrompt.trim().length > 0)
+    ? config.customPrompt
+    : DEFAULT_PROMPT;
+  customPromptInput.value = promptVal;
 }
 
 /**
@@ -593,7 +639,9 @@ async function handleSave() {
     maxOutputTokens: parseInt(maxOutputTokensSlider?.value || '500', 10),
     autoCloseDelayMs: parseInt(autoCloseDelaySlider?.value || '1400', 10),
     theme: currentConfig.theme || 'dark',
-    customPrompt: customPromptInput.value
+    customPrompt: (customPromptInput.value && customPromptInput.value.trim().length > 0)
+      ? customPromptInput.value
+      : DEFAULT_PROMPT
   };
 
   chrome.runtime.sendMessage({
@@ -639,5 +687,9 @@ function escapeAttr(str) {
     .replace(/'/g, '&#39;');
 }
 
-// Start on DOM ready
-document.addEventListener('DOMContentLoaded', init);
+// Start on DOM ready, handling deferred ES module execution when document is already parsed
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

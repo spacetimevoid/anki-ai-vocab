@@ -347,18 +347,22 @@
         <div class="slider-row">
           <div class="slider-header">
             <span class="slider-title">Desired output token budget:</span>
-            <div class="token-budget-controls" style="display: flex; align-items: center; gap: 10px;">
-              <label class="auto-token-toggle" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px; color: var(--text-secondary); user-select: none;">
-                <input type="checkbox" id="autoTokenBudget" class="custom-checkbox" style="width: 14px; height: 14px; accent-color: #38BDF8; cursor: pointer;">
-                <span>Auto (Recommended)</span>
+            <div class="token-budget-controls">
+              <label class="auto-badge-toggle" id="auto-badge-toggle" title="Click to toggle between Auto and manual token limit">
+                <input type="checkbox" id="autoTokenBudget" class="auto-toggle-input">
+                <span class="auto-toggle-pill">
+                  <span class="auto-dot-indicator"></span>
+                  <span class="auto-text">Auto</span>
+                  <span class="auto-badge-hint">Recommended</span>
+                </span>
               </label>
               <span class="slider-value-pill" id="token-budget-val">Auto</span>
             </div>
           </div>
           <div class="slider-control-wrap" id="token-slider-wrap">
-            <input type="range" id="maxOutputTokens" min="150" max="1000" step="25" value="500" class="custom-range-slider">
+            <input type="range" id="maxOutputTokens" min="150" max="1000" step="25" value="500" class="custom-range-slider" aria-label="Max output tokens">
           </div>
-          <p class="field-caption" id="token-budget-caption">Auto dynamically allocates token headroom, preventing definitions, meanings, and examples from being truncated. Uncheck to set a manual cap.</p>
+          <p class="field-caption" id="token-budget-caption">Auto dynamically allocates token headroom, preventing definitions, meanings, and examples from being truncated. Click Auto to set a manual cap.</p>
         </div>
 
         <!-- Slider 2: Auto Close Delay -->
@@ -432,8 +436,8 @@
           <div class="custom-select-wrap">
             <select id="audioVoice" class="custom-select">
               <option value="random">Random (Male or Female)</option>
-              <option value="male">Male Voice (Giọng Nam)</option>
-              <option value="female">Female Voice (Giọng Nữ)</option>
+              <option value="male">Male Voice</option>
+              <option value="female">Female Voice</option>
             </select>
             <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"/>
@@ -450,7 +454,18 @@
               <span>Reset Prompt</span>
             </button>
           </div>
-          <textarea id="customPrompt" class="custom-textarea" rows="6" spellcheck="false"></textarea>
+          <textarea id="customPrompt" class="custom-textarea" rows="6" spellcheck="false">Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: {{target_lang}}.
+
+CRITICAL RULES:
+1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "phenomena" -> "phenomenon"). Never output inflected, conjugated, plural, comparative/superlative, or past tense forms for "word". The "phonetic" field must correspond to this base lemma.
+2. Complete 100% Translation: If Context is provided, you MUST translate 100% of the entire Context sentence into {{target_lang}} for example_vi. Never omit, truncate, or summarize any clause, phrase, or conjunction (including clauses connected by "and", "but", "because", "so", or relative pronouns).
+3. Standalone Word Lookup: If Context is missing, "none", empty, or identical to the target word, you MUST:
+   - Generate a clear, natural English example sentence (B1-B2 level) demonstrating real-world usage of the lemma for example_en.
+   - Translate 100% of that generated sentence completely into {{target_lang}} for example_vi without skipping any clause or word.
+4. If Context is provided, set example_en to the exact context sentence.
+
+Word: "{{word}}"
+Context: "{{sentence}}"</textarea>
           <p class="field-caption">Keep JSON schema field names intact to ensure the extension accurately parses word properties.</p>
         </div>
       </section>

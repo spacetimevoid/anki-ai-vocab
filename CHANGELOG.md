@@ -4,6 +4,24 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.10.1] - 2026-10-26
+
+### Refined UI/UX Sliders, Seamless Auto Pill Toggle, English Voice Labels & Storage Persistence Fix
+- **Refined Range Slider & Auto Toggle UI/UX:**
+  - Redesigned the token budget toggle into a modern Zinc/Shadcn pill switch with dynamic glow indicator and "Recommended" badge pill (`.auto-badge-toggle`).
+  - Added smooth dynamic CSS track progression (`--slider-progress`) on `.custom-range-slider` for real-time visual fill feedback on both Token Budget and Auto-dismiss delay sliders.
+  - Enhanced slider thumbs with smooth grabbing cursor, hover scale elevation (1.18x), active grab scale (1.25x), and focus-visible glow rings.
+  - Added smooth cubic-bezier transitions for disabled states when toggling between Auto and manual limits.
+- **Synchronized English Audio Pronunciation Voice Labels:**
+  - Removed Vietnamese parenthetical labels `"(Giọng Nam)"` and `"(Giọng Nữ)"` from `options/options.html` to maintain 100% English interface consistency (`Male Voice`, `Female Voice`).
+- **Fixed Options Page Refresh Bug (Settings Reverting to Defaults & Empty System Prompt):**
+  - **Root Cause 1 (Scope ReferenceError):** The function `updateTokenBudgetUI` was declared inside `setupEventListeners()`, causing calling it from `populateForm()` to throw an uncaught `ReferenceError: updateTokenBudgetUI is not defined` whenever the page loaded or refreshed. This halted execution at line 269, leaving all subsequent settings at HTML defaults and leaving `customPrompt` completely blank.
+  - **Root Cause 2 (ES Module Lifecycle):** Script execution via `<script type="module">` was relying solely on `DOMContentLoaded`, which could miss execution if the document was already parsed. Added `document.readyState` check so `init()` runs reliably on cold start and reloads.
+  - **Root Cause 3 (HTML Blank Textarea):** Pre-populated the default prompt inside `<textarea id="customPrompt">` in HTML, ensuring it is never visually blank even before JavaScript hydration.
+  - **Dual-Storage Resilience (local + sync):** Upgraded `background/config.js` to prioritize `chrome.storage.local` (10MB quota, no per-item limits) as the authoritative persistence layer with best-effort mirroring to `chrome.storage.sync`. Added strict safeguards against empty or whitespace prompt strings.
+
+---
+
 ## [3.10.0] - 2026-10-26
 
 ### 🚀 Chế Độ Auto Token Budget, Chuẩn Hóa Từ Gốc (Lemmatization) & Tra Lại Câu Ngữ Cảnh Đã Sửa
