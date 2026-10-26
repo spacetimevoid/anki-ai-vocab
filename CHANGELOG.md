@@ -4,6 +4,22 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.10.0] - 2026-10-26
+
+### 🚀 Chế Độ Auto Token Budget, Chuẩn Hóa Từ Gốc (Lemmatization) & Tra Lại Câu Ngữ Cảnh Đã Sửa
+- **Chế Độ Auto Output Token Budget (Ngăn Chặn Cắt Cụt Dữ Liệu):**
+  - **Vấn đề đã xử lý:** Giới hạn token đầu ra cố định quá thấp (250 tokens) khiến các câu văn dài hoặc phần `definition_en`/`meaning_vi` bị cắt cụt ngang chừng do hết quota token khi AI đang sinh JSON.
+  - **Giải pháp:** Bổ sung tùy chọn `autoTokenBudget: true` (Auto - Recommended) trong `DEFAULT_CONFIG` và giao diện `options/options.html`. Khi bật chế độ Auto, extension tự động cấp phát token headroom an toàn (1024 tokens cho Gemini và 1000 tokens cho OpenAI), bảo đảm toàn bộ các trường JSON luôn được hoàn thiện 100%. Thanh trượt thủ công được làm mờ nhẹ và tự động kích hoạt lại khi người dùng bỏ chọn Auto.
+- **Chuẩn Hóa Từ Vựng Về Dạng Từ Gốc (Lemmatization / Base Form):**
+  - **Vấn đề đã xử lý:** Khi người dùng bôi đen từ ở dạng chia thì, số nhiều hoặc so sánh hơn (e.g. `families`, `studied`, `running`, `better`, `caught up`), thẻ Anki nên lưu từ gốc để học theo dạng từ điển chuẩn (`family`, `study`, `run`, `good`, `catch up`).
+  - **Giải pháp:** Cập nhật System Instruction nghiêm ngặt trong `lookupGeminiFast`, `queryOpenAI` và `DEFAULT_PROMPT`, bắt buộc trường `word` luôn là từ điển gốc viết thường (lemma), đồng thời trường `phonetic` và `pos` phải tương ứng với từ gốc này, trong khi câu ví dụ ngữ cảnh `example_sentence` và bản dịch `example_vi` vẫn bảo toàn nguyên vẹn ngữ cảnh ban đầu.
+  - **Dual Cache:** Tự động lưu cache cho cả từ bôi đen gốc và từ gốc chuẩn hóa, mang lại phản hồi 0ms tức thì cho cả hai trường hợp.
+- **Nút "Tra lại" (Re-analyze) Đọc Trực Tiếp Context Người Dùng Đã Chỉnh Sửa:**
+  - **Vấn đề đã xử lý:** Khi câu ngữ cảnh được trích xuất tự động bị thừa nhãn hoặc thiếu chữ, người dùng chỉnh sửa lại câu văn trong khung context của Popover nhưng khi bấm nút "Tra lại" (`#anki-btn-relookup`), hệ thống lại dùng lại câu cũ hoặc quét lại từ trang web.
+  - **Giải pháp:** Cập nhật sự kiện click của nút Re-analyze trong `content/content.js`: trích xuất trực tiếp giá trị text hiện tại từ ô `[data-field="example_sentence"]` / `.anki-example-en` và `[data-field="word"]` ngay trước khi hiển thị skeleton loading. Truyền câu ngữ cảnh mới vào `EXPLAIN_WORD` với cờ `bypassCache = true`, đồng thời cập nhật `context.sentence` để bảo toàn nội dung khi người dùng lưu thẻ Anki hoặc bấm Reset.
+
+---
+
 ## [3.9.0] - 2026-10-25
 
 ### 🎯 Dịch Trọn Vẹn 100% Câu Ngữ Cảnh & Tự Động Sinh Ví Dụ Khi Tra Từ Đơn Lập

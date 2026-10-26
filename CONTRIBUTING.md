@@ -47,3 +47,4 @@ Thank you for your interest in contributing to **Anki AI Vocab**! We welcome bug
 ## 📄 License
 
 By contributing to Anki AI Vocab, you agree that your contributions will be licensed under its [MIT License](LICENSE).
+

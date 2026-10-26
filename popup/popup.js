@@ -416,6 +416,8 @@ function renderQuickResult(data) {
         if (res?.success && res.data) {
           currentAiResult = res.data;
           originalAiResult = JSON.parse(JSON.stringify(res.data));
+          if (quickWordInput && res.data.word) quickWordInput.value = res.data.word;
+          if (quickSentenceInput && currentSentence) quickSentenceInput.value = currentSentence;
           renderQuickResult(res.data);
         } else {
           if (btnAdd) {

@@ -269,6 +269,15 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
 - [x] **Task 32.7:** Đồng bộ hóa `renderQuickResult` và nút `btn-popup-add-anki` trong `popup/popup.js`: hỗ trợ hiển thị và lưu câu ví dụ tự sinh khi người dùng tra từ đơn lẻ từ cửa sổ popup.
 - [x] **Task 32.8:** Cập nhật tài liệu thiết kế `DESIGN.md`, ghi nhận lịch sử phiên bản `[3.9.0]` trong `CHANGELOG.md`, cập nhật nhãn phiên bản trong `popup/popup.html` và nâng version lên `3.9.0` trong `manifest.json`.
 
+## Phase 33: Auto Token Budget, Lemma Normalization & User-Edited Context Re-Analysis [DONE]
+- [x] **Task 33.1:** Bổ sung chế độ "Auto" cho Output Token Budget: thêm toggle `autoTokenBudget` trong `background/config.js` (`DEFAULT_CONFIG`) và giao diện cài đặt `options/options.html`, tự động vô hiệu hóa thanh trượt cố định và hiển thị nhãn `Auto (Recommended)`.
+- [x] **Task 33.2:** Tích hợp cơ chế cấp phát token động trong `background/ai-service.js`: khi bật `autoTokenBudget`, cấp phát `1024` tokens cho Gemini và `1000` tokens cho OpenAI, ngăn chặn triệt để tình trạng câu dài hoặc phần `definition_en`/`meaning_vi` bị AI cắt ngang chừng do hết quota token.
+- [x] **Task 33.3:** Chuẩn hóa từ vựng về dạng từ gốc (Lemmatization/Base form): bổ sung quy tắc nghiêm ngặt vào `DEFAULT_PROMPT` và System Instruction của `lookupGeminiFast` và `queryOpenAI`, yêu cầu trường `word` luôn là từ điển gốc viết thường (e.g. `families` -> `family`, `ran` -> `run`, `better` -> `good`, `caught up` -> `catch up`), đồng thời `phonetic` và `pos` phải tương ứng với từ gốc này.
+- [x] **Task 33.4:** Cập nhật bộ nhớ đệm kép (Dual Cache) trong `background/ai-service.js`: lưu cache đồng thời cho cả từ bôi đen gốc (`families`) và từ gốc đã chuẩn hóa (`family`), đảm bảo 0ms hit cho cả hai hình thức tra cứu.
+- [x] **Task 33.5:** Tối ưu nút "Tra lại" (`#anki-btn-relookup`) trên Popover: trích xuất trực tiếp giá trị câu ngữ cảnh và từ vựng từ các trường DOM/contenteditable người dùng vừa chỉnh sửa (`[data-field="example_sentence"]`, `.anki-example-en`, `[data-field="word"]`) trước khi hiển thị skeleton loading, loại bỏ hoàn toàn lỗi lấy lại câu cũ từ trang web.
+- [x] **Task 33.6:** Đồng bộ hóa `context.sentence` và `context.word` sau khi re-analyze thành công để các thao tác Reset và Add to Anki tiếp theo bảo toàn câu ngữ cảnh đã chỉnh sửa.
+- [x] **Task 33.7:** Cập nhật `CHANGELOG.md` ghi nhận phiên bản `[3.10.0]`, nâng version trong `manifest.json` và `popup/popup.html`.
+
 
 
 

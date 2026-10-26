@@ -272,6 +272,29 @@ To support uninterrupted reading, note-taking, and studying workflows:
   - `renderPopoverLoadedData` and `renderQuickResult` display both lines (`example_sentence` and `example_translation`) cleanly in the example box.
   - `getEditedCardData` and Anki note creator seamlessly write the generated English example and Vietnamese translation to Anki flashcards, ensuring rich, actionable cards even when studying single words.
 
+---
+
+## 15. Auto Token Budget, Lemma Normalization & User-Edited Context Pipeline
+
+### A. Auto Output Token Budget Architecture
+- **Problem Solved:** Hard-capping output tokens at a low threshold (e.g., 250 tokens) caused the model to cut off mid-stream during JSON generation on long sentences, truncating definitions or translations.
+- **Design:**
+  - Added `autoTokenBudget: true` (Auto - Recommended) to `DEFAULT_CONFIG` and the Preferences & Performance dashboard in `options.html`.
+  - In Auto mode, the model is allocated sufficient headroom (1024 tokens for Gemini, 1000 tokens for OpenAI) so that complex multi-clause sentences, English definitions, and contextual translations complete 100% without truncation.
+  - If a user desires hard latency limits, unchecking Auto re-enables the manual range slider (150 - 1000 tokens).
+
+### B. Lemmatization / Base Form Normalization
+- **Pedagogical Alignment:** When users highlight inflected or plural forms (`families`, `studied`, `running`, `better`, `caught up`), flashcards should store the headword lemma (`family`, `study`, `run`, `good`, `catch up`) for long-term vocabulary acquisition.
+- **Instruction Enforcement:**
+  - Added strict prompt guidelines requiring the `word` property to always return the base dictionary lemma in lowercase, and `phonetic` to match this base form.
+  - The sentence context (`example_sentence`) and Vietnamese translation (`example_vi`) preserve the exact inflected phrasing from the user's reading material.
+  - Implemented Dual Caching in `ai-service.js` to ensure 0ms cache hits for both the highlighted inflected form and the base lemma.
+
+### C. Live Context Re-Analysis
+- **Interaction Solution:**
+  - When a user modifies the context sentence in `.anki-example-en` / `[data-field="example_sentence"]` to remove surrounding web page artifacts and clicks `#anki-btn-relookup`, the handler extracts the live edited string directly from the DOM before rendering skeleton shimmer.
+  - Passes the edited sentence with `bypassCache = true`, updates `context.sentence`, and syncs Anki card creation to the user's curated sentence.
+
 
 
 

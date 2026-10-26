@@ -280,11 +280,13 @@ function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourc
   const definition_en = (result.definition_en || '').trim();
 
   // English Context Sentence:
-  // Check if fallbackSentence is an actual real sentence (>= 3 words and not equal to word)
+  // Check if fallbackSentence is an actual real sentence (>= 3 words and not equal to word or original highlighted form)
   const rawFallback = (fallbackSentence || '').trim();
   const cleanWord = (word || fallbackWord || '').trim();
+  const cleanFallback = (fallbackWord || '').trim();
   const isRealContext = rawFallback && 
     rawFallback.toLowerCase() !== cleanWord.toLowerCase() && 
+    rawFallback.toLowerCase() !== cleanFallback.toLowerCase() &&
     rawFallback.split(/\s+/).length >= 3;
 
   const example_sentence = (isRealContext 
@@ -299,8 +301,8 @@ function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourc
   const collocations = [];
 
   return {
-    word,
-    phonetic,
+    word,                  // Lemmatized base form
+    phonetic,              // IPA for base form
     pos,
     meaning_vi,
     definition_en,
@@ -318,9 +320,9 @@ function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourc
 
 /**
  * Ultra-fast lookup function using native Fetch with 14s AbortController timeout,
- * strict responseSchema + lean 7-field schema, minimal thinking level, maxOutputTokens: 450.
+ * strict responseSchema + lean 7-field schema, minimal thinking level, configurable or Auto Token Budget.
  */
-async function lookupGeminiFast(word, sentence, apiKey, model = PRIMARY_GEMINI_MODEL, targetLang = 'Vietnamese', customPrompt = '') {
+async function lookupGeminiFast(word, sentence, apiKey, model = PRIMARY_GEMINI_MODEL, targetLang = 'Vietnamese', customPrompt = '', tokenBudget = 'auto') {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   // Hard timeout at 14 seconds: gives AI Studio breathing room while preventing indefinite hangs
@@ -338,16 +340,20 @@ async function lookupGeminiFast(word, sentence, apiKey, model = PRIMARY_GEMINI_M
 
   if (isRealContext) {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
-CRITICAL TRANSLATION RULES:
-1. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi". Never omit, drop, or summarize any clause, phrase, or conjunction (e.g., secondary clauses joined by "and", "but", "because", "although", "which").
-2. Set "example_en" to the exact Context sentence.`;
+CRITICAL RULES:
+1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "phenomena" -> "phenomenon"). Never output inflected, conjugated, plural, comparative, or past tense forms for "word".
+2. The "phonetic" property MUST match the pronunciation of this base lemma form.
+3. Complete 100% Translation: Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi". Never omit, drop, or summarize any clause, phrase, or conjunction (e.g., secondary clauses joined by "and", "but", "because", "although", "which").
+4. Set "example_en" to the exact Context sentence.`;
     prompt = `Word: "${cleanWord}"\nContext: "${rawSentence}"`;
   } else {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
-CRITICAL EXAMPLE RULES:
-1. No context sentence was provided. Generate a natural, practical English example sentence (B1-B2 level) demonstrating real-world usage of "${cleanWord}" for "example_en".
-2. Translate 100% of this generated English example sentence completely into ${targetLang} for "example_vi" without omitting any clause or word.`;
-    prompt = `Word: "${cleanWord}"\nContext: none. Generate an authentic example sentence containing "${cleanWord}".`;
+CRITICAL RULES:
+1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "phenomena" -> "phenomenon"). Never output inflected, conjugated, plural, comparative, or past tense forms for "word".
+2. The "phonetic" property MUST match the pronunciation of this base lemma form.
+3. Standalone Example: No context sentence was provided. Generate a natural, practical English example sentence (B1-B2 level) demonstrating real-world usage of the lemma for "example_en".
+4. Translate 100% of this generated English example sentence completely into ${targetLang} for "example_vi" without omitting any clause or word.`;
+    prompt = `Word: "${cleanWord}"\nContext: none. Generate an authentic example sentence containing the lemma.`;
   }
 
   const systemInstruction = (customPrompt && customPrompt.trim().length > 0 && !customPrompt.includes('You are a precision'))
@@ -355,6 +361,10 @@ CRITICAL EXAMPLE RULES:
     : defaultSystemInstruction;
 
   const thinkingCfg = getThinkingConfig(model);
+
+  // Dynamic token limit: In "auto" mode, allocate 1024 tokens to guarantee no truncation.
+  const isAutoToken = tokenBudget === 'auto' || tokenBudget === null || tokenBudget === undefined || tokenBudget <= 0;
+  const maxTokensLimit = isAutoToken ? 1024 : Math.max(150, parseInt(tokenBudget, 10));
 
   const requestBody = {
     contents: [
@@ -365,7 +375,7 @@ CRITICAL EXAMPLE RULES:
     },
     generationConfig: {
       temperature: 0.1,
-      maxOutputTokens: 450,             // 450 tokens: ample room for compound Vietnamese sentences and example_en
+      maxOutputTokens: maxTokensLimit,
       responseMimeType: "application/json",
       ...(thinkingCfg ? { thinkingConfig: thinkingCfg } : {}),
       responseSchema: {
@@ -463,6 +473,10 @@ async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = fa
   const targetLang = config.targetLanguage || 'Vietnamese';
   const customPrompt = config.customPrompt || '';
 
+  // Determine token budget (Auto or manual cap)
+  const isAuto = config?.autoTokenBudget !== false;
+  const tokenBudget = isAuto ? 'auto' : (config?.maxOutputTokens || 500);
+
   // 1. Check Context-Aware Cache first (0ms)
   const cached = await getFromCache(word, sentence, targetLang, bypassCache);
   if (cached) {
@@ -471,10 +485,13 @@ async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = fa
 
   try {
     // Attempt 1: Primary Model (<1s)
-    const rawResult = await lookupGeminiFast(word, sentence, apiKey, primaryModel, targetLang, customPrompt);
+    const rawResult = await lookupGeminiFast(word, sentence, apiKey, primaryModel, targetLang, customPrompt, tokenBudget);
     const normalized = normalizeSchema(rawResult, word, sentence, sourceUrl);
     // Save to Cache with context
     saveToCache(word, sentence, targetLang, normalized);
+    if (normalized.word && normalized.word.toLowerCase() !== word.toLowerCase()) {
+      saveToCache(normalized.word, sentence, targetLang, normalized);
+    }
     return normalized;
   } catch (primaryErr) {
     // Fail-fast on auth or timeout errors
@@ -486,9 +503,12 @@ async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = fa
     if ((primaryErr.status === 429 || primaryErr.status === 503) && fallbackModel && fallbackModel !== primaryModel) {
       console.warn(`[Anki AI Vocab] Model "${primaryModel}" encountered ${primaryErr.status}. Retrying fallback model "${fallbackModel}"...`);
       try {
-        const fallbackResult = await lookupGeminiFast(word, sentence, apiKey, fallbackModel, targetLang, customPrompt);
+        const fallbackResult = await lookupGeminiFast(word, sentence, apiKey, fallbackModel, targetLang, customPrompt, tokenBudget);
         const normalized = normalizeSchema(fallbackResult, word, sentence, sourceUrl);
         saveToCache(word, sentence, targetLang, normalized);
+        if (normalized.word && normalized.word.toLowerCase() !== word.toLowerCase()) {
+          saveToCache(normalized.word, sentence, targetLang, normalized);
+        }
         return normalized;
       } catch (fallbackErr) {
         throw fallbackErr;
@@ -500,7 +520,7 @@ async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = fa
 }
 
 /**
- * Query OpenAI or OpenAI-Compatible API with 7s Timeout & Max 400 Tokens
+ * Query OpenAI or OpenAI-Compatible API with Configurable Token Budget
  */
 async function queryOpenAI({ word, sentence, sourceUrl, config, isCustom = false, bypassCache = false }) {
   const apiKey = (config.apiKey || '').trim();
@@ -535,19 +555,25 @@ async function queryOpenAI({ word, sentence, sourceUrl, config, isCustom = false
   if (isRealContext) {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
 RULES:
-1. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi". Never omit, drop, or summarize any clause, phrase, or conjunction (including clauses connected by "and", "but", "because", "so", or relative pronouns).
-2. Set "example_en" to the exact Context sentence.`;
+1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up"). The "phonetic" field must correspond to this base lemma.
+2. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi". Never omit, drop, or summarize any clause, phrase, or conjunction (including clauses connected by "and", "but", "because", "so", or relative pronouns).
+3. Set "example_en" to the exact Context sentence.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}".`;
   } else {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
 RULES:
-1. No context sentence was provided. Generate a natural, practical English example sentence (B1-B2 level) demonstrating real-world usage of "${cleanWord}" for "example_en".
-2. Translate 100% of this generated English example sentence completely into ${targetLang} for "example_vi" without skipping any clause or word.`;
+1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up"). The "phonetic" field must correspond to this base lemma.
+2. No context sentence was provided. Generate a natural, practical English example sentence (B1-B2 level) demonstrating real-world usage of the lemma for "example_en".
+3. Translate 100% of this generated English example sentence completely into ${targetLang} for "example_vi" without skipping any clause or word.`;
     prompt = `Word: "${cleanWord}". Context: none. Generate a natural English example sentence for this word.`;
   }
 
   const headers = { 'Content-Type': 'application/json' };
   if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+  // Token budget: In auto mode, use 1000 tokens to prevent truncating definitions/translations
+  const isAuto = config?.autoTokenBudget !== false;
+  const maxTokens = isAuto ? 1000 : Math.max(150, parseInt(config?.maxOutputTokens || '500', 10));
 
   const payload = {
     model,
@@ -557,7 +583,7 @@ RULES:
     ],
     response_format: { type: 'json_object' },
     temperature: 0.1,
-    max_tokens: 500
+    max_tokens: maxTokens
   };
 
   const controller = new AbortController();
@@ -593,6 +619,9 @@ RULES:
     const parsed = safeParseAIJson(rawText);
     const normalized = normalizeSchema(parsed, word, sentence, sourceUrl);
     saveToCache(word, sentence, targetLang, normalized);
+    if (normalized.word && normalized.word.toLowerCase() !== word.toLowerCase()) {
+      saveToCache(normalized.word, sentence, targetLang, normalized);
+    }
     return normalized;
   } catch (err) {
     clearTimeout(timeoutId);

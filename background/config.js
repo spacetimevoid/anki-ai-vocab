@@ -6,16 +6,17 @@ export const PRIMARY_GEMINI_MODEL = 'gemini-3.5-flash-lite';
 export const FALLBACK_GEMINI_MODEL = 'gemini-3.1-flash-lite';
 
 /**
- * Token-optimized prompt adhering strictly to SPEC.md with 100% complete translation and standalone example generation
+ * Token-optimized prompt adhering strictly to SPEC.md with lemmatization, 100% complete translation and standalone example generation
  */
 export const DEFAULT_PROMPT = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: {{target_lang}}.
 
 CRITICAL RULES:
-1. Complete 100% Translation: If Context is provided, you MUST translate 100% of the entire Context sentence into {{target_lang}} for example_vi. Never omit, truncate, or summarize any clause, phrase, or conjunction (including clauses connected by "and", "but", "because", "so", or relative pronouns).
-2. Standalone Word Lookup: If Context is missing, "none", empty, or identical to the target word, you MUST:
-   - Generate a clear, natural English example sentence (B1-B2 level) demonstrating real-world usage of "{{word}}" for example_en.
+1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "phenomena" -> "phenomenon"). Never output inflected, conjugated, plural, comparative/superlative, or past tense forms for "word". The "phonetic" field must correspond to this base lemma.
+2. Complete 100% Translation: If Context is provided, you MUST translate 100% of the entire Context sentence into {{target_lang}} for example_vi. Never omit, truncate, or summarize any clause, phrase, or conjunction (including clauses connected by "and", "but", "because", "so", or relative pronouns).
+3. Standalone Word Lookup: If Context is missing, "none", empty, or identical to the target word, you MUST:
+   - Generate a clear, natural English example sentence (B1-B2 level) demonstrating real-world usage of the lemma for example_en.
    - Translate 100% of that generated sentence completely into {{target_lang}} for example_vi without skipping any clause or word.
-3. If Context is provided, set example_en to the exact context sentence.
+4. If Context is provided, set example_en to the exact context sentence.
 
 Word: "{{word}}"
 Context: "{{sentence}}"`;
@@ -76,7 +77,8 @@ export const DEFAULT_CONFIG = {
   showQuickTooltip: true,
   autoCloseOnSuccess: true,
   autoCloseDelayMs: 1400,
-  maxOutputTokens: 250,
+  autoTokenBudget: true, // Auto output token budget to prevent truncating definitions & meanings
+  maxOutputTokens: 500,  // Used when autoTokenBudget is false
   autoPronounce: false,
   audioVoice: 'random', // 'random' | 'male' | 'female'
   closeOnlyOnX: false, // Keep popover open on click outside; only dismiss via '×' button or Esc

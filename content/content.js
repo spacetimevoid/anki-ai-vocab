@@ -782,9 +782,34 @@
 
         btnRelookup.classList.add('anki-spinning');
 
-        // Extract current target word and sentence context
-        const currentWord = activePopoverEl.querySelector('[data-field="word"]')?.innerText?.trim() || aiData.word;
-        const currentSentence = context?.sentence || aiData.example_sentence || '';
+        // Helper to extract text from inputs, textareas, or contenteditable elements
+        const extractFieldText = (selector) => {
+          const el = activePopoverEl.querySelector(selector);
+          if (!el) return null;
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            return (el.value || '').trim();
+          }
+          return (el.innerText || el.textContent || '').trim();
+        };
+
+        // Extract user-edited context sentence directly from the UI before rendering skeleton
+        const userEditedSentence = extractFieldText('[data-field="example_sentence"]') 
+                                ?? extractFieldText('.anki-example-en')
+                                ?? extractFieldText('.result-example-en');
+
+        // Extract user-edited word directly from the UI
+        const userEditedWord = extractFieldText('[data-field="word"]')
+                            ?? extractFieldText('.anki-word-text')
+                            ?? extractFieldText('.word-text');
+
+        const currentWord = (userEditedWord && userEditedWord.length > 0)
+          ? userEditedWord
+          : (aiData.word || context?.word || '').trim();
+
+        const currentSentence = (userEditedSentence !== null && userEditedSentence !== undefined && userEditedSentence.length > 0)
+          ? userEditedSentence
+          : (context?.sentence || aiData.example_sentence || '').trim();
+
         const currentSourceUrl = context?.sourceUrl || window.location.href;
 
         // Display smooth skeleton loading in content area
@@ -823,6 +848,12 @@
             const errorMsg = chrome.runtime.lastError?.message || res?.error || 'Failed to re-analyze word.';
             renderPopoverError(errorMsg);
             return;
+          }
+
+          // Update mutable context so future actions (Save/Reset) reflect user's updated sentence
+          if (context) {
+            context.word = currentWord;
+            context.sentence = currentSentence;
           }
 
           // Cache fresh data and re-render loaded popover

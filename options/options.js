@@ -53,9 +53,11 @@ const closeOnlyOnXInput = document.getElementById('closeOnlyOnX');
 const customPromptInput = document.getElementById('customPrompt');
 const btnResetPrompt = document.getElementById('btn-reset-prompt');
 
-// Sliders
+// Sliders & Token Budget
+const autoTokenBudgetCheckbox = document.getElementById('autoTokenBudget');
 const maxOutputTokensSlider = document.getElementById('maxOutputTokens');
 const tokenBudgetVal = document.getElementById('token-budget-val');
+const tokenBudgetCaption = document.getElementById('token-budget-caption');
 const autoCloseDelaySlider = document.getElementById('autoCloseDelaySlider');
 const autocloseDelayVal = document.getElementById('autoclose-delay-val');
 
@@ -99,10 +101,39 @@ function setupEventListeners() {
     themeBtnDark.addEventListener('click', () => setTheme('dark'));
   }
 
+  // Token Budget Auto Toggle
+  function updateTokenBudgetUI(isAuto) {
+    if (autoTokenBudgetCheckbox) autoTokenBudgetCheckbox.checked = isAuto;
+    if (maxOutputTokensSlider) {
+      maxOutputTokensSlider.disabled = isAuto;
+      const wrap = document.getElementById('token-slider-wrap') || maxOutputTokensSlider.parentElement;
+      if (wrap) {
+        wrap.style.opacity = isAuto ? '0.45' : '1';
+        wrap.style.pointerEvents = isAuto ? 'none' : 'auto';
+      }
+    }
+    if (tokenBudgetVal) {
+      tokenBudgetVal.textContent = isAuto ? 'Auto' : `${maxOutputTokensSlider?.value || 500} tokens`;
+    }
+    if (tokenBudgetCaption) {
+      tokenBudgetCaption.textContent = isAuto
+        ? 'Auto dynamically allocates token headroom, preventing definitions, meanings, and examples from being truncated. Uncheck to set a manual cap.'
+        : 'Fixed token budget. Values below 400 may cause long Vietnamese translations or English definitions to be cut off.';
+    }
+  }
+
+  if (autoTokenBudgetCheckbox) {
+    autoTokenBudgetCheckbox.addEventListener('change', (e) => {
+      updateTokenBudgetUI(e.target.checked);
+    });
+  }
+
   // Sliders Live Update
   if (maxOutputTokensSlider && tokenBudgetVal) {
     maxOutputTokensSlider.addEventListener('input', (e) => {
-      tokenBudgetVal.textContent = `${e.target.value} tokens`;
+      if (!autoTokenBudgetCheckbox?.checked) {
+        tokenBudgetVal.textContent = `${e.target.value} tokens`;
+      }
     });
   }
 
@@ -229,12 +260,13 @@ function populateForm(config) {
   ankiUrlInput.value = config.ankiUrl || 'http://127.0.0.1:8765';
   ankiApiKeyInput.value = config.ankiApiKey || '';
 
-  // Sliders
-  if (maxOutputTokensSlider && tokenBudgetVal) {
-    const tokens = config.maxOutputTokens || 250;
+  // Sliders & Token Budget
+  const isAutoTokens = config.autoTokenBudget !== false;
+  const tokens = config.maxOutputTokens || 500;
+  if (maxOutputTokensSlider) {
     maxOutputTokensSlider.value = tokens;
-    tokenBudgetVal.textContent = `${tokens} tokens`;
   }
+  updateTokenBudgetUI(isAutoTokens);
 
   if (autoCloseDelaySlider && autocloseDelayVal) {
     const delay = config.autoCloseDelayMs || 1400;
@@ -557,7 +589,8 @@ async function handleSave() {
     audioVoice: audioVoiceSelect.value || 'random',
     autoCloseOnSuccess: autoCloseOnSuccessInput.checked,
     closeOnlyOnX: closeOnlyOnXInput ? closeOnlyOnXInput.checked : false,
-    maxOutputTokens: parseInt(maxOutputTokensSlider?.value || '250', 10),
+    autoTokenBudget: autoTokenBudgetCheckbox ? autoTokenBudgetCheckbox.checked : true,
+    maxOutputTokens: parseInt(maxOutputTokensSlider?.value || '500', 10),
     autoCloseDelayMs: parseInt(autoCloseDelaySlider?.value || '1400', 10),
     theme: currentConfig.theme || 'dark',
     customPrompt: customPromptInput.value

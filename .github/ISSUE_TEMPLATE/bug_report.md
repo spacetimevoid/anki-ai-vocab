@@ -27,3 +27,4 @@ If applicable, add screenshots or console errors (`F12` -> Console) to help expl
 - Extension Version: [e.g. v3.9.0]
 - AI Provider: [e.g. Google Gemini 3.5-flash-lite / OpenAI / Custom]
 - AnkiConnect Version: [e.g. 24.x]
+

@@ -347,12 +347,18 @@
         <div class="slider-row">
           <div class="slider-header">
             <span class="slider-title">Desired output token budget:</span>
-            <span class="slider-value-pill" id="token-budget-val">250 tokens</span>
+            <div class="token-budget-controls" style="display: flex; align-items: center; gap: 10px;">
+              <label class="auto-token-toggle" style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px; color: var(--text-secondary); user-select: none;">
+                <input type="checkbox" id="autoTokenBudget" class="custom-checkbox" style="width: 14px; height: 14px; accent-color: #38BDF8; cursor: pointer;">
+                <span>Auto (Recommended)</span>
+              </label>
+              <span class="slider-value-pill" id="token-budget-val">Auto</span>
+            </div>
           </div>
-          <div class="slider-control-wrap">
-            <input type="range" id="maxOutputTokens" min="150" max="800" step="25" value="250" class="custom-range-slider">
+          <div class="slider-control-wrap" id="token-slider-wrap">
+            <input type="range" id="maxOutputTokens" min="150" max="1000" step="25" value="500" class="custom-range-slider">
           </div>
-          <p class="field-caption">Hard-capping output tokens stops model generation immediately once the JSON structure is complete, reducing latency by 80%.</p>
+          <p class="field-caption" id="token-budget-caption">Auto dynamically allocates token headroom, preventing definitions, meanings, and examples from being truncated. Uncheck to set a manual cap.</p>
         </div>
 
         <!-- Slider 2: Auto Close Delay -->
