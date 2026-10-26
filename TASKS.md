@@ -283,6 +283,13 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Cập nhật màu chữ nhãn giá trị `tokenBudgetVal` thành xanh Emerald khi kích hoạt chế độ Auto.
 - [x] **Task 35.4:** Kiểm tra cú pháp toàn bộ codebase, nâng version lên `[3.11.0]` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
 
+## Phase 36: Anki Multi-Modal Card Templates: Typing from Meaning & Listening Dictation [DONE]
+- [x] **Task 36.1:** Mở rộng đặc tả `ANKI_TEMPLATE.md` với 3 loại thẻ học tập toàn diện (Recognition, Type from Meaning, Listen & Type) dùng chung 8 fields của Note Type `Anki AI Vocab`.
+- [x] **Task 36.2:** Thiết kế Card 2 (Type from Meaning): nghĩa tiếng Việt và định nghĩa tiếng Anh làm tiêu điểm, khung nhập từ vựng `{{type:Word}}` chuẩn Shadcn và so khớp kết quả gõ chữ với màu sắc trực quan.
+- [x] **Task 36.3:** Thiết kế Card 3 (Listen & Type): Nút phát âm thanh trung tâm to rõ (`.card-listen-hero`), gợi ý từ loại và phím tắt `R`, khung gõ từ `{{type:Word}}` rèn luyện chính tả từ âm thanh.
+- [x] **Task 36.4:** Cung cấp bảng mã CSS Styling hợp nhất với thiết kế input bo tròn hiện đại `input#typeans` và bảng diff kết quả `code#typeans` (`.typeGood`, `.typeBad`, `.typeMissed`) hỗ trợ mượt mà cả Light Mode và Dark Mode.
+- [x] **Task 36.5:** Viết hướng dẫn chi tiết từng bước cài đặt nhiều loại thẻ (Add Card Type) trong Anki Desktop.
+
 
 
 
