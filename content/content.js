@@ -68,6 +68,25 @@
   let activePopoverEl = null;
   let currentSelectionContext = null;
   let currentCardData = null;
+  let lastUsedDeck = null;
+
+  /**
+   * Persist selected deck across lookups and browser sessions (local + sync)
+   */
+  function saveSelectedDeck(deck) {
+    if (!deck) return;
+    lastUsedDeck = deck;
+    if (extensionConfig) {
+      extensionConfig.deckName = deck;
+      extensionConfig.lastUsedDeck = deck;
+    }
+    try {
+      chrome.storage?.local?.set({ deckName: deck, lastUsedDeck: deck });
+      chrome.storage?.sync?.set({ deckName: deck, lastUsedDeck: deck });
+    } catch {
+      // ignore storage error
+    }
+  }
 
   /**
    * Safe sendMessage wrapper to prevent "Extension context invalidated" uncaught errors
@@ -128,15 +147,23 @@
         if (extensionConfig?.theme) {
           host.setAttribute('data-theme', extensionConfig.theme);
         }
+        if (extensionConfig?.lastUsedDeck || extensionConfig?.deckName) {
+          lastUsedDeck = extensionConfig.lastUsedDeck || extensionConfig.deckName;
+        }
       }
     });
 
     // Listen for real-time config and theme changes
     try {
       chrome.storage?.onChanged?.addListener((changes, areaName) => {
-        if (areaName === 'sync') {
+        if (areaName === 'sync' || areaName === 'local') {
           if (changes.theme) {
             host.setAttribute('data-theme', changes.theme.newValue);
+          }
+          if (changes.lastUsedDeck?.newValue) {
+            lastUsedDeck = changes.lastUsedDeck.newValue;
+          } else if (changes.deckName?.newValue) {
+            lastUsedDeck = changes.deckName.newValue;
           }
           if (!extensionConfig) {
             extensionConfig = {};
@@ -581,7 +608,7 @@
       activePopoverEl._originalAiData = JSON.parse(JSON.stringify(aiData));
     }
 
-    const currentDeck = activePopoverEl._selectedDeck || extensionConfig?.deckName || 'Default';
+    const currentDeck = activePopoverEl._selectedDeck || lastUsedDeck || extensionConfig?.lastUsedDeck || extensionConfig?.deckName || 'Default';
     const allDecks = Array.from(new Set([currentDeck, ...(extensionConfig?.availableDecks || [])])).filter(Boolean);
     if (!allDecks.length) allDecks.push('Default');
 
@@ -741,9 +768,7 @@
           menuEl.style.display = 'none';
 
           // Persist default choice
-          try {
-            chrome.storage?.sync?.set({ deckName: deckVal });
-          } catch {}
+          saveSelectedDeck(deckVal);
         });
       });
 
@@ -1016,18 +1041,13 @@
       // Selected Target Deck from dropdown
       const selectedDeck = activePopoverEl?.querySelector('#anki-popover-deck-select')?.value 
         || activePopoverEl?._selectedDeck 
+        || lastUsedDeck
+        || extensionConfig?.lastUsedDeck
         || extensionConfig?.deckName 
         || 'Default';
 
       // Remember latest selected deck for future lookups
-      if (extensionConfig && extensionConfig.deckName !== selectedDeck) {
-        extensionConfig.deckName = selectedDeck;
-        try {
-          chrome.storage?.sync?.set({ deckName: selectedDeck });
-        } catch {
-          // ignore storage error
-        }
-      }
+      saveSelectedDeck(selectedDeck);
 
       // English sentence (guaranteed original English from webpage)
       const rawEnglishSentence = editedCardData.example_sentence || context?.sentence || '';

@@ -103,7 +103,7 @@ function updateTokenBudgetUI(isAuto) {
   }
   if (tokenBudgetVal) {
     tokenBudgetVal.textContent = isAuto ? 'Auto' : `${maxOutputTokensSlider?.value || 500} tokens`;
-    tokenBudgetVal.style.color = isAuto ? 'var(--accent-blue)' : 'var(--text-primary)';
+    tokenBudgetVal.style.color = isAuto ? 'var(--success)' : 'var(--text-primary)';
   }
   if (tokenBudgetCaption) {
     tokenBudgetCaption.textContent = isAuto

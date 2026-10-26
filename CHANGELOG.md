@@ -4,6 +4,23 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.11.0] - 2026-10-26
+
+### Selection Popover Toggle in Popup, Sticky Deck Memory & Emerald Green Auto Button
+- **Manual Lookup Selection Popover Toggle:**
+  - Added a responsive, compact toggle switch (`#toggle-selection-popover` with `.mini-switch`) directly inside the Manual Lookup header in `popup/popup.html`.
+  - Enables users to instantly enable or disable the floating trigger/popover when highlighting text on any webpage without having to open the Options page.
+  - Automatically synchronizes across all open web tabs in real time via dual storage (`chrome.storage.local` and `chrome.storage.sync`).
+- **Sticky Anki Deck Memory (Last Used Deck):**
+  - Popovers now automatically remember and pre-select the target deck chosen during previous additions or dropdown selections (`lastUsedDeck` / `deckName`).
+  - Eliminates repetitive deck re-selection on every lookup.
+  - Seamlessly keeps both Popover and Popup deck dropdowns synchronized.
+- **Emerald Green Auto Token Budget Button:**
+  - Updated the Auto token budget toggle pill and status indicator to a vibrant, polished Emerald Green palette (`var(--success)` / `#10B981`) in `options/options.css` and `options/options.js`.
+  - Communicates optimal automated configuration with a clean, modern aesthetic.
+
+---
+
 ## [3.10.1] - 2026-10-26
 
 ### Refined UI/UX Sliders, Seamless Auto Pill Toggle, English Voice Labels & Storage Persistence Fix

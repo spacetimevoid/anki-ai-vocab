@@ -14,6 +14,10 @@ const btnQuickLookup = document.getElementById('btn-quick-lookup');
 const quickResultBox = document.getElementById('quick-result');
 const popupIdleGuide = document.getElementById('popup-idle-guide');
 
+const toggleSelectionPopover = document.getElementById('toggle-selection-popover');
+const selectionToggleLabel = document.getElementById('selection-toggle-label');
+const popupSelectionToggle = document.getElementById('popup-selection-toggle');
+
 let extensionConfig = null;
 let currentAiResult = null;
 let originalAiResult = null;
@@ -35,6 +39,39 @@ function applyTheme(theme) {
 function setTheme(theme) {
   applyTheme(theme);
   chrome.storage?.sync?.set({ theme });
+  try { chrome.storage?.local?.set({ theme }); } catch {}
+}
+
+/**
+ * Persist selected deck across sessions (local + sync)
+ */
+function saveSelectedDeck(deck) {
+  if (!deck) return;
+  if (extensionConfig) {
+    extensionConfig.deckName = deck;
+    extensionConfig.lastUsedDeck = deck;
+  }
+  try {
+    chrome.storage?.local?.set({ deckName: deck, lastUsedDeck: deck });
+    chrome.storage?.sync?.set({ deckName: deck, lastUsedDeck: deck });
+  } catch {}
+}
+
+/**
+ * Update selection popover toggle UI state
+ */
+function updatePopoverToggleUI(isEnabled) {
+  if (toggleSelectionPopover) {
+    toggleSelectionPopover.checked = isEnabled;
+  }
+  if (selectionToggleLabel) {
+    selectionToggleLabel.style.color = isEnabled ? 'var(--text-secondary)' : 'var(--text-muted)';
+  }
+  if (popupSelectionToggle) {
+    popupSelectionToggle.title = isEnabled
+      ? 'Selection popover: Active (Click to disable)'
+      : 'Selection popover: Disabled (Click to enable)';
+  }
 }
 
 /**
@@ -77,9 +114,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (res?.success && res.config) {
       extensionConfig = res.config;
       applyTheme(extensionConfig.theme || 'dark');
+      updatePopoverToggleUI(extensionConfig.showQuickTooltip !== false);
       updateAIStatus(extensionConfig);
       checkAnkiStatus();
     }
+  });
+
+  // Toggle selection popover listener
+  toggleSelectionPopover?.addEventListener('change', (e) => {
+    const isEnabled = e.target.checked;
+    if (extensionConfig) extensionConfig.showQuickTooltip = isEnabled;
+    updatePopoverToggleUI(isEnabled);
+    try {
+      chrome.storage?.local?.set({ showQuickTooltip: isEnabled });
+      chrome.storage?.sync?.set({ showQuickTooltip: isEnabled });
+    } catch {}
   });
 
   // Quick lookup button & enter keys
@@ -275,7 +324,7 @@ function renderQuickResult(data) {
   if (popupIdleGuide) popupIdleGuide.style.display = 'none';
   quickResultBox.style.display = 'flex';
 
-  const currentDeck = extensionConfig?.deckName || 'Default';
+  const currentDeck = extensionConfig?.lastUsedDeck || extensionConfig?.deckName || 'Default';
   const allDecks = Array.from(new Set([currentDeck, ...(extensionConfig?.availableDecks || [])])).filter(Boolean);
   if (!allDecks.length) allDecks.push('Default');
 
@@ -453,8 +502,7 @@ function renderQuickResult(data) {
   if (deckSelect) {
     deckSelect.addEventListener('change', (e) => {
       const selectedDeck = e.target.value;
-      if (extensionConfig) extensionConfig.deckName = selectedDeck;
-      chrome.storage?.sync?.set({ deckName: selectedDeck });
+      saveSelectedDeck(selectedDeck);
     });
   }
 
@@ -506,7 +554,8 @@ function renderQuickResult(data) {
         const example_sentence = getText('example_sentence') || data.example_sentence || data.example_en || quickSentenceInput.value.trim() || '';
         const example_translation = getText('example_translation') || data.example_translation || data.example_vi || '';
 
-        const targetDeck = deckSelect?.value || extensionConfig?.deckName || 'Default';
+        const targetDeck = deckSelect?.value || extensionConfig?.lastUsedDeck || extensionConfig?.deckName || 'Default';
+        saveSelectedDeck(targetDeck);
 
         const enriched = {
           ...data,

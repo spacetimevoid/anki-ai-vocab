@@ -915,24 +915,24 @@ a {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Checked (Auto Enabled) State */
+/* Checked (Auto Enabled) State - Modern Emerald Green */
 .auto-toggle-input:checked + .auto-toggle-pill {
-  background-color: rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.38);
-  color: var(--accent-blue);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 1px 4px rgba(59, 130, 246, 0.1);
+  background-color: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--success);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.18), 0 1px 4px rgba(16, 185, 129, 0.12);
 }
 
 .auto-toggle-input:checked + .auto-toggle-pill .auto-dot-indicator {
-  background-color: var(--accent-blue);
-  box-shadow: 0 0 6px var(--accent-blue);
+  background-color: var(--success);
+  box-shadow: 0 0 6px var(--success);
   transform: scale(1.15);
 }
 
 .auto-toggle-input:checked + .auto-toggle-pill .auto-badge-hint {
-  background-color: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.3);
-  color: var(--accent-blue);
+  background-color: rgba(16, 185, 129, 0.2);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: var(--success);
 }
 
 .auto-toggle-input:focus-visible + .auto-toggle-pill {

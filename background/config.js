@@ -37,6 +37,7 @@ export const DEFAULT_CONFIG = {
   ankiUrl: 'http://127.0.0.1:8765',
   ankiApiKey: '',
   deckName: 'Default',
+  lastUsedDeck: 'Default',
   availableDecks: ['Default'],
   noteType: 'Basic',
   tags: 'anki-ai-vocab',

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Anki AI Vocab - Smart Context Card Creator",
-  "version": "3.10.1",
+  "version": "3.11.0",
   "description": "Highlight vocabulary to look up AI contextual meanings and instantly create Anki flashcards via AnkiConnect.",
   "icons": {
     "16": "icons/icon16.png",

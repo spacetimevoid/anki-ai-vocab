@@ -269,19 +269,19 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
 - [x] **Task 32.7:** Đồng bộ hóa `renderQuickResult` và nút `btn-popup-add-anki` trong `popup/popup.js`: hỗ trợ hiển thị và lưu câu ví dụ tự sinh khi người dùng tra từ đơn lẻ từ cửa sổ popup.
 - [x] **Task 32.8:** Cập nhật tài liệu thiết kế `DESIGN.md`, ghi nhận lịch sử phiên bản `[3.9.0]` trong `CHANGELOG.md`, cập nhật nhãn phiên bản trong `popup/popup.html` và nâng version lên `3.9.0` trong `manifest.json`.
 
-## Phase 34: Refined Slider UI/UX, Auto Pill Toggle, English Voice Labels & Storage Persistence [DONE]
-- [x] **Task 34.1:** Sửa triệt để lỗi khi refresh trang options các thiết lập bị quay về mặc định và System Prompt bị trống trơn:
-  - Khắc phục lỗi `ReferenceError: updateTokenBudgetUI is not defined` do hàm bị khai báo cục bộ bên trong `setupEventListeners()`, khiến `populateForm()` ném ngoại lệ dừng thực thi ở dòng 269 và bỏ qua việc điền System Prompt và các trường phía dưới.
-  - Xử lý cơ chế chạy ES module (`type="module"`): bổ sung kiểm tra `document.readyState === 'loading'` để đảm bảo `init()` luôn được gọi ngay cả khi trang tải nhanh hoặc được refresh.
-  - Đồng bộ sẵn nội dung prompt mặc định trực tiếp vào thẻ `<textarea id="customPrompt">` trong HTML, đảm bảo textarea không bao giờ bị trống ngay cả trước khi JavaScript hydrat hóa.
-  - Nâng cấp cơ chế lưu trữ lưỡng phân (Dual-Storage Resilience) trong `background/config.js`: ưu tiên `chrome.storage.local` (hạn mức 10MB, không bị giới hạn 8KB/item của Chrome Sync) làm nguồn dữ liệu chính thống, đồng thời đồng bộ dự phòng sang `chrome.storage.sync`.
-- [x] **Task 34.2:** Tinh chỉnh UI/UX thanh trượt kéo (Range Sliders) và nút Auto Token Budget theo phong cách Zinc/Shadcn:
-  - Tái thiết kế nút Auto thành pill badge toggle hiện đại (`.auto-badge-toggle`) có đèn chỉ báo phát sáng nhẹ (`.auto-dot-indicator`) và nhãn phụ `Recommended`.
-  - Bổ sung dải màu nền động CSS (`--slider-progress`) phản ánh tỉ lệ phần trăm kéo thực tế theo thời gian thực cho cả thanh Token Budget và Auto-dismiss timer.
-  - Tối ưu nút thumb con trượt: hiệu ứng hover phóng to mượt mà (1.18x), kéo giữ chuột grabbing (1.25x), viền focus-ring rõ nét và hiệu ứng làm mờ chuyển đổi mượt mà khi bật/tắt Auto.
-- [x] **Task 34.3:** Chuẩn hóa 100% tiếng Anh cho tùy chọn Audio Pronunciation Voice:
-  - Xóa bỏ hoàn toàn nhãn tiếng Việt `(Giọng Nam)` và `(Giọng Nữ)` trong dropdown `options/options.html` (`Male Voice`, `Female Voice`).
-- [x] **Task 34.4:** Kiểm tra cú pháp toàn bộ codebase, nâng version lên `[3.10.1]` trong `manifest.json`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+## Phase 35: Selection Popover Toggle in Popup, Sticky Deck Memory & Emerald Auto Button [DONE]
+- [x] **Task 35.1:** Bổ sung nút bật/tắt hiển thị popover khi bôi đen từ ngay trên Popup tra cứu (`popup/popup.html` và `popup/popup.js`):
+  - Thiết kế công tắc chuyển đổi `.popup-selection-toggle` và `.mini-switch` chuẩn Zinc/Shadcn tại hàng tiêu đề Manual Lookup.
+  - Tự động đồng bộ và lưu trữ ngay lập tức vào `chrome.storage.local` và `chrome.storage.sync` (`showQuickTooltip`).
+  - Lắng nghe sự kiện `storage.onChanged` trên tất cả các tab đang mở để cập nhật tức thì trạng thái bật/tắt mà không cần tải lại trang.
+- [x] **Task 35.2:** Tính năng ghi nhớ Deck Anki ở lần thêm trước (Sticky Deck Selection):
+  - Popover tự động ghi nhớ và chọn sẵn bộ thẻ đã dùng ở lần add hoặc click chọn trước đó (`lastUsedDeck` / `deckName`) trong `content/content.js`.
+  - Cập nhật cả `chrome.storage.local` và `chrome.storage.sync` khi người dùng thay đổi deck hoặc bấm Add to Anki.
+  - Đồng bộ lựa chọn deck qua lại mượt mà giữa Popover trên trang web và Popup extension.
+- [x] **Task 35.3:** Đổi màu nút Auto trong Desired output token budget sang màu xanh lá Emerald (`options/options.css` và `options/options.js`):
+  - Đổi màu nền, viền và chấm chỉ báo sáng sang tone Emerald Green (`var(--success)` / `#10B981`) chuyên nghiệp, hiện đại.
+  - Cập nhật màu chữ nhãn giá trị `tokenBudgetVal` thành xanh Emerald khi kích hoạt chế độ Auto.
+- [x] **Task 35.4:** Kiểm tra cú pháp toàn bộ codebase, nâng version lên `[3.11.0]` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
 
 
 
