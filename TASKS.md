@@ -308,6 +308,24 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
 - [x] **Task 38.4:** Thay thế mô hình `gemini-1.5-flash` đã hết vòng đời bằng `gemini-3.5-flash-lite`, `gemini-2.5-flash`, `gemini-3.1-flash-lite` trong pipeline Vision và danh sách lựa chọn của Options.
 - [x] **Task 38.5:** Kiểm tra toàn diện cú pháp codebase, nâng version lên `[3.13.0]` trong `manifest.json`, cập nhật `CHANGELOG.md` và `TASKS.md`.
 
+## Phase 39: UI Overlap Fix, Context Normalizer & Context Session State Manager [DONE]
+- [x] **Task 39.1:** Khắc phục triệt để lỗi chen chúc / đè chữ trên giao diện Popover (UI Overlap & Layout Fix):
+  - Sửa lỗi flexbox container: cấu hình `.anki-floating-popover` với `display: flex; flex-direction: column; overflow: visible;`.
+  - Cấu hình `.anki-popover-content` với `flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;` cho phép thanh cuộn kích hoạt mượt mà khi nội dung vượt quá chiều cao tối đa.
+  - Gán `flex-shrink: 0;` cho toàn bộ các phần tử con (`.anki-context-chips-wrap`, `.anki-meaning-row`, `.anki-def-row`, `.anki-example-box`) cùng `word-break: break-word; overflow-wrap: anywhere;` để các dòng chữ không bao giờ bị ép méo hoặc đè lên nhau.
+  - Tách bạch `.anki-popover-header` và `.anki-popover-footer` cố định với `flex-shrink: 0;`.
+- [x] **Task 39.2:** Xây dựng bộ chuẩn hóa câu ngữ cảnh (Context Normalizer & Cleaning Engine):
+  - Triển khai `cleanContextSpacing(str)`: dọn dẹp các dấu cách thừa quanh dấu ngoặc đơn, ngoặc vuông và dấu câu (e.g. `( the pink tiles )` -> `(the pink tiles)`, `meters .` -> `meters.`, `don 't` -> `don't`).
+  - Triển khai `isMostlyAllCaps(str)` & `toSentenceCase(str)`: tự động nhận diện câu bị IN HOA TOÀN BỘ từ OCR hoặc web (e.g. `PASS THE BALL BRO, I AM INTERESTED`) và chuyển đổi sang sentence case tự nhiên mà vẫn giữ nguyên từ ngữ gốc.
+  - Tích hợp chuẩn hóa ngữ cảnh vào `extractSentenceContext`, `openFloatingPopover`, và `openCropLoadingPopover`.
+  - Cập nhật System Prompt và Vision OCR Prompt để AI tự động chuẩn hóa văn bản ngay từ đầu.
+- [x] **Task 39.3:** Xây dựng Bộ Quản lý Phiên Ngữ cảnh (`ContextSessionManager`):
+  - Quản lý phiên ngữ cảnh theo câu: tái sử dụng 100% bản dịch tiếng Việt của câu (`existingTranslation`) khi người dùng đổi từ trong cùng một câu, giảm độ trễ về 0 cho khối ví dụ và tiết kiệm token tối đa.
+  - Highlight từ/cụm từ mục tiêu phía client (`highlightWordInSentence`) bằng thẻ `<b class="anki-example-highlight">` màu cyan nổi bật `#38bdf8`, độc lập với việc AI có trả thẻ `<b>` hay không.
+  - Triển khai Partial Skeleton Loading: khi đổi từ trên thanh Captured Context Chips, khối câu ngữ cảnh và bản dịch tiếng Việt được giữ nguyên trên màn hình với 0ms delay, chỉ hiển thị skeleton shimmer tại các trường từ vựng mục tiêu (`word`, `pos`, `phonetic`, `meaning_vi`, `definition_en`).
+- [x] **Task 39.4:** Kiểm tra toàn diện cú pháp codebase, nâng version lên `[3.14.0]` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+
+
 
 
 

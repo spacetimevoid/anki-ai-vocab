@@ -4,6 +4,29 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.14.0] - 2026-10-29
+
+### Popover Layout Overlap Fix, Context Normalizer & Context Session State Manager
+- **Eliminated Popover UI Overlap & Layout Crowding (`content/content.css`, `content/content.js`):**
+  - Resolved flexbox collapse bug where long definitions and example boxes overlapped each other.
+  - Formatted `.anki-floating-popover` with `display: flex; flex-direction: column; overflow: visible;`.
+  - Configured `.anki-popover-content` as the primary scrollable container (`flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;`).
+  - Added `flex-shrink: 0;` and `word-break: break-word; overflow-wrap: anywhere;` to all child rows (`.anki-context-chips-wrap`, `.anki-meaning-row`, `.anki-def-row`, `.anki-example-box`) to guarantee zero text truncation or vertical overlap.
+  - Fixed header and footer with `flex-shrink: 0;`.
+- **Intelligent Context Sentence Normalizer (`background/config.js`, `background/ai-service.js`, `content/content.js`):**
+  - Integrated `cleanContextSpacing(str)`: eliminates stray spaces around punctuation and brackets (e.g. `( the pink tiles )` -> `(the pink tiles)`, `meters .` -> `meters.`, `don 't` -> `don't`).
+  - Integrated `isMostlyAllCaps(str)` & `toSentenceCase(str)`: intelligently detects ALL CAPS sentences from OCR or subtitles (e.g. `"PASS THE BALL BRO, I AM INTERESTED"`) and formats them into natural sentence casing without altering vocabulary words.
+  - Added Context Normalization rule to System Instruction in `background/config.js` and Vision OCR prompts in `background/ai-service.js`.
+- **Context Session State Manager (`ContextSessionManager` in `content/content.js`):**
+  - **Sentence Translation Reuse:** When switching target words in the same context sentence, the existing Vietnamese translation (`existingTranslation`) is automatically reused. The AI focuses purely on defining the new word, saving tokens and eliminating translation discrepancies.
+  - **Client-Side Sentence Highlighting:** Implemented `highlightWordInSentence(sentence, targetWord)` in `content/content.js` to wrap target words and phrases in `<b class="anki-example-highlight">` with vivid cyan `#38bdf8` styling, without relying on inconsistent AI markdown tags.
+  - **Partial Skeleton Loading:** Switching words in the Captured Context chips keeps the example box and context chips visible with 0ms latency, only rendering shimmering skeletons on the word metadata fields (`word`, `pos`, `phonetic`, `meaning_vi`, `definition_en`).
+- **Codebase Integrity & Syntax Verification:**
+  - Ran syntax and parsing checks across all scripts (`background/`, `content/`, `popup/`, `options/`) with 100% pass rate.
+  - Bumped version to `v3.14.0` in `manifest.json` and `popup/popup.html`.
+
+---
+
 ## [3.13.0] - 2026-10-29
 
 ### In-Session Chip Lookup Cache, Phrase/Collocation Selection & Reordered Quality Priorities

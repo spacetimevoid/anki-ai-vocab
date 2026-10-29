@@ -130,8 +130,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         case 'EXPLAIN_WORD': {
-          const { word, sentence, sourceUrl, bypassCache } = payload;
-          const result = await explainWord({ word, sentence, sourceUrl, config, bypassCache });
+          const { word, sentence, sourceUrl, bypassCache, existingTranslation, reuseTranslation } = payload;
+          const result = await explainWord({ word, sentence, sourceUrl, config, bypassCache, existingTranslation, reuseTranslation });
           sendResponse({ success: true, data: result });
           break;
         }

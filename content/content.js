@@ -20,7 +20,892 @@
   const $$ = (selector, context = shadowRoot || document) => (context?.querySelectorAll ? context.querySelectorAll(selector) : []);
 
   // Inlined Scoped Stylesheet for Shadow DOM
-  const POPOVER_CSS = "/**\n * Compact Floating Popover Styles (Shadow DOM Encapsulated)\n * Design Style: Modern Linear / Shadcn UI / Clean Typography\n * 375px Width, 2-Row Header, Muted Pastel Badges & Custom Deck Dropdown Menu\n */\n\n:host {\n  all: initial;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Inter\", \"Helvetica Neue\", Arial, sans-serif !important;\n  font-size: 14px;\n  line-height: 1.5;\n  box-sizing: border-box;\n  -webkit-font-smoothing: antialiased;\n}\n\n:host, .popover-container, *:not(.phonetic-text):not(.anki-ipa-text):not(.ipa) {\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Inter\", \"Helvetica Neue\", Arial, sans-serif !important;\n  -webkit-font-smoothing: antialiased;\n}\n\n*, *::before, *::after {\n  box-sizing: inherit;\n  margin: 0;\n  padding: 0;\n}\n\n/* =========================================================\n   DESIGN TOKENS (SHADCN ZINC PALETTE)\n   ========================================================= */\n:host,\n:host([data-theme=\"light\"]) {\n  /* Light Mode */\n  --popover-bg: #FFFFFF;\n  --border: #E4E4E7;            /* Zinc-200 */\n  --text-primary: #09090B;      /* Zinc-950 */\n  --text-secondary: #71717A;    /* Zinc-500 */\n  --text-muted: #A1A1AA;        /* Zinc-400 */\n  --badge-bg: #F4F4F5;          /* Zinc-100 */\n  --badge-text: #18181B;        /* Zinc-900 */\n  --btn-bg: #18181B;            /* Zinc-900 */\n  --btn-text: #FAFAFA;          /* Zinc-50 */\n  --btn-hover: #27272A;         /* Zinc-800 */\n  --btn-secondary-bg: #F4F4F5;\n  --btn-secondary-hover: #E4E4E7;\n  --hover-bg: #F4F4F5;          /* Zinc-100 */\n  --skeleton-bg: #F4F4F5;\n  --skeleton-shine: #E4E4E7;\n  --success: #10B981;\n  --success-bg: #ECFDF5;\n  --danger: #EF4444;\n  --danger-bg: #FEF2F2;\n  --radius: 12px;\n  --shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);\n}\n\n:host([data-theme=\"dark\"]) {\n  /* Explicit Dark Mode (PeakPlanner Theme) */\n  --popover-bg: #0E0F14;\n  --border: #242530;\n  --text-primary: #FFFFFF;\n  --text-secondary: #9698A6;\n  --text-muted: #646675;\n  --badge-bg: #1F202A;\n  --badge-text: #FFFFFF;\n  --btn-bg: #FFFFFF;\n  --btn-text: #0E0F14;\n  --btn-hover: #E4E5EB;\n  --btn-secondary-bg: #1F202A;\n  --btn-secondary-hover: #292B38;\n  --hover-bg: #171820;\n  --skeleton-bg: #171820;\n  --skeleton-shine: #242530;\n  --success: #10B981;\n  --success-bg: #064E3B;\n  --danger: #F87171;\n  --danger-bg: #450A0A;\n  --radius: 12px;\n  --shadow: 0 16px 42px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.4);\n}\n\n@media (prefers-color-scheme: dark) {\n  :host(:not([data-theme=\"light\"])) {\n    /* Auto Dark Mode */\n    --popover-bg: #0E0F14;\n    --border: #242530;\n    --text-primary: #FFFFFF;\n    --text-secondary: #9698A6;\n    --text-muted: #646675;\n    --badge-bg: #1F202A;\n    --badge-text: #FFFFFF;\n    --btn-bg: #FFFFFF;\n    --btn-text: #0E0F14;\n    --btn-hover: #E4E5EB;\n    --btn-secondary-bg: #1F202A;\n    --btn-secondary-hover: #292B38;\n    --hover-bg: #171820;\n    --skeleton-bg: #171820;\n    --skeleton-shine: #242530;\n    --success: #10B981;\n    --success-bg: #064E3B;\n    --danger: #F87171;\n    --danger-bg: #450A0A;\n    --radius: 12px;\n    --shadow: 0 16px 42px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.4);\n  }\n}\n\n/* =========================================================\n   1. QUICK TRIGGER PILL BUTTON (FLOATING NEAR SELECTION)\n   ========================================================= */\n.anki-quick-trigger {\n  position: absolute;\n  z-index: 2147483646;\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  height: 28px;\n  background: var(--popover-bg);\n  color: var(--text-primary);\n  border: 1px solid var(--border);\n  border-radius: 6px;\n  padding: 0 10px;\n  font-size: 12px;\n  font-weight: 500;\n  cursor: pointer;\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);\n  transition: all 0.14s ease;\n  user-select: none;\n  animation: anki-fade-in 0.12s ease-out;\n}\n\n.anki-quick-trigger:hover {\n  background: var(--hover-bg);\n  border-color: var(--text-muted);\n}\n\n.anki-quick-trigger svg {\n  width: 13px;\n  height: 13px;\n  fill: currentColor;\n  flex-shrink: 0;\n}\n\n/* =========================================================\n   2. COMPACT FLOATING POPOVER (375PX WIDTH)\n   ========================================================= */\n.anki-floating-popover {\n  position: absolute;\n  z-index: 2147483647;\n  width: 380px;\n  max-width: 95vw;\n  max-height: 500px;\n  background: var(--popover-bg);\n  border: 1px solid var(--border);\n  border-radius: var(--radius);\n  box-shadow: var(--shadow);\n  display: flex;\n  flex-direction: column;\n  overflow: visible; /* Allows custom dropdown menu to open downward cleanly */\n  user-select: text;\n  color: var(--text-primary);\n  animation: anki-scale-in 0.14s cubic-bezier(0.16, 1, 0.3, 1);\n  pointer-events: auto;\n}\n\n/* Custom Slim Scrollbar */\n.anki-popover-content::-webkit-scrollbar {\n  width: 4px;\n}\n.anki-popover-content::-webkit-scrollbar-track {\n  background: transparent;\n}\n.anki-popover-content::-webkit-scrollbar-thumb {\n  background: var(--border);\n  border-radius: 2px;\n}\n.anki-popover-content::-webkit-scrollbar-thumb:hover {\n  background: var(--text-muted);\n}\n\n/* =========================================================\n   POPOVER HEADER (2-ROW TYPOGRAPHY STRUCTURE & DRAG HANDLE)\n   ========================================================= */\n.anki-popover-header {\n  padding: 14px 16px 8px;\n  border-bottom: 1px solid var(--border);\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 12px;\n  cursor: grab;\n  user-select: none;\n  background: var(--popover-bg);\n  border-top-left-radius: calc(var(--radius) - 1px);\n  border-top-right-radius: calc(var(--radius) - 1px);\n}\n\n/* Ensure interactive controls in header maintain their normal cursors */\n.anki-popover-header .anki-header-controls,\n.anki-popover-header .anki-btn-icon,\n.anki-popover-header .anki-editable,\n.anki-popover-header [contenteditable=\"true\"] {\n  cursor: default;\n}\n\n.anki-popover-header .anki-btn-icon {\n  cursor: pointer;\n}\n\n.anki-popover-header .anki-editable,\n.anki-popover-header [contenteditable=\"true\"] {\n  cursor: text;\n  user-select: text;\n}\n\n/* Active Dragging States */\n.anki-floating-popover.anki-is-dragging,\n.anki-floating-popover.anki-is-dragging * {\n  cursor: grabbing !important;\n  user-select: none !important;\n}\n\n.anki-floating-popover.anki-is-dragging {\n  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.15);\n  transition: box-shadow 0.15s ease;\n}\n\n:host([data-theme=\"light\"]) .anki-floating-popover.anki-is-dragging {\n  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18), 0 0 0 1px #E4E4E7;\n}\n\n.anki-header-left {\n  display: flex;\n  flex-direction: column;\n  min-width: 0;\n  flex: 1;\n}\n\n/* Row 1: Word + Part of Speech Badge */\n.header-row,\n.anki-header-row1 {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  margin-bottom: 2px;\n  min-width: 0;\n}\n\n.word-text,\n.anki-word-text {\n  font-size: 19px !important;       /* Cỡ chữ to vừa phải, hiện đại */\n  font-weight: 700 !important;\n  letter-spacing: -0.02em;\n  color: #FAFAFA !important;\n  line-height: 1.2;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  max-width: 250px;\n}\n\n:host([data-theme=\"light\"]) .word-text,\n:host([data-theme=\"light\"]) .anki-word-text {\n  color: #09090B !important;\n}\n\n/* Row 2: Phonetic IPA (Specialized Serif: Times New Roman for crisp IPA symbols) */\n.header-row-2,\n.anki-header-row2 {\n  display: flex;\n  align-items: center;\n}\n\n.phonetic-text,\n.anki-ipa-text,\n.ipa {\n  font-family: \"Times New Roman\", Times, serif !important;\n  font-size: 17px !important;\n  font-style: normal;\n  font-weight: 400;\n  letter-spacing: 0.03em;\n  color: #A1A1AA !important;\n  margin-top: 2px;\n  margin-bottom: 12px;\n  line-height: 1.2;\n}\n\n:host([data-theme=\"light\"]) .phonetic-text,\n:host([data-theme=\"light\"]) .anki-ipa-text,\n:host([data-theme=\"light\"]) .ipa {\n  color: #71717A !important;\n}\n\n/* Part of Speech Badges (Refined Pastel / Muted Tones) */\n.pos-badge,\n.anki-pos-badge {\n  display: inline-flex;\n  align-items: center;\n  font-size: 11px !important;\n  font-weight: 600 !important;\n  padding: 2px 7px;\n  border-radius: 4px;\n  line-height: 1.25;\n  flex-shrink: 0;\n  text-transform: lowercase;\n  letter-spacing: 0.02em;\n  transition: all 0.12s ease;\n  user-select: text;\n}\n\n/* Dark Mode POS Badges */\n.anki-pos-badge.pos-verb {\n  background-color: rgba(59, 130, 246, 0.12);\n  color: #60A5FA;\n  border: 1px solid rgba(59, 130, 246, 0.22);\n}\n\n.anki-pos-badge.pos-noun {\n  background-color: rgba(99, 102, 241, 0.12);\n  color: #818CF8;\n  border: 1px solid rgba(99, 102, 241, 0.22);\n}\n\n.anki-pos-badge.pos-adj {\n  background-color: rgba(16, 185, 129, 0.12);\n  color: #34D399;\n  border: 1px solid rgba(16, 185, 129, 0.22);\n}\n\n.anki-pos-badge.pos-adv,\n.anki-pos-badge.pos-other {\n  background-color: rgba(245, 158, 11, 0.12);\n  color: #FBBF24;\n  border: 1px solid rgba(245, 158, 11, 0.22);\n}\n\n/* Light Mode POS Badges */\n:host([data-theme=\"light\"]) .anki-pos-badge.pos-verb {\n  background-color: #EFF6FF;\n  color: #2563EB;\n  border: 1px solid #BFDBFE;\n}\n\n:host([data-theme=\"light\"]) .anki-pos-badge.pos-noun {\n  background-color: #EEF2FF;\n  color: #4F46E5;\n  border: 1px solid #C7D2FE;\n}\n\n:host([data-theme=\"light\"]) .anki-pos-badge.pos-adj {\n  background-color: #ECFDF5;\n  color: #059669;\n  border: 1px solid #A7F3D0;\n}\n\n:host([data-theme=\"light\"]) .anki-pos-badge.pos-adv,\n:host([data-theme=\"light\"]) .anki-pos-badge.pos-other {\n  background-color: #FFFBEB;\n  color: #D97706;\n  border: 1px solid #FDE68A;\n}\n\n.anki-header-controls {\n  display: flex;\n  align-items: center;\n  gap: 3px;\n  flex-shrink: 0;\n}\n\n.anki-btn-icon {\n  background: transparent;\n  border: none;\n  width: 26px;\n  height: 26px;\n  border-radius: 5px;\n  color: var(--text-secondary);\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  transition: all 0.12s ease;\n}\n\n.anki-btn-icon:hover {\n  background: var(--hover-bg);\n  color: var(--text-primary);\n}\n\n.anki-btn-relookup:hover svg {\n  transform: rotate(45deg);\n  transition: transform 0.2s ease;\n}\n\n.anki-spinning svg,\nsvg.anki-spinning,\n.anki-btn-icon.anki-spinning svg {\n  animation: anki-spin 0.6s linear infinite !important;\n}\n\n.anki-btn-audio {\n  width: 28px !important;\n  height: 28px !important;\n  border-radius: 50% !important;\n  background: var(--badge-bg) !important;\n  border: 1px solid var(--border) !important;\n  color: var(--text-secondary);\n  transition: all 0.15s ease;\n}\n\n.anki-btn-audio:hover {\n  background: var(--hover-bg) !important;\n  color: var(--text-primary) !important;\n  transform: scale(1.08);\n}\n\n/* =========================================================\n   POPOVER BODY CONTENT (CLEAR TYPOGRAPHY)\n   ========================================================= */\n.anki-popover-content {\n  padding: 16px;\n  overflow-y: auto;\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n/* High-Legibility Meaning Row */\n.anki-meaning-row {\n  font-size: 15.5px;\n  font-weight: 600;\n  color: var(--text-primary);\n  line-height: 1.4;\n}\n\n/* English Definition */\n.anki-def-row {\n  font-size: 13.5px;\n  color: var(--text-secondary);\n  line-height: 1.5;\n}\n\n/* Context Example with Spacious Padding & Border */\n.anki-example-box {\n  margin-top: 4px;\n  border-left: 2px solid rgba(255, 255, 255, 0.15);\n  padding: 4px 0 4px 12px;\n  display: flex;\n  flex-direction: column;\n  gap: 5px;\n  background-color: transparent;\n  border-radius: 0;\n}\n\n:host([data-theme=\"light\"]) .anki-example-box {\n  border-left: 2px solid rgba(0, 0, 0, 0.12);\n}\n\n.anki-example-en {\n  color: var(--text-primary);\n  font-size: 14px;\n  line-height: 1.6;\n  font-style: italic;\n}\n\n.anki-example-vi {\n  color: var(--text-secondary);\n  font-size: 13px;\n  line-height: 1.5;\n  font-style: normal;\n}\n\n/* =========================================================\n   INLINE EDITABLE FIELDS (ZERO LAYOUT SHIFT)\n   ========================================================= */\n.anki-editable {\n  outline: none;\n  cursor: text;\n  border-radius: 4px;\n  font-size: inherit;\n  transition: background-color 0.12s ease, box-shadow 0.12s ease;\n  padding: 1px 4px;\n  margin: -1px -4px;\n  position: relative;\n}\n\n.anki-editable:hover {\n  background-color: var(--hover-bg);\n}\n\n.anki-editable:focus {\n  outline: none;\n  background-color: var(--hover-bg);\n  box-shadow: 0 0 0 1px var(--text-muted);\n}\n\n.anki-word-text.anki-editable {\n  min-width: 32px;\n  display: inline-block;\n}\n\n.anki-word-text.anki-editable:focus {\n  overflow: visible;\n  text-overflow: clip;\n  max-width: 260px;\n}\n\n.anki-ipa-text.anki-editable {\n  min-width: 24px;\n  display: inline-block;\n}\n\n.anki-pos-badge.anki-editable {\n  cursor: text;\n}\n\n.anki-meaning-row.anki-editable {\n  min-height: 22px;\n}\n\n.anki-def-row.anki-editable {\n  min-height: 20px;\n}\n\n.anki-example-en.anki-editable {\n  min-height: 20px;\n}\n\n.anki-example-vi.anki-editable {\n  min-height: 18px;\n}\n\n.anki-editable[placeholder]:empty::before {\n  content: attr(placeholder);\n  color: var(--text-muted);\n  font-style: italic;\n  pointer-events: none;\n}\n\n/* =========================================================\n   POPOVER FOOTER WITH CUSTOM DECK DROPDOWN MENU\n   ========================================================= */\n.anki-popover-footer {\n  padding: 10px 16px;\n  border-top: 1px solid var(--border);\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n  background: var(--popover-bg);\n  position: relative;\n  border-bottom-left-radius: calc(var(--radius) - 1px);\n  border-bottom-right-radius: calc(var(--radius) - 1px);\n  background-clip: padding-box;\n}\n\n.anki-deck-dropdown-container {\n  position: relative;\n  display: inline-flex;\n}\n\n/* Trigger Button */\n.anki-deck-trigger {\n  background-color: #18181B;\n  border: 1px solid #27272A;\n  border-radius: 6px;\n  height: 32px;\n  padding: 0 10px;\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  color: #E4E4E7;\n  cursor: pointer;\n  font-size: 12.5px;\n  font-weight: 500;\n  transition: all 0.14s ease;\n  max-width: 175px;\n  outline: none;\n  user-select: none;\n}\n\n.anki-deck-trigger:hover {\n  background-color: #27272A;\n  border-color: #3F3F46;\n  color: #FFFFFF;\n}\n\n.anki-deck-trigger.active {\n  border-color: #52525B;\n  background-color: #27272A;\n}\n\n.anki-deck-icon {\n  width: 14px;\n  height: 14px;\n  color: #A1A1AA;\n  flex-shrink: 0;\n}\n\n.anki-deck-current-label {\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  max-width: 110px;\n  color: inherit;\n}\n\n.anki-deck-chevron {\n  width: 12px;\n  height: 12px;\n  color: #71717A;\n  flex-shrink: 0;\n  transition: transform 0.15s ease;\n}\n\n.anki-deck-trigger.active .anki-deck-chevron {\n  transform: rotate(180deg);\n}\n\n/* Custom Floating Dropdown Menu (Opens downward below trigger button) */\n.deck-menu,\n.anki-deck-menu {\n  position: absolute;\n  top: calc(100% + 6px) !important;\n  bottom: auto !important;\n  left: 0 !important;\n  min-width: 190px;\n  max-width: 270px;\n  max-height: 200px;\n  overflow-y: auto;\n  background-color: #121215;\n  border: 1px solid #27272A;\n  border-radius: 8px;\n  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);\n  z-index: 100;\n  padding: 4px;\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  animation: anki-fade-in 0.12s ease-out;\n}\n\n/* Custom thin scrollbar for deck menu */\n.anki-deck-menu::-webkit-scrollbar {\n  width: 4px;\n}\n.anki-deck-menu::-webkit-scrollbar-track {\n  background: transparent;\n}\n.anki-deck-menu::-webkit-scrollbar-thumb {\n  background: #27272A;\n  border-radius: 2px;\n}\n.anki-deck-menu::-webkit-scrollbar-thumb:hover {\n  background: #3F3F46;\n}\n\n.anki-deck-item {\n  padding: 8px 10px;\n  font-size: 13px;\n  color: #E4E4E7;\n  border-radius: 4px;\n  cursor: pointer;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  transition: background-color 0.12s ease, color 0.12s ease;\n  user-select: none;\n}\n\n.anki-deck-item:hover {\n  background-color: #27272A;\n  color: #FFFFFF;\n}\n\n.anki-deck-item.selected {\n  color: #FAFAFA;\n  font-weight: 500;\n  background-color: rgba(255, 255, 255, 0.05);\n}\n\n.anki-deck-item-text {\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n\n.anki-deck-item-check {\n  width: 13px;\n  height: 13px;\n  color: var(--success);\n  flex-shrink: 0;\n}\n\n/* Light Mode Overrides for Deck Dropdown */\n:host([data-theme=\"light\"]) .anki-deck-trigger {\n  background-color: #F4F4F5;\n  border: 1px solid #E4E4E7;\n  color: #18181B;\n}\n\n:host([data-theme=\"light\"]) .anki-deck-trigger:hover {\n  background-color: #E4E4E7;\n  border-color: #D4D4D8;\n}\n\n:host([data-theme=\"light\"]) .anki-deck-icon {\n  color: #71717A;\n}\n\n:host([data-theme=\"light\"]) .deck-menu,\n:host([data-theme=\"light\"]) .anki-deck-menu {\n  background-color: #FFFFFF;\n  border: 1px solid #E4E4E7;\n  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);\n}\n\n:host([data-theme=\"light\"]) .anki-deck-item {\n  color: #18181B;\n}\n\n:host([data-theme=\"light\"]) .anki-deck-item:hover {\n  background-color: #F4F4F5;\n  color: #09090B;\n}\n\n:host([data-theme=\"light\"]) .anki-deck-item.selected {\n  color: #09090B;\n  background-color: #F4F4F5;\n}\n\n:host([data-theme=\"light\"]) .anki-deck-menu::-webkit-scrollbar-thumb {\n  background: #E4E4E7;\n}\n\n.anki-btn-add {\n  height: 32px;\n  padding: 0 14px;\n  font-size: 13px;\n  font-weight: 600;\n  border-radius: 6px;\n  border: 1px solid transparent;\n  cursor: pointer;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 6px;\n  background: var(--btn-bg);\n  color: var(--btn-text);\n  transition: all 0.12s ease;\n  user-select: none;\n  flex-shrink: 0;\n}\n\n.anki-btn-add:hover {\n  background: var(--btn-hover);\n}\n\n.anki-btn-add:disabled {\n  opacity: 0.5;\n  cursor: not-allowed;\n}\n\n.anki-btn-add.anki-added {\n  background: var(--success);\n  color: #FFFFFF;\n}\n\n/* =========================================================\n   SKELETON SHIMMER LOADER\n   ========================================================= */\n.anki-skeleton-wrap {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  padding: 4px 0;\n}\n\n.anki-skeleton {\n  background: linear-gradient(90deg, var(--skeleton-bg) 25%, var(--skeleton-shine) 50%, var(--skeleton-bg) 75%);\n  background-size: 200% 100%;\n  border-radius: 4px;\n  animation: anki-shimmer 1.4s infinite ease-in-out;\n}\n\n.anki-skeleton-title {\n  height: 18px;\n  width: 55%;\n}\n\n.anki-skeleton-line {\n  height: 14px;\n  width: 90%;\n}\n\n.anki-skeleton-box {\n  height: 44px;\n  width: 100%;\n  margin-top: 2px;\n}\n\n@keyframes anki-shimmer {\n  0% { background-position: 200% 0; }\n  100% { background-position: -200% 0; }\n}\n\n/* =========================================================\n   ERROR / WARNING BANNER\n   ========================================================= */\n.anki-popover-banner {\n  padding: 8px 10px;\n  border-radius: 6px;\n  font-size: 12.5px;\n  line-height: 1.4;\n  display: flex;\n  align-items: flex-start;\n  gap: 6px;\n}\n\n.anki-banner-error {\n  background: var(--danger-bg);\n  color: var(--danger);\n  border: 1px solid var(--danger);\n}\n\n/* Minimal Spinner */\n.anki-spinner-sm {\n  width: 12px;\n  height: 12px;\n  border: 2px solid currentColor;\n  border-top-color: transparent;\n  border-radius: 50%;\n  animation: anki-spin 0.6s linear infinite;\n  display: inline-block;\n  opacity: 0.8;\n}\n\n@keyframes anki-spin {\n  to { transform: rotate(360deg); }\n}\n\n@keyframes anki-fade-in {\n  from { opacity: 0; }\n  to { opacity: 1; }\n}\n\n@keyframes anki-scale-in {\n  from { opacity: 0; transform: scale(0.97) translateY(2px); }\n  to { opacity: 1; transform: scale(1) translateY(0); }\n}\n";
+  const POPOVER_CSS = `/**
+ * Compact Floating Popover Styles (Shadow DOM Encapsulated)
+ * Design Style: Modern Linear / Shadcn UI / Clean Typography
+ * 375px Width, 2-Row Header, Muted Pastel Badges & Custom Deck Dropdown Menu
+ */
+
+:host {
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 14px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+:host, .popover-container, *:not(.phonetic-text):not(.anki-ipa-text):not(.ipa) {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+/* =========================================================
+   DESIGN TOKENS (SHADCN ZINC PALETTE)
+   ========================================================= */
+:host,
+:host([data-theme="light"]) {
+  /* Light Mode */
+  --popover-bg: #FFFFFF;
+  --border: #E4E4E7;            /* Zinc-200 */
+  --text-primary: #09090B;      /* Zinc-950 */
+  --text-secondary: #71717A;    /* Zinc-500 */
+  --text-muted: #A1A1AA;        /* Zinc-400 */
+  --badge-bg: #F4F4F5;          /* Zinc-100 */
+  --badge-text: #18181B;        /* Zinc-900 */
+  --btn-bg: #18181B;            /* Zinc-900 */
+  --btn-text: #FAFAFA;          /* Zinc-50 */
+  --btn-hover: #27272A;         /* Zinc-800 */
+  --btn-secondary-bg: #F4F4F5;
+  --btn-secondary-hover: #E4E4E7;
+  --hover-bg: #F4F4F5;          /* Zinc-100 */
+  --skeleton-bg: #F4F4F5;
+  --skeleton-shine: #E4E4E7;
+  --success: #10B981;
+  --success-bg: #ECFDF5;
+  --danger: #EF4444;
+  --danger-bg: #FEF2F2;
+  --radius: 12px;
+  --shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
+:host([data-theme="dark"]) {
+  /* Explicit Dark Mode (PeakPlanner Theme) */
+  --popover-bg: #0E0F14;
+  --border: #242530;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9698A6;
+  --text-muted: #646675;
+  --badge-bg: #1F202A;
+  --badge-text: #FFFFFF;
+  --btn-bg: #FFFFFF;
+  --btn-text: #0E0F14;
+  --btn-hover: #E4E5EB;
+  --btn-secondary-bg: #1F202A;
+  --btn-secondary-hover: #292B38;
+  --hover-bg: #171820;
+  --skeleton-bg: #171820;
+  --skeleton-shine: #242530;
+  --success: #10B981;
+  --success-bg: #064E3B;
+  --danger: #F87171;
+  --danger-bg: #450A0A;
+  --radius: 12px;
+  --shadow: 0 16px 42px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :host(:not([data-theme="light"])) {
+    /* Auto Dark Mode */
+    --popover-bg: #0E0F14;
+    --border: #242530;
+    --text-primary: #FFFFFF;
+    --text-secondary: #9698A6;
+    --text-muted: #646675;
+    --badge-bg: #1F202A;
+    --badge-text: #FFFFFF;
+    --btn-bg: #FFFFFF;
+    --btn-text: #0E0F14;
+    --btn-hover: #E4E5EB;
+    --btn-secondary-bg: #1F202A;
+    --btn-secondary-hover: #292B38;
+    --hover-bg: #171820;
+    --skeleton-bg: #171820;
+    --skeleton-shine: #242530;
+    --success: #10B981;
+    --success-bg: #064E3B;
+    --danger: #F87171;
+    --danger-bg: #450A0A;
+    --radius: 12px;
+    --shadow: 0 16px 42px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* =========================================================
+   1. QUICK TRIGGER PILL BUTTON (FLOATING NEAR SELECTION)
+   ========================================================= */
+.anki-quick-trigger {
+  position: absolute;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  background: var(--popover-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.14s ease;
+  user-select: none;
+  animation: anki-fade-in 0.12s ease-out;
+}
+
+.anki-quick-trigger:hover {
+  background: var(--hover-bg);
+  border-color: var(--text-muted);
+}
+
+.anki-quick-trigger svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   2. COMPACT FLOATING POPOVER (375PX WIDTH)
+   ========================================================= */
+.anki-floating-popover {
+  position: absolute;
+  z-index: 2147483647;
+  width: 400px;
+  max-width: 95vw;
+  max-height: 560px;
+  background: var(--popover-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: visible; /* Allows custom dropdown menu to open downward cleanly */
+  user-select: text;
+  color: var(--text-primary);
+  animation: anki-scale-in 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+/* Custom Slim Scrollbar */
+.anki-popover-content::-webkit-scrollbar {
+  width: 4px;
+}
+.anki-popover-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.anki-popover-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+.anki-popover-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* =========================================================
+   POPOVER HEADER (2-ROW TYPOGRAPHY STRUCTURE & DRAG HANDLE)
+   ========================================================= */
+.anki-popover-header {
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: grab;
+  user-select: none;
+  background: var(--popover-bg);
+  border-top-left-radius: calc(var(--radius) - 1px);
+  border-top-right-radius: calc(var(--radius) - 1px);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* Ensure interactive controls in header maintain their normal cursors */
+.anki-popover-header .anki-header-controls,
+.anki-popover-header .anki-btn-icon,
+.anki-popover-header .anki-editable,
+.anki-popover-header [contenteditable="true"] {
+  cursor: default;
+}
+
+.anki-popover-header .anki-btn-icon {
+  cursor: pointer;
+}
+
+.anki-popover-header .anki-editable,
+.anki-popover-header [contenteditable="true"] {
+  cursor: text;
+  user-select: text;
+}
+
+/* Active Dragging States */
+.anki-floating-popover.anki-is-dragging,
+.anki-floating-popover.anki-is-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.anki-floating-popover.anki-is-dragging {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  transition: box-shadow 0.15s ease;
+}
+
+:host([data-theme="light"]) .anki-floating-popover.anki-is-dragging {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18), 0 0 0 1px #E4E4E7;
+}
+
+.anki-header-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Row 1: Word + Part of Speech Badge */
+.header-row,
+.anki-header-row1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 2px;
+  min-width: 0;
+}
+
+.word-text,
+.anki-word-text {
+  font-size: 19px !important;       /* Cỡ chữ to vừa phải, hiện đại */
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  color: #FAFAFA !important;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+:host([data-theme="light"]) .word-text,
+:host([data-theme="light"]) .anki-word-text {
+  color: #09090B !important;
+}
+
+/* Row 2: Phonetic IPA (Specialized Serif: Times New Roman for crisp IPA symbols) */
+.header-row-2,
+.anki-header-row2 {
+  display: flex;
+  align-items: center;
+}
+
+.phonetic-text,
+.anki-ipa-text,
+.ipa {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 17px !important;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #A1A1AA !important;
+  margin-top: 2px;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+:host([data-theme="light"]) .phonetic-text,
+:host([data-theme="light"]) .anki-ipa-text,
+:host([data-theme="light"]) .ipa {
+  color: #71717A !important;
+}
+
+/* Part of Speech Badges (Refined Pastel / Muted Tones) */
+.pos-badge,
+.anki-pos-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.25;
+  flex-shrink: 0;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  transition: all 0.12s ease;
+  user-select: text;
+}
+
+/* Dark Mode POS Badges */
+.anki-pos-badge.pos-verb {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+.anki-pos-badge.pos-noun {
+  background-color: rgba(99, 102, 241, 0.12);
+  color: #818CF8;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+}
+
+.anki-pos-badge.pos-adj {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+.anki-pos-badge.pos-adv,
+.anki-pos-badge.pos-other {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+/* Light Mode POS Badges */
+:host([data-theme="light"]) .anki-pos-badge.pos-verb {
+  background-color: #EFF6FF;
+  color: #2563EB;
+  border: 1px solid #BFDBFE;
+}
+
+:host([data-theme="light"]) .anki-pos-badge.pos-noun {
+  background-color: #EEF2FF;
+  color: #4F46E5;
+  border: 1px solid #C7D2FE;
+}
+
+:host([data-theme="light"]) .anki-pos-badge.pos-adj {
+  background-color: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+
+:host([data-theme="light"]) .anki-pos-badge.pos-adv,
+:host([data-theme="light"]) .anki-pos-badge.pos-other {
+  background-color: #FFFBEB;
+  color: #D97706;
+  border: 1px solid #FDE68A;
+}
+
+.anki-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.anki-btn-icon {
+  background: transparent;
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+
+.anki-btn-icon:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.anki-btn-relookup:hover svg {
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.anki-spinning svg,
+svg.anki-spinning,
+.anki-btn-icon.anki-spinning svg {
+  animation: anki-spin 0.6s linear infinite !important;
+}
+
+.anki-btn-audio {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: var(--badge-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.anki-btn-audio:hover {
+  background: var(--hover-bg) !important;
+  color: var(--text-primary) !important;
+  transform: scale(1.08);
+}
+
+/* =========================================================
+   POPOVER BODY CONTENT (CLEAR TYPOGRAPHY)
+   ========================================================= */
+.anki-popover-content {
+  padding: 14px 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* High-Legibility Meaning Row */
+.anki-meaning-row {
+  flex-shrink: 0;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* English Definition */
+.anki-def-row {
+  flex-shrink: 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Context Example with Spacious Padding & Border */
+.anki-example-box {
+  flex-shrink: 0;
+  margin-top: 2px;
+  border-left: 2px solid rgba(255, 255, 255, 0.18);
+  padding: 6px 0 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: transparent;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+
+:host([data-theme="light"]) .anki-example-box {
+  border-left: 2px solid rgba(0, 0, 0, 0.12);
+}
+
+.anki-example-en {
+  color: var(--text-primary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  font-style: italic;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.anki-example-en b,
+.anki-example-en strong,
+.anki-example-highlight {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+}
+
+:host([data-theme="light"]) .anki-example-highlight,
+:host([data-theme="light"]) .anki-example-en b,
+:host([data-theme="light"]) .anki-example-en strong {
+  color: #0284c7 !important;
+}
+
+.anki-example-vi {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  font-style: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   INLINE EDITABLE FIELDS (ZERO LAYOUT SHIFT)
+   ========================================================= */
+.anki-editable {
+  outline: none;
+  cursor: text;
+  border-radius: 4px;
+  font-size: inherit;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  position: relative;
+}
+
+.anki-editable:hover {
+  background-color: var(--hover-bg);
+}
+
+.anki-editable:focus {
+  outline: none;
+  background-color: var(--hover-bg);
+  box-shadow: 0 0 0 1px var(--text-muted);
+}
+
+.anki-word-text.anki-editable {
+  min-width: 32px;
+  display: inline-block;
+}
+
+.anki-word-text.anki-editable:focus {
+  overflow: visible;
+  text-overflow: clip;
+  max-width: 260px;
+}
+
+.anki-ipa-text.anki-editable {
+  min-width: 24px;
+  display: inline-block;
+}
+
+.anki-pos-badge.anki-editable {
+  cursor: text;
+}
+
+.anki-meaning-row.anki-editable {
+  min-height: 22px;
+}
+
+.anki-def-row.anki-editable {
+  min-height: 20px;
+}
+
+.anki-example-en.anki-editable {
+  min-height: 20px;
+}
+
+.anki-example-vi.anki-editable {
+  min-height: 18px;
+}
+
+.anki-editable[placeholder]:empty::before {
+  content: attr(placeholder);
+  color: var(--text-muted);
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* =========================================================
+   POPOVER FOOTER WITH CUSTOM DECK DROPDOWN MENU
+   ========================================================= */
+.anki-popover-footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--popover-bg);
+  position: relative;
+  border-bottom-left-radius: calc(var(--radius) - 1px);
+  border-bottom-right-radius: calc(var(--radius) - 1px);
+  background-clip: padding-box;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.anki-deck-dropdown-container {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Trigger Button */
+.anki-deck-trigger {
+  background-color: #18181B;
+  border: 1px solid #27272A;
+  border-radius: 6px;
+  height: 32px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #E4E4E7;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: all 0.14s ease;
+  max-width: 175px;
+  outline: none;
+  user-select: none;
+}
+
+.anki-deck-trigger:hover {
+  background-color: #27272A;
+  border-color: #3F3F46;
+  color: #FFFFFF;
+}
+
+.anki-deck-trigger.active {
+  border-color: #52525B;
+  background-color: #27272A;
+}
+
+.anki-deck-icon {
+  width: 14px;
+  height: 14px;
+  color: #A1A1AA;
+  flex-shrink: 0;
+}
+
+.anki-deck-current-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+  color: inherit;
+}
+
+.anki-deck-chevron {
+  width: 12px;
+  height: 12px;
+  color: #71717A;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.anki-deck-trigger.active .anki-deck-chevron {
+  transform: rotate(180deg);
+}
+
+/* Custom Floating Dropdown Menu (Opens downward below trigger button) */
+.deck-menu,
+.anki-deck-menu {
+  position: absolute;
+  top: calc(100% + 6px) !important;
+  bottom: auto !important;
+  left: 0 !important;
+  min-width: 190px;
+  max-width: 270px;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: #121215;
+  border: 1px solid #27272A;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+  z-index: 100;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: anki-fade-in 0.12s ease-out;
+}
+
+/* Custom thin scrollbar for deck menu */
+.anki-deck-menu::-webkit-scrollbar {
+  width: 4px;
+}
+.anki-deck-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.anki-deck-menu::-webkit-scrollbar-thumb {
+  background: #27272A;
+  border-radius: 2px;
+}
+.anki-deck-menu::-webkit-scrollbar-thumb:hover {
+  background: #3F3F46;
+}
+
+.anki-deck-item {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #E4E4E7;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  user-select: none;
+}
+
+.anki-deck-item:hover {
+  background-color: #27272A;
+  color: #FFFFFF;
+}
+
+.anki-deck-item.selected {
+  color: #FAFAFA;
+  font-weight: 500;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.anki-deck-item-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.anki-deck-item-check {
+  width: 13px;
+  height: 13px;
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+/* Light Mode Overrides for Deck Dropdown */
+:host([data-theme="light"]) .anki-deck-trigger {
+  background-color: #F4F4F5;
+  border: 1px solid #E4E4E7;
+  color: #18181B;
+}
+
+:host([data-theme="light"]) .anki-deck-trigger:hover {
+  background-color: #E4E4E7;
+  border-color: #D4D4D8;
+}
+
+:host([data-theme="light"]) .anki-deck-icon {
+  color: #71717A;
+}
+
+:host([data-theme="light"]) .deck-menu,
+:host([data-theme="light"]) .anki-deck-menu {
+  background-color: #FFFFFF;
+  border: 1px solid #E4E4E7;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+:host([data-theme="light"]) .anki-deck-item {
+  color: #18181B;
+}
+
+:host([data-theme="light"]) .anki-deck-item:hover {
+  background-color: #F4F4F5;
+  color: #09090B;
+}
+
+:host([data-theme="light"]) .anki-deck-item.selected {
+  color: #09090B;
+  background-color: #F4F4F5;
+}
+
+:host([data-theme="light"]) .anki-deck-menu::-webkit-scrollbar-thumb {
+  background: #E4E4E7;
+}
+
+.anki-btn-add {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  transition: all 0.12s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.anki-btn-add:hover {
+  background: var(--btn-hover);
+}
+
+.anki-btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.anki-btn-add.anki-added {
+  background: var(--success);
+  color: #FFFFFF;
+}
+
+/* =========================================================
+   SKELETON SHIMMER LOADER
+   ========================================================= */
+.anki-skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.anki-skeleton {
+  background: linear-gradient(90deg, var(--skeleton-bg) 25%, var(--skeleton-shine) 50%, var(--skeleton-bg) 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: anki-shimmer 1.4s infinite ease-in-out;
+}
+
+.anki-skeleton-title {
+  height: 18px;
+  width: 55%;
+}
+
+.anki-skeleton-line {
+  height: 14px;
+  width: 90%;
+}
+
+.anki-skeleton-box {
+  height: 44px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+@keyframes anki-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* =========================================================
+   ERROR / WARNING BANNER
+   ========================================================= */
+.anki-popover-banner {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.anki-banner-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+/* Minimal Spinner */
+.anki-spinner-sm {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: anki-spin 0.6s linear infinite;
+  display: inline-block;
+  opacity: 0.8;
+}
+
+@keyframes anki-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes anki-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes anki-scale-in {
+  from { opacity: 0; transform: scale(0.97) translateY(2px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+`;
 
   const ICONS = {
     spark: `<svg viewBox="0 0 24 24"><path d="M12 2L14.39 8.26L21 9.27L16.09 13.74L17.5 20.24L12 16.9L6.5 20.24L7.91 13.74L3 9.27L9.61 8.26L12 2Z"/></svg>`,
@@ -41,11 +926,26 @@
    INTERACTIVE CONTEXT CHIPS (CROP & SCREENSHOT LOOKUP)
    ========================================================= */
 .anki-context-chips-wrap {
+  flex-shrink: 0;
+  max-height: 130px;
+  overflow-y: auto;
   margin-bottom: 2px;
   padding: 8px 10px;
   background: var(--badge-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.anki-context-chips-wrap::-webkit-scrollbar {
+  width: 3px;
+}
+.anki-context-chips-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+.anki-context-chips-wrap::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
 }
 
 .anki-chips-header {
@@ -139,6 +1039,167 @@
   /**
    * Returns pastel/muted color class according to part of speech
    */
+    /**
+   * Helper functions for Context Normalization & Highlighting
+   */
+  function cleanContextSpacing(str) {
+    if (!str) return '';
+    return str
+      .replace(/\r\n|\r/g, '\n')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\s+([.,!?;:)]}”’])/g, '$1')
+      .replace(/([([{“‘])\s+/g, '$1')
+      .replace(/\s+('\w+)/g, '$1')
+      .trim();
+  }
+
+  function isMostlyAllCaps(str) {
+    if (!str) return false;
+    const letters = str.replace(/[^a-zA-ZÀ-ỹ]/g, '');
+    if (letters.length < 5) return false;
+    const upperCount = (letters.match(/[A-ZÀ-Ý]/g) || []).length;
+    return (upperCount / letters.length) > 0.7;
+  }
+
+  function toSentenceCase(str) {
+    if (!str) return '';
+    return str.toLowerCase().replace(/(^\s*|[.!?]\s+)([a-zà-ỹ])/g, (m, p1, p2) => p1 + p2.toUpperCase())
+      .replace(/\bi\b/g, 'I');
+  }
+
+  function normalizeContextSentence(raw) {
+    if (!raw) return '';
+    let cleaned = cleanContextSpacing(raw);
+    if (isMostlyAllCaps(cleaned)) {
+      cleaned = toSentenceCase(cleaned);
+    }
+    return cleaned;
+  }
+
+  function highlightWordInSentence(sentence, targetWord) {
+    if (!sentence) return '';
+    if (!targetWord) return escapeHtml(sentence);
+
+    const cleanWord = targetWord.trim();
+    if (!cleanWord) return escapeHtml(sentence);
+
+    const escapedWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\function getPosClass(pos) {');
+    const regex = new RegExp('(^|[^a-zA-Z0-9À-ỹ])(' + escapedWord + ')([^a-zA-Z0-9À-ỹ]|$)', 'i');
+    const match = sentence.match(regex);
+
+    if (match) {
+      const prefix = sentence.substring(0, match.index + match[1].length);
+      const matchedText = match[2];
+      const suffix = sentence.substring(match.index + match[1].length + matchedText.length);
+      return `${escapeHtml(prefix)}<b class="anki-example-highlight">${escapeHtml(matchedText)}</b>${escapeHtml(suffix)}`;
+    }
+
+    const lowerSentence = sentence.toLowerCase();
+    const lowerWord = cleanWord.toLowerCase();
+    const idx = lowerSentence.indexOf(lowerWord);
+    if (idx !== -1) {
+      const prefix = sentence.substring(0, idx);
+      const matchedText = sentence.substring(idx, idx + cleanWord.length);
+      const suffix = sentence.substring(idx + cleanWord.length);
+      return `${escapeHtml(prefix)}<b class="anki-example-highlight">${escapeHtml(matchedText)}</b>${escapeHtml(suffix)}`;
+    }
+
+    return escapeHtml(sentence);
+  }
+
+  /**
+   * Session-level Context Manager
+   * Preserves translation of context sentence across lookups and eliminates redundant re-translations.
+   */
+  class ContextSessionManager {
+    constructor() {
+      this.currentSentence = '';
+      this.unifiedTranslation = '';
+      this.wordCache = new Map();
+    }
+
+    normalizeKey(str) {
+      if (!str) return '';
+      return str.toLowerCase().trim().replace(/^[^w\sÀ-ỹ]+|[^w\sÀ-ỹ]+$/g, '');
+    }
+
+    initSession(sentence, initialTranslation = '') {
+      const normSentence = normalizeContextSentence(sentence || '').trim();
+      const normKey = this.normalizeKey(normSentence);
+      const curKey = this.normalizeKey(this.currentSentence);
+
+      if (normKey && curKey && normKey !== curKey) {
+        this.currentSentence = normSentence;
+        this.unifiedTranslation = initialTranslation ? initialTranslation.trim() : '';
+        this.wordCache.clear();
+      } else {
+        if (!this.currentSentence) this.currentSentence = normSentence;
+        if (initialTranslation && (!this.unifiedTranslation || this.unifiedTranslation.length < 5)) {
+          this.unifiedTranslation = initialTranslation.trim();
+        }
+      }
+    }
+
+    setTranslation(translation) {
+      if (translation && typeof translation === 'string') {
+        const clean = translation.trim();
+        if (clean && (!this.unifiedTranslation || this.unifiedTranslation.length < 5)) {
+          this.unifiedTranslation = clean;
+        }
+      }
+    }
+
+    getUnifiedTranslation() {
+      return this.unifiedTranslation;
+    }
+
+    hasTranslation() {
+      return Boolean(this.unifiedTranslation && this.unifiedTranslation.trim().length > 0);
+    }
+
+    setWordData(wordOrPhrase, cardData) {
+      const k = this.normalizeKey(wordOrPhrase);
+      if (k && cardData) {
+        this.wordCache.set(k, cardData);
+      }
+      if (cardData?.word) {
+        const kw = this.normalizeKey(cardData.word);
+        if (kw) this.wordCache.set(kw, cardData);
+      }
+      if (cardData?.raw_selected_word) {
+        const kr = this.normalizeKey(cardData.raw_selected_word);
+        if (kr) this.wordCache.set(kr, cardData);
+      }
+      const trans = cardData?.example_translation || cardData?.example_vi;
+      if (trans) {
+        this.setTranslation(trans);
+      }
+    }
+
+    getWordData(wordOrPhrase) {
+      const k = this.normalizeKey(wordOrPhrase);
+      return k ? this.wordCache.get(k) : null;
+    }
+
+    hasWordData(wordOrPhrase) {
+      const k = this.normalizeKey(wordOrPhrase);
+      return k ? this.wordCache.has(k) : false;
+    }
+
+    invalidate(wordOrPhrase) {
+      const k = this.normalizeKey(wordOrPhrase);
+      if (k) this.wordCache.delete(k);
+    }
+
+    reset() {
+      this.currentSentence = '';
+      this.unifiedTranslation = '';
+      this.wordCache.clear();
+    }
+  }
+
+  const globalContextSession = new ContextSessionManager();
+
   function getPosClass(pos) {
     const p = (pos || '').toLowerCase().trim();
     if (p.includes('verb') || p === 'v' || p === 'v.') return 'pos-verb';
@@ -427,9 +1488,11 @@
       }
     }
 
+    const normalizedSentence = normalizeContextSentence(fullSentence);
+
     return {
       word: selectedText,
-      sentence: fullSentence,
+      sentence: normalizedSentence,
       sourceUrl: window.location.href,
       targetRect: range.getBoundingClientRect()
     };
@@ -635,6 +1698,11 @@
     if (!context || !context.word) return;
     removeQuickTrigger();
     closeFloatingPopover();
+
+    if (context.sentence) {
+      context.sentence = normalizeContextSentence(context.sentence);
+    }
+    globalContextSession.initSession(context.sentence);
 
     currentSelectionContext = context;
 
@@ -1015,10 +2083,15 @@
         return;
       }
 
+      const rawSent = res.data.detected_sentence || res.data.example_sentence || '';
+      const normalizedSentence = normalizeContextSentence(rawSent);
+      const initialTrans = res.data.example_translation || res.data.example_vi || '';
+      globalContextSession.initSession(normalizedSentence, initialTrans);
+
       const context = {
         word: res.data.word,
-        sentence: res.data.detected_sentence || res.data.example_sentence,
-        detected_sentence: res.data.detected_sentence,
+        sentence: normalizedSentence,
+        detected_sentence: normalizedSentence,
         raw_selected_word: res.data.raw_selected_word,
         sourceUrl: window.location.href,
         targetRect,
@@ -1117,13 +2190,25 @@
       rawContextSentence.toLowerCase() !== rawContextWord.toLowerCase() && 
       rawContextSentence.split(/\s+/).length >= 3;
 
-    const exampleSentence = (isRealContext 
+    let exampleSentence = (isRealContext 
       ? rawContextSentence 
       : (aiData.example_sentence || aiData.example_en || rawContextSentence || '')
     ).trim();
-    const exampleTranslation = (aiData.example_translation || aiData.example_vi || '').trim();
+    exampleSentence = normalizeContextSentence(exampleSentence);
 
-    const detectedSentence = (aiData.detected_sentence || context?.detected_sentence || '').trim();
+    let detectedSentence = (aiData.detected_sentence || context?.detected_sentence || '').trim();
+    if (detectedSentence) {
+      detectedSentence = normalizeContextSentence(detectedSentence);
+    }
+
+    const rawTranslation = (aiData.example_translation || aiData.example_vi || '').trim();
+    const sessionSentence = detectedSentence || exampleSentence;
+    globalContextSession.initSession(sessionSentence, rawTranslation);
+    if (rawTranslation) {
+      globalContextSession.setTranslation(rawTranslation);
+    }
+    const unifiedTranslation = globalContextSession.getUnifiedTranslation() || rawTranslation;
+
     const activeWord = (aiData.word || context?.word || '').trim();
     const rawWord = (aiData.raw_selected_word || context?.raw_selected_word || activeWord).trim();
 
@@ -1137,12 +2222,17 @@
       return str.toLowerCase().trim().replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '');
     };
 
-    // Snapshot current AI card data into session cache
+    // Snapshot current AI card data into session cache and globalContextSession
     const currentSnapshotData = {
       ...aiData,
+      example_translation: unifiedTranslation,
+      example_vi: unifiedTranslation,
       detected_sentence: detectedSentence,
       raw_selected_word: rawWord
     };
+    globalContextSession.setWordData(activeWord, currentSnapshotData);
+    if (rawWord) globalContextSession.setWordData(rawWord, currentSnapshotData);
+    if (context?.word) globalContextSession.setWordData(context.word, currentSnapshotData);
     const kWord = normalizeLookupKey(aiData.word);
     const kRaw = normalizeLookupKey(rawWord);
     const kCtxWord = normalizeLookupKey(context?.word);
@@ -1209,10 +2299,10 @@
           </div>
         ` : ''}
 
-        ${(exampleSentence || exampleTranslation) ? `
+        ${(exampleSentence || unifiedTranslation) ? `
           <div class="anki-example-box">
-            ${exampleSentence ? `<div class="anki-example-en anki-editable" contenteditable="true" spellcheck="false" data-field="example_sentence" title="Click to edit example sentence">${escapeHtml(exampleSentence)}</div>` : ''}
-            ${exampleTranslation ? `<div class="anki-example-vi anki-editable" contenteditable="true" spellcheck="false" data-field="example_translation" title="Click to edit translation">${escapeHtml(exampleTranslation)}</div>` : ''}
+            ${exampleSentence ? `<div class="anki-example-en anki-editable" contenteditable="true" spellcheck="false" data-field="example_sentence" title="Click to edit example sentence">${highlightWordInSentence(exampleSentence, rawWord || activeWord)}</div>` : ''}
+            ${unifiedTranslation ? `<div class="anki-example-vi anki-editable" contenteditable="true" spellcheck="false" data-field="example_translation" title="Click to edit translation">${escapeHtml(unifiedTranslation)}</div>` : ''}
           </div>
         ` : ''}
       </div>
@@ -1375,6 +2465,12 @@
         const kRawLookup = normalizeLookupKey(rawWord);
         if (kRawLookup && activePopoverEl._sessionWordCache) activePopoverEl._sessionWordCache.delete(kRawLookup);
 
+        globalContextSession.invalidate(currentWord);
+        globalContextSession.invalidate(rawWord);
+        if (userEditedSentence) {
+          globalContextSession.initSession(userEditedSentence);
+        }
+
         // Display smooth skeleton loading in content area
         const contentEl = activePopoverEl.querySelector('.anki-popover-content');
         if (contentEl) {
@@ -1486,12 +2582,14 @@
       try {
         const liveEdited = getEditedCardData(currentCardData || aiData, context);
         const liveKey = normalizeLookupKey(liveEdited.word);
-        if (liveKey && activePopoverEl._sessionWordCache) {
-          activePopoverEl._sessionWordCache.set(liveKey, {
+        if (liveKey) {
+          const snapshot = {
             ...liveEdited,
             detected_sentence: detectedSentence,
             raw_selected_word: rawWord
-          });
+          };
+          if (activePopoverEl._sessionWordCache) activePopoverEl._sessionWordCache.set(liveKey, snapshot);
+          globalContextSession.setWordData(liveKey, snapshot);
         }
       } catch {
         // ignore live edit snapshot error
@@ -1503,8 +2601,9 @@
       }
 
       // 1. Session Cache Hit: Instant 0ms display without AI API call
-      if (normTarget && activePopoverEl._sessionWordCache && activePopoverEl._sessionWordCache.has(normTarget)) {
-        const cached = activePopoverEl._sessionWordCache.get(normTarget);
+      const cached = globalContextSession.getWordData(cleanTarget) 
+                  || (activePopoverEl._sessionWordCache && activePopoverEl._sessionWordCache.get(normTarget));
+      if (cached) {
         const nextContext = {
           ...context,
           word: cached.word || cleanTarget,
@@ -1516,16 +2615,63 @@
         return;
       }
 
-      // 2. Cache Miss: Update UI with loading state and query AI
+      // 2. Cache Miss: Partial Skeleton Loading (Keep Context Chips & Example Box fully visible at 0ms latency)
+      // Header: update target word, show subtle loading badges
       const wordEl = activePopoverEl.querySelector('.anki-word-text');
       if (wordEl) wordEl.textContent = cleanTarget;
 
+      const posEl = activePopoverEl.querySelector('.anki-pos-badge');
+      if (posEl) {
+        posEl.className = 'anki-pos-badge pos-badge pos-other';
+        posEl.textContent = '...';
+        posEl.style.opacity = '0.6';
+      }
+
+      const ipaEl = activePopoverEl.querySelector('.anki-ipa-text');
+      if (ipaEl) {
+        ipaEl.textContent = '/ ... /';
+        ipaEl.style.opacity = '0.4';
+      }
+
+      // Captured Context Chips: instantly highlight the clicked chip
+      const chipsContainer = activePopoverEl.querySelector('.anki-context-chips-container');
+      if (chipsContainer) {
+        chipsContainer.querySelectorAll('.active-chip').forEach(el => el.classList.remove('active-chip'));
+        chipsContainer.querySelectorAll('.active-chip-sep').forEach(el => el.classList.remove('active-chip-sep'));
+        const targetCleanLower = cleanTarget.toLowerCase();
+        chipsContainer.querySelectorAll('.anki-chip-word').forEach(chip => {
+          const w = (chip.dataset.word || chip.textContent || '').trim().toLowerCase();
+          if (w && targetCleanLower.includes(w)) {
+            chip.classList.add('active-chip');
+          }
+        });
+      }
+
+      // Meaning & Definition rows: show lightweight shimmer skeletons
       const meaningEl = activePopoverEl.querySelector('.anki-meaning-row');
       if (meaningEl) {
-        meaningEl.innerHTML = `<span class="anki-spinner-sm" style="display:inline-block;margin-right:6px;vertical-align:middle;"></span>Analyzing "${escapeHtml(cleanTarget)}"...`;
+        meaningEl.innerHTML = `<span class="anki-spinner-sm" style="display:inline-block;margin-right:6px;vertical-align:middle;"></span>Analyzing "${escapeHtml(cleanTarget)}"...<div class="anki-skeleton anki-skeleton-title" style="width: 55%; height: 16px; margin-top: 6px;"></div>`;
       }
       const defEl = activePopoverEl.querySelector('.anki-def-row');
-      if (defEl) defEl.style.opacity = '0.35';
+      if (defEl) {
+        defEl.innerHTML = `<div class="anki-skeleton anki-skeleton-line" style="width: 85%; height: 14px; opacity: 0.6;"></div>`;
+      }
+
+      // Example Box: Instant 0ms update: re-highlight target in English sentence while keeping existing translation!
+      const exampleEnEl = activePopoverEl.querySelector('.anki-example-en');
+      if (exampleEnEl && exampleSentence) {
+        exampleEnEl.innerHTML = highlightWordInSentence(exampleSentence, cleanTarget);
+      }
+
+      // Add Button: disable with loader
+      const btnAdd = activePopoverEl.querySelector('#anki-btn-add');
+      if (btnAdd) {
+        btnAdd.disabled = true;
+        btnAdd.innerHTML = `<span class="anki-spinner-sm"></span> <span>Analyzing...</span>`;
+      }
+
+      const hasReusedTranslation = globalContextSession.hasTranslation();
+      const existingTrans = globalContextSession.getUnifiedTranslation();
 
       safeSendMessage({
         action: 'EXPLAIN_WORD',
@@ -1533,26 +2679,41 @@
           word: cleanTarget,
           sentence: detectedSentence || context?.sentence,
           sourceUrl: context?.sourceUrl || window.location.href,
-          bypassCache: false
+          bypassCache: false,
+          reuseTranslation: hasReusedTranslation,
+          existingTranslation: existingTrans
         }
       }, (res) => {
         if (!activePopoverEl) return;
         if (!res || !res.success) {
           if (meaningEl) meaningEl.textContent = 'Failed to analyze word or phrase.';
+          if (btnAdd) {
+            btnAdd.disabled = false;
+            btnAdd.innerHTML = `<span>+ Add to Anki</span>`;
+          }
           return;
+        }
+
+        const effectiveTranslation = existingTrans || res.data.example_translation || res.data.example_vi || '';
+        if (effectiveTranslation) {
+          globalContextSession.setTranslation(effectiveTranslation);
         }
 
         const updatedData = {
           ...res.data,
+          example_translation: effectiveTranslation,
+          example_vi: effectiveTranslation,
           detected_sentence: detectedSentence,
           raw_selected_word: cleanTarget
         };
 
-        // Cache fresh response in session cache
+        // Cache response in both globalContextSession and popover session cache
         const nextKey = normalizeLookupKey(res.data.word);
         const nextRawKey = normalizeLookupKey(cleanTarget);
         if (nextKey && activePopoverEl._sessionWordCache) activePopoverEl._sessionWordCache.set(nextKey, updatedData);
         if (nextRawKey && activePopoverEl._sessionWordCache) activePopoverEl._sessionWordCache.set(nextRawKey, updatedData);
+        globalContextSession.setWordData(cleanTarget, updatedData);
+        if (res.data.word) globalContextSession.setWordData(res.data.word, updatedData);
 
         const updatedContext = {
           ...context,

@@ -272,7 +272,7 @@ export function safeParseAIJson(rawText) {
 /**
  * Validate and normalize parsed AI response matching SPEC.md schema
  */
-function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourceUrl = '') {
+function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourceUrl = '', existingTranslation = '') {
   const word = (result.word || fallbackWord).trim();
   const phonetic = (result.phonetic || '').trim();
   const pos = (result.pos || 'noun').trim().toLowerCase();
@@ -294,8 +294,8 @@ function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourc
     : (result.example_en || result.example_sentence || rawFallback || '')
   ).trim();
 
-  // Vietnamese Translation: 100% complete translation
-  const example_translation = (result.example_vi || result.example_translation || '').trim();
+  // Vietnamese Translation: 100% complete translation (reuse existing when available)
+  const example_translation = (existingTranslation || result.example_vi || result.example_translation || '').trim();
   const example_vi = example_translation;
   const example_en = example_sentence;
   const collocations = [];
@@ -324,7 +324,7 @@ function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourc
  * Ultra-fast lookup function using native Fetch with 14s AbortController timeout,
  * strict responseSchema + lean 7-field schema, minimal thinking level, configurable or Auto Token Budget.
  */
-async function lookupGeminiFast(word, sentence, apiKey, model = PRIMARY_GEMINI_MODEL, targetLang = 'Vietnamese', customPrompt = '', tokenBudget = 'auto') {
+async function lookupGeminiFast(word, sentence, apiKey, model = PRIMARY_GEMINI_MODEL, targetLang = 'Vietnamese', customPrompt = '', tokenBudget = 'auto', existingTranslation = '', reuseTranslation = false) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
   // Hard timeout at 14 seconds: gives AI Studio breathing room while preventing indefinite hangs
@@ -340,14 +340,26 @@ async function lookupGeminiFast(word, sentence, apiKey, model = PRIMARY_GEMINI_M
   let prompt = '';
   let defaultSystemInstruction = '';
 
-  if (isRealContext) {
+  if (isRealContext && reuseTranslation && existingTranslation && existingTranslation.trim()) {
+    const safeTrans = existingTranslation.trim().replace(/"/g, '\\"');
+    defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
+
+STRICT ANALYSIS PRIORITIES:
+1. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi): HIGHEST PRIORITY. You MUST provide the exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context dictionary meaning.
+2. PRIORITY 2 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
+3. CONTEXT REUSE (CRITICAL): The sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Do NOT re-translate the sentence. Output "example_en" as the context sentence and "example_vi" exactly as "${safeTrans}".
+4. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.
+5. CONTEXT NORMALIZATION: If Context is in ALL CAPS or has OCR glitches, normalize "example_en" into natural sentence casing, keeping all original words.`;
+    prompt = `Word: "${cleanWord}"\nContext: "${rawSentence}"\nExisting Translation: "${safeTrans}"`;
+  } else if (isRealContext) {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
 
 STRICT ANALYSIS PRIORITIES:
 1. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi): HIGHEST PRIORITY. You MUST provide the exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context dictionary meaning.
 2. PRIORITY 2 - CONTEXT SENTENCE & 100% TRANSLATION (example_en & example_vi): Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting, dropping, or summarizing any clause or conjunction.
 3. PRIORITY 3 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
-4. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.`;
+4. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.
+5. CONTEXT NORMALIZATION: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED") or has OCR glitches, normalize "example_en" into natural, standard English sentence casing, keeping all original words.`;
     prompt = `Word: "${cleanWord}"\nContext: "${rawSentence}"`;
   } else {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
@@ -466,7 +478,7 @@ STRICT ANALYSIS PRIORITIES:
 /**
  * Query Google Gemini with Max 1 Quick Fallback (Fail-Fast Policy)
  */
-async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = false }) {
+async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = false, existingTranslation = '', reuseTranslation = false }) {
   const apiKey = (config.apiKey || '').trim();
   if (!apiKey) {
     throw new Error('Gemini API Key is not configured. Please open Settings to enter your API Key.');
@@ -489,8 +501,8 @@ async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = fa
 
   try {
     // Attempt 1: Primary Model (<1s)
-    const rawResult = await lookupGeminiFast(word, sentence, apiKey, primaryModel, targetLang, customPrompt, tokenBudget);
-    const normalized = normalizeSchema(rawResult, word, sentence, sourceUrl);
+    const rawResult = await lookupGeminiFast(word, sentence, apiKey, primaryModel, targetLang, customPrompt, tokenBudget, existingTranslation, reuseTranslation);
+    const normalized = normalizeSchema(rawResult, word, sentence, sourceUrl, existingTranslation);
     // Save to Cache with context
     saveToCache(word, sentence, targetLang, normalized);
     if (normalized.word && normalized.word.toLowerCase() !== word.toLowerCase()) {
@@ -507,8 +519,8 @@ async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = fa
     if ((primaryErr.status === 429 || primaryErr.status === 503) && fallbackModel && fallbackModel !== primaryModel) {
       console.warn(`[Anki AI Vocab] Model "${primaryModel}" encountered ${primaryErr.status}. Retrying fallback model "${fallbackModel}"...`);
       try {
-        const fallbackResult = await lookupGeminiFast(word, sentence, apiKey, fallbackModel, targetLang, customPrompt, tokenBudget);
-        const normalized = normalizeSchema(fallbackResult, word, sentence, sourceUrl);
+        const fallbackResult = await lookupGeminiFast(word, sentence, apiKey, fallbackModel, targetLang, customPrompt, tokenBudget, existingTranslation, reuseTranslation);
+        const normalized = normalizeSchema(fallbackResult, word, sentence, sourceUrl, existingTranslation);
         saveToCache(word, sentence, targetLang, normalized);
         if (normalized.word && normalized.word.toLowerCase() !== word.toLowerCase()) {
           saveToCache(normalized.word, sentence, targetLang, normalized);
@@ -526,7 +538,7 @@ async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = fa
 /**
  * Query OpenAI or OpenAI-Compatible API with Configurable Token Budget
  */
-async function queryOpenAI({ word, sentence, sourceUrl, config, isCustom = false, bypassCache = false }) {
+async function queryOpenAI({ word, sentence, sourceUrl, config, isCustom = false, bypassCache = false, existingTranslation = '', reuseTranslation = false }) {
   const apiKey = (config.apiKey || '').trim();
   if (!apiKey && !isCustom) {
     throw new Error('OpenAI API Key is not configured. Please open Settings to enter your API Key.');
@@ -556,13 +568,24 @@ async function queryOpenAI({ word, sentence, sourceUrl, config, isCustom = false
   let systemInstruction = '';
   let prompt = '';
 
-  if (isRealContext) {
+  if (isRealContext && reuseTranslation && existingTranslation && existingTranslation.trim()) {
+    const safeTrans = existingTranslation.trim().replace(/"/g, '\\"');
+    systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
+STRICT PRIORITIES:
+1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact translation in ${targetLang} fitting the SPECIFIC CONTEXT.
+2. PRIORITY 2: "definition_en" - Concise English definition for this context.
+3. CONTEXT REUSE: Sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Set "example_en" to Context and "example_vi" to "${safeTrans}". Do NOT re-translate.
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+5. Context Normalization: Clean up noisy capitalization or spacing into natural sentence casing.`;
+    prompt = `Word: "${cleanWord}". Context: "${rawSentence}". Existing Translation: "${safeTrans}".`;
+  } else if (isRealContext) {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
 STRICT PRIORITIES:
 1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context meaning.
 2. PRIORITY 2: Context sentence & 100% Translation - Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting any clause or conjunction.
 3. PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase as used in this context.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.`;
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+5. Context Normalization: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED"), normalize "example_en" into standard sentence casing.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}".`;
   } else {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
@@ -623,7 +646,7 @@ STRICT PRIORITIES:
     if (!rawText) throw new Error('AI server did not return any content.');
 
     const parsed = safeParseAIJson(rawText);
-    const normalized = normalizeSchema(parsed, word, sentence, sourceUrl);
+    const normalized = normalizeSchema(parsed, word, sentence, sourceUrl, existingTranslation);
     saveToCache(word, sentence, targetLang, normalized);
     if (normalized.word && normalized.word.toLowerCase() !== word.toLowerCase()) {
       saveToCache(normalized.word, sentence, targetLang, normalized);
@@ -641,7 +664,7 @@ STRICT PRIORITIES:
 /**
  * Main dispatcher to query AI
  */
-export async function explainWord({ word, sentence, sourceUrl, config, bypassCache = false }) {
+export async function explainWord({ word, sentence, sourceUrl, config, bypassCache = false, existingTranslation = '', reuseTranslation = false }) {
   if (!word || !word.trim()) {
     throw new Error('Selected word or phrase is invalid.');
   }
@@ -654,11 +677,11 @@ export async function explainWord({ word, sentence, sourceUrl, config, bypassCac
   const provider = config.apiProvider || 'gemini';
 
   if (provider === 'gemini') {
-    return await queryGemini({ word, sentence, sourceUrl, config, bypassCache });
+    return await queryGemini({ word, sentence, sourceUrl, config, bypassCache, existingTranslation, reuseTranslation });
   } else if (provider === 'openai') {
-    return await queryOpenAI({ word, sentence, sourceUrl, config, isCustom: false, bypassCache });
+    return await queryOpenAI({ word, sentence, sourceUrl, config, isCustom: false, bypassCache, existingTranslation, reuseTranslation });
   } else if (provider === 'custom') {
-    return await queryOpenAI({ word, sentence, sourceUrl, config, isCustom: true, bypassCache });
+    return await queryOpenAI({ word, sentence, sourceUrl, config, isCustom: true, bypassCache, existingTranslation, reuseTranslation });
   } else {
     throw new Error(`Unsupported AI provider: ${provider}`);
   }
@@ -845,7 +868,7 @@ async function queryGeminiVision({ base64Image, apiKey, model, targetLang, sourc
   const promptText = `You are an expert OCR & bilingual dictionary AI.
 Examine this cropped image (e.g. video subtitles, movie line, article text, or PDF).
 Task:
-1. OCR: Transcribe all visible text accurately into a coherent, complete English sentence: "detected_sentence".
+1. OCR & Normalization: Transcribe all visible text accurately into a coherent, complete English sentence: "detected_sentence". If the text is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED") or has OCR spacing glitches, normalize it into natural, standard English sentence casing, keeping all original words.
 2. Key Vocab Selection: From "detected_sentence", select the most valuable or challenging vocabulary word or key phrase (B1-C2 level) to learn: "word".
 3. STRICT PRIORITIES OF ANALYSIS:
    - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of "detected_sentence". Never return an out-of-context generic meaning.
@@ -984,7 +1007,7 @@ async function queryOpenAIVision({ base64Image, apiKey, targetLang, sourceUrl, c
 
   const promptText = `You are an expert OCR & bilingual dictionary AI.
 Examine this cropped image.
-1. OCR: Transcribe visible text into "detected_sentence".
+1. OCR & Normalization: Transcribe visible text into "detected_sentence". Normalize ALL CAPS or noisy spacing into natural English sentence casing.
 2. Select key vocabulary/phrase to learn: "word".
 3. STRICT PRIORITIES:
    - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of "detected_sentence".

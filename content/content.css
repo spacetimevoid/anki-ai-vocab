@@ -147,9 +147,9 @@
 .anki-floating-popover {
   position: absolute;
   z-index: 2147483647;
-  width: 380px;
+  width: 400px;
   max-width: 95vw;
-  max-height: 500px;
+  max-height: 560px;
   background: var(--popover-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -161,6 +161,7 @@
   color: var(--text-primary);
   animation: anki-scale-in 0.14s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: auto;
+  box-sizing: border-box;
 }
 
 /* Custom Slim Scrollbar */
@@ -193,6 +194,8 @@
   background: var(--popover-bg);
   border-top-left-radius: calc(var(--radius) - 1px);
   border-top-right-radius: calc(var(--radius) - 1px);
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 /* Ensure interactive controls in header maintain their normal cursors */
@@ -417,38 +420,50 @@ svg.anki-spinning,
    POPOVER BODY CONTENT (CLEAR TYPOGRAPHY)
    ========================================================= */
 .anki-popover-content {
-  padding: 16px;
+  padding: 14px 16px;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 /* High-Legibility Meaning Row */
 .anki-meaning-row {
+  flex-shrink: 0;
   font-size: 15.5px;
   font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.4;
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* English Definition */
 .anki-def-row {
+  flex-shrink: 0;
   font-size: 13.5px;
   color: var(--text-secondary);
   line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* Context Example with Spacious Padding & Border */
 .anki-example-box {
-  margin-top: 4px;
-  border-left: 2px solid rgba(255, 255, 255, 0.15);
-  padding: 4px 0 4px 12px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  border-left: 2px solid rgba(255, 255, 255, 0.18);
+  padding: 6px 0 6px 12px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   background-color: transparent;
   border-radius: 0;
+  box-sizing: border-box;
 }
 
 :host([data-theme="light"]) .anki-example-box {
@@ -457,9 +472,25 @@ svg.anki-spinning,
 
 .anki-example-en {
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.6;
   font-style: italic;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.anki-example-en b,
+.anki-example-en strong,
+.anki-example-highlight {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+}
+
+:host([data-theme="light"]) .anki-example-highlight,
+:host([data-theme="light"]) .anki-example-en b,
+:host([data-theme="light"]) .anki-example-en strong {
+  color: #0284c7 !important;
 }
 
 .anki-example-vi {
@@ -467,6 +498,8 @@ svg.anki-spinning,
   font-size: 13px;
   line-height: 1.5;
   font-style: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 /* =========================================================
@@ -551,6 +584,8 @@ svg.anki-spinning,
   border-bottom-left-radius: calc(var(--radius) - 1px);
   border-bottom-right-radius: calc(var(--radius) - 1px);
   background-clip: padding-box;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .anki-deck-dropdown-container {
