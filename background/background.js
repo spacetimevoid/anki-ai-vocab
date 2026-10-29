@@ -4,7 +4,7 @@
  */
 
 import { getConfig, saveConfig, DEFAULT_CONFIG } from './config.js';
-import { explainWord, testAIConnection } from './ai-service.js';
+import { explainWord, testAIConnection, cropImageData, analyzeCroppedImage } from './ai-service.js';
 import {
   checkAnkiConnection,
   getDeckNames,
@@ -14,14 +14,21 @@ import {
 } from './anki-service.js';
 
 const CONTEXT_MENU_ID = 'anki_ai_explain_selection';
+const CROP_CONTEXT_MENU_ID = 'anki_ai_crop_lookup';
 
-// 1. Initialize Extension and Context Menu
+// 1. Initialize Extension and Context Menus
 chrome.runtime.onInstalled.addListener(async () => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: CONTEXT_MENU_ID,
       title: 'Explain & Add to Anki: "%s"',
       contexts: ['selection']
+    });
+
+    chrome.contextMenus.create({
+      id: CROP_CONTEXT_MENU_ID,
+      title: 'Crop & Look Up (Alt+S)',
+      contexts: ['all']
     });
   });
 
@@ -47,39 +54,41 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 // 2. Handle Context Menu Click with Auto-Injection Fallback
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId === CONTEXT_MENU_ID && tab?.id) {
-    // Check for internal browser URLs where extensions cannot run
-    const url = tab.url || '';
-    if (url.startsWith('chrome://') || url.startsWith('edge://') || url.startsWith('chrome-extension://') || url.startsWith('about:') || url.startsWith('view-source:')) {
-      console.warn('[Anki AI Vocab] Cannot run extension on internal browser pages.');
-      return;
-    }
+  if (!tab?.id) return;
 
-    const payload = {
-      action: 'TRIGGER_LOOKUP_FROM_CONTEXT_MENU',
-      selectedText: info.selectionText || ''
-    };
+  const url = tab.url || '';
+  if (url.startsWith('chrome://') || url.startsWith('edge://') || url.startsWith('chrome-extension://') || url.startsWith('about:') || url.startsWith('view-source:')) {
+    console.warn('[Anki AI Vocab] Cannot run extension on internal browser pages.');
+    return;
+  }
 
+  const payload = info.menuItemId === CROP_CONTEXT_MENU_ID
+    ? { action: 'TRIGGER_CROP_MODE' }
+    : (info.menuItemId === CONTEXT_MENU_ID
+        ? { action: 'TRIGGER_LOOKUP_FROM_CONTEXT_MENU', selectedText: info.selectionText || '' }
+        : null);
+
+  if (!payload) return;
+
+  try {
+    // 1. Try sending message to existing content script
+    await chrome.tabs.sendMessage(tab.id, payload);
+  } catch (err) {
+    // 2. If content script is missing (e.g. tab opened before extension reload), inject it dynamically
     try {
-      // 1. Try sending message to existing content script
-      await chrome.tabs.sendMessage(tab.id, payload);
-    } catch (err) {
-      // 2. If content script is missing (e.g. tab opened before extension reload), inject it dynamically
-      try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: false },
-          files: ['content/content.js']
-        });
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: false },
+        files: ['content/content.js']
+      });
 
-        // 3. Resend message after short delay for content script to attach listener
-        setTimeout(() => {
-          chrome.tabs.sendMessage(tab.id, payload).catch(retryErr => {
-            console.warn('[Anki AI Vocab] Vẫn chưa thể gửi message sau khi inject:', retryErr);
-          });
-        }, 150);
-      } catch (injectErr) {
-        console.warn('[Anki AI Vocab] Không thể inject content script vào tab này:', injectErr);
-      }
+      // 3. Resend message after short delay for content script to attach listener
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tab.id, payload).catch(retryErr => {
+          console.warn('[Anki AI Vocab] Vẫn chưa thể gửi message sau khi inject:', retryErr);
+        });
+      }, 150);
+    } catch (injectErr) {
+      console.warn('[Anki AI Vocab] Không thể inject content script vào tab này:', injectErr);
     }
   }
 });
@@ -123,6 +132,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'EXPLAIN_WORD': {
           const { word, sentence, sourceUrl, bypassCache } = payload;
           const result = await explainWord({ word, sentence, sourceUrl, config, bypassCache });
+          sendResponse({ success: true, data: result });
+          break;
+        }
+
+        case 'CAPTURE_AND_LOOKUP_HYBRID': {
+          const { cropArea, sourceUrl } = payload;
+          const windowId = sender.tab?.windowId || null;
+
+          // 1. Capture visible tab at high quality
+          const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'jpeg', quality: 95 });
+
+          // 2. Crop area using OffscreenCanvas
+          const base64Image = await cropImageData(dataUrl, cropArea);
+
+          // 3. Process with Gemini Vision OCR + Vocab Extractor
+          const result = await analyzeCroppedImage({ base64Image, sourceUrl, config });
           sendResponse({ success: true, data: result });
           break;
         }

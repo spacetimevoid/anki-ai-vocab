@@ -4,6 +4,29 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.12.0] - 2026-10-29
+
+### Screen Crop & Look Up (Hybrid OCR + Vocab Selection + Interactive Chips)
+- **Screen Cropping UI Overlay (`Alt + S`):**
+  - Added an intuitive fullscreen cropping overlay with crosshair cursor and instruction banner (`content/content.js`).
+  - Supports dragging a dashed selection box over YouTube video subtitles, Netflix frames, image infographics, and PDF pages.
+  - Automatically scales coordinates by `window.devicePixelRatio` for high-DPI (Retina / 4K) precision.
+  - Cancelable anytime via `Escape` key without side-effects or leftover overlay DOM nodes.
+  - Accessible via global shortcut `Alt + S`, right-click context menu "Crop & Look Up (Alt+S)", and dedicated Crop icon in the extension popup header.
+- **Multimodal AI Vision & OffscreenCanvas Background Pipeline:**
+  - Service worker takes clean visible tab screenshots using `chrome.tabs.captureVisibleTab(windowId, { format: 'jpeg', quality: 95 })`.
+  - Seamlessly crops exact selection coordinates inside Service Worker MV3 using native `OffscreenCanvas` and `createImageBitmap` without needing DOM access.
+  - Leverages Google Gemini Multimodal Vision API (`gemini-2.5-flash`, `gemini-1.5-flash`) with structured JSON schema to OCR all text into `detected_sentence` while automatically picking the most relevant vocabulary word/phrase (`word`) in lemmatized dictionary base form.
+  - Comprehensive fallback support for OpenAI multimodal models (`gpt-4o-mini`).
+- **Interactive Vocabulary Context Chips on Popover:**
+  - Popover cleanly displays the captured sentence as interactive token chips (`.anki-context-chips-container`) directly above the meaning definition.
+  - Tokenized into word chips (`.anki-chip-word`) and punctuation separators (`.anki-chip-sep`).
+  - Active vocabulary is highlighted with vibrant cyan badge styling (`.active-chip`).
+  - Clicking any other word chip instantly triggers sub-0.5s text-based AI lookup (`EXPLAIN_WORD`) in the exact context of the captured sentence without re-cropping or re-running OCR.
+  - Full inline editing, audio pronunciation matching selected voice, and sticky target deck selection supported.
+
+---
+
 ## [3.11.0] - 2026-10-26
 
 ### Selection Popover Toggle in Popup, Sticky Deck Memory & Emerald Green Auto Button

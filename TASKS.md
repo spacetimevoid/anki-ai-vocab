@@ -290,6 +290,14 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
 - [x] **Task 36.4:** Cung cấp bảng mã CSS Styling hợp nhất với thiết kế input bo tròn hiện đại `input#typeans` và bảng diff kết quả `code#typeans` (`.typeGood`, `.typeBad`, `.typeMissed`) hỗ trợ mượt mà cả Light Mode và Dark Mode.
 - [x] **Task 36.5:** Viết hướng dẫn chi tiết từng bước cài đặt nhiều loại thẻ (Add Card Type) trong Anki Desktop.
 
+## Phase 37: Crop & Look Up (Hybrid OCR + Vocab Selection + Interactive Chips) [DONE]
+- [x] **Task 37.1:** Xây dựng giao diện kéo thả khoanh vùng màn hình (`startCropMode` trong `content/content.js`) với fullscreen overlay, viền đứt crop box, phím `Alt + S`, nút `Escape` hủy bỏ và banner hướng dẫn.
+- [x] **Task 37.2:** Triển khai pipeline cắt ảnh bằng `OffscreenCanvas` và Service Worker MV3 trong `background/ai-service.js` (`cropImageData`), chuyển đổi sang JPEG Base64 với `devicePixelRatio` chính xác.
+- [x] **Task 37.3:** Tích hợp Gemini Vision Multimodal API (`analyzeCroppedImage`, `queryGeminiVision`) tự động OCR `detected_sentence`, thông minh chọn từ khóa tiêu biểu (`word`), chuẩn hóa về dạng từ gốc (lemmatization) và sinh định nghĩa/dịch thuật ngữ cảnh.
+- [x] **Task 37.4:** Tích hợp giao diện Interactive Vocabulary Context Chips trên Popover (`.anki-context-chips-container` và `renderInteractiveChips`): từng từ trong câu văn có thể click chuyển đổi tức thời mà không cần crop lại màn hình.
+- [x] **Task 37.5:** Bổ sung nút Crop & Look Up trên Header Popup (`popup/popup.html`, `popup/popup.js`) và Context Menu chuột phải ("Crop & Look Up (Alt+S)").
+- [x] **Task 37.6:** Kiểm tra cú pháp toàn bộ codebase, nâng version lên `[3.12.0]` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+
 
 
 

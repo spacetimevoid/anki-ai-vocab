@@ -7,6 +7,7 @@
 const ankiStatusIndicator = document.getElementById('anki-status-indicator');
 const aiStatusIndicator = document.getElementById('ai-status-indicator');
 const btnOpenOptionsIcon = document.getElementById('btn-open-options-icon');
+const btnCropLookup = document.getElementById('btn-crop-lookup');
 
 const quickWordInput = document.getElementById('quick-word');
 const quickSentenceInput = document.getElementById('quick-sentence');
@@ -108,6 +109,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Setup options gear button
   btnOpenOptionsIcon?.addEventListener('click', () => chrome.runtime.openOptionsPage());
+
+  // Setup Crop & Look Up button
+  btnCropLookup?.addEventListener('click', async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id) {
+        chrome.tabs.sendMessage(tab.id, { action: 'TRIGGER_CROP_MODE' }).catch(() => {});
+        window.close();
+      }
+    } catch (err) {
+      console.warn('Failed to trigger crop mode from popup:', err);
+    }
+  });
 
   // Load config & statuses
   chrome.runtime.sendMessage({ action: 'GET_CONFIG' }, (res) => {

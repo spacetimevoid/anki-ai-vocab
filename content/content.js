@@ -32,8 +32,86 @@
     alert: `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
     deck: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
     folder: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
-    chevron: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>`
+    chevron: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
+    crop: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>`
   };
+
+  const CHIPS_CSS = `
+/* =========================================================
+   INTERACTIVE CONTEXT CHIPS (CROP & SCREENSHOT LOOKUP)
+   ========================================================= */
+.anki-context-chips-wrap {
+  margin-bottom: 2px;
+  padding: 8px 10px;
+  background: var(--badge-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.anki-chips-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+.anki-chips-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.anki-chips-hint {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.anki-context-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 2px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.anki-chip-word {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--text-primary);
+  background: transparent;
+  transition: all 0.14s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  font-weight: 450;
+}
+
+.anki-chip-word:hover {
+  background: rgba(56, 189, 248, 0.16);
+  color: #38bdf8;
+}
+
+.anki-chip-word.active-chip {
+  background: #38bdf8 !important;
+  color: #09090b !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 4px rgba(56, 189, 248, 0.35);
+}
+
+.anki-chip-sep {
+  color: var(--text-muted);
+  white-space: pre;
+}
+`;
 
   /**
    * Returns pastel/muted color class according to part of speech
@@ -61,6 +139,29 @@
     return clean ? `/ ${clean} /` : '';
   }
 
+  /**
+   * Splits a sentence into clickable word tokens and punctuation
+   */
+  function renderInteractiveChips(sentence, currentWord, rawWord) {
+    if (!sentence) return '';
+    const tokens = sentence.split(/(\s+|[.,!?;:"'“”‘’()\[\]{}]+)/);
+    const cleanCurrent = (currentWord || '').toLowerCase().trim();
+    const cleanRaw = (rawWord || '').toLowerCase().trim();
+
+    let html = '';
+    for (const token of tokens) {
+      if (!token) continue;
+      if (/[a-zA-ZÀ-ỹ0-9]/.test(token)) {
+        const cleanToken = token.toLowerCase().replace(/^[^\w]+|[^\w]+$/g, '');
+        const isMatch = cleanToken && (cleanToken === cleanCurrent || (cleanRaw && cleanToken === cleanRaw));
+        html += `<span class="anki-chip-word ${isMatch ? 'active-chip' : ''}" data-word="${escapeHtml(token)}" title="Click to inspect '${escapeHtml(token)}'">${escapeHtml(token)}</span>`;
+      } else {
+        html += `<span class="anki-chip-sep">${escapeHtml(token)}</span>`;
+      }
+    }
+    return html;
+  }
+
   // State
   let extensionConfig = null;
   let shadowRoot = null;
@@ -69,6 +170,8 @@
   let currentSelectionContext = null;
   let currentCardData = null;
   let lastUsedDeck = null;
+  let isCropModeActive = false;
+  let cropOverlayEl = null;
 
   /**
    * Persist selected deck across lookups and browser sessions (local + sync)
@@ -136,7 +239,7 @@
     if (!styleEl) {
       styleEl = document.createElement('style');
       styleEl.id = 'anki-vocab-inlined-styles';
-      styleEl.textContent = POPOVER_CSS;
+      styleEl.textContent = POPOVER_CSS + CHIPS_CSS;
       shadowRoot.appendChild(styleEl);
     }
 
@@ -542,6 +645,300 @@
   }
 
   /**
+   * 5b. Start Crop Mode (Screen Selection Box Overlay)
+   */
+  function startCropMode() {
+    if (isCropModeActive) return;
+    isCropModeActive = true;
+
+    removeQuickTrigger();
+    closeFloatingPopover();
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    cropOverlayEl = document.createElement('div');
+    cropOverlayEl.className = 'anki-crop-overlay';
+    cropOverlayEl.innerHTML = `
+      <style>
+        .anki-crop-overlay {
+          position: fixed !important;
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          z-index: 2147483645 !important;
+          cursor: crosshair !important;
+          user-select: none !important;
+          -webkit-user-select: none !important;
+          background: rgba(0, 0, 0, 0.35) !important;
+        }
+        .anki-crop-banner {
+          position: fixed !important;
+          top: 24px !important;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          display: flex !important;
+          align-items: center !important;
+          gap: 12px !important;
+          background: rgba(15, 23, 42, 0.94) !important;
+          backdrop-filter: blur(8px) !important;
+          -webkit-backdrop-filter: blur(8px) !important;
+          color: #F8FAFC !important;
+          padding: 8px 18px !important;
+          border-radius: 9999px !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.5) !important;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+          font-size: 13px !important;
+          pointer-events: none !important;
+          z-index: 2147483647 !important;
+          user-select: none !important;
+        }
+        .anki-crop-banner-badge {
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          font-weight: 600 !important;
+          color: #38BDF8 !important;
+        }
+        .anki-crop-banner-text {
+          color: #E2E8F0 !important;
+        }
+        .anki-crop-banner-hint {
+          color: #94A3B8 !important;
+          font-size: 12px !important;
+        }
+        .anki-crop-banner-hint strong {
+          color: #FFFFFF !important;
+          padding: 1px 6px !important;
+          border-radius: 4px !important;
+          background: rgba(255, 255, 255, 0.12) !important;
+          border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+        .anki-crop-box {
+          position: fixed !important;
+          border: 2px dashed #38BDF8 !important;
+          background: rgba(56, 189, 248, 0.08) !important;
+          box-shadow: 0 0 0 99999px rgba(0, 0, 0, 0.45) !important;
+          pointer-events: none !important;
+          border-radius: 4px !important;
+          z-index: 2147483646 !important;
+        }
+      </style>
+      <div class="anki-crop-banner">
+        <div class="anki-crop-banner-badge">
+          ${ICONS.crop}
+          <span>Crop & Look Up</span>
+        </div>
+        <span class="anki-crop-banner-text">Drag a box over subtitles, image, or text</span>
+        <span class="anki-crop-banner-hint">Press <strong>Esc</strong> to cancel</span>
+      </div>
+      <div class="anki-crop-box" style="display: none;"></div>
+    `;
+
+    document.documentElement.appendChild(cropOverlayEl);
+
+    const cropBox = cropOverlayEl.querySelector('.anki-crop-box');
+    let isDrawing = false;
+    let startX = 0;
+    let startY = 0;
+
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      isDrawing = true;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      cropBox.style.left = `${startX}px`;
+      cropBox.style.top = `${startY}px`;
+      cropBox.style.width = '0px';
+      cropBox.style.height = '0px';
+      cropBox.style.display = 'block';
+    };
+
+    const onMouseMove = (e) => {
+      if (!isDrawing) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+      const left = Math.min(startX, currentX);
+      const top = Math.min(startY, currentY);
+      const width = Math.abs(currentX - startX);
+      const height = Math.abs(currentY - startY);
+
+      cropBox.style.left = `${left}px`;
+      cropBox.style.top = `${top}px`;
+      cropBox.style.width = `${width}px`;
+      cropBox.style.height = `${height}px`;
+    };
+
+    const onMouseUp = (e) => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+      const left = Math.min(startX, currentX);
+      const top = Math.min(startY, currentY);
+      const width = Math.abs(currentX - startX);
+      const height = Math.abs(currentY - startY);
+
+      cleanupCropOverlay();
+
+      if (width < 12 || height < 12) {
+        return;
+      }
+
+      const cropArea = {
+        x: left,
+        y: top,
+        width,
+        height,
+        devicePixelRatio: window.devicePixelRatio || 1
+      };
+
+      const targetRect = {
+        top,
+        bottom: top + height,
+        left,
+        right: left + width,
+        width,
+        height
+      };
+
+      openCropLoadingPopover(targetRect, cropArea);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cleanupCropOverlay();
+      }
+    };
+
+    function cleanupCropOverlay() {
+      isCropModeActive = false;
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('mousemove', onMouseMove, true);
+      window.removeEventListener('mouseup', onMouseUp, true);
+      window.removeEventListener('keydown', onKeyDown, true);
+      if (cropOverlayEl && cropOverlayEl.parentNode) {
+        cropOverlayEl.parentNode.removeChild(cropOverlayEl);
+        cropOverlayEl = null;
+      }
+    }
+
+    cropOverlayEl.addEventListener('mousedown', onMouseDown, true);
+    window.addEventListener('mousemove', onMouseMove, true);
+    window.addEventListener('mouseup', onMouseUp, true);
+    window.addEventListener('keydown', onKeyDown, true);
+  }
+
+  /**
+   * 5c. Open Crop Loading Popover
+   */
+  function openCropLoadingPopover(targetRect, cropArea) {
+    removeQuickTrigger();
+    closeFloatingPopover();
+
+    activePopoverEl = document.createElement('div');
+    activePopoverEl.className = 'anki-floating-popover popover-container';
+
+    const pos = calculatePopoverPosition(targetRect, 220);
+    activePopoverEl._placement = pos.placement;
+    activePopoverEl.style.top = `${pos.top}px`;
+    activePopoverEl.style.left = `${pos.left}px`;
+
+    makePopoverDraggable(activePopoverEl);
+
+    activePopoverEl.innerHTML = `
+      <div class="anki-popover-header">
+        <div class="anki-header-left">
+          <div class="anki-header-row1 header-row">
+            <span class="anki-word-text word-text" style="font-size: 16px;">Scanning visual text...</span>
+            <span class="anki-pos-badge pos-badge pos-other" style="opacity:0.8;">Vision OCR</span>
+          </div>
+          <div class="anki-header-row2 header-row-2">
+            <span class="anki-ipa-text phonetic-text ipa" style="opacity:0.5;font-family:inherit;font-size:12px;">Analyzing crop area with Gemini Vision...</span>
+          </div>
+        </div>
+        <div class="anki-header-controls">
+          <button class="anki-btn-icon" id="anki-popover-close" title="Close (Esc)">${ICONS.close}</button>
+        </div>
+      </div>
+      <div class="anki-popover-content">
+        <div class="anki-skeleton-wrap">
+          <div class="anki-skeleton anki-skeleton-title" style="width: 75%;"></div>
+          <div class="anki-skeleton anki-skeleton-line" style="width: 95%;"></div>
+          <div class="anki-skeleton anki-skeleton-box" style="height: 52px;"></div>
+        </div>
+      </div>
+      <div class="anki-popover-footer">
+        <span class="anki-footer-info" style="font-size:12px;color:var(--text-muted);">Vision AI Engine</span>
+        <button class="anki-btn-add" disabled>
+          <span class="anki-spinner-sm"></span>
+          <span>Extracting...</span>
+        </button>
+      </div>
+    `;
+
+    shadowRoot.appendChild(activePopoverEl);
+
+    activePopoverEl.querySelector('#anki-popover-close').addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeFloatingPopover();
+    });
+
+    let hasResponded = false;
+    const safetyTimeoutId = setTimeout(() => {
+      if (!hasResponded) {
+        hasResponded = true;
+        renderPopoverError('OCR request timed out (> 18s). Please try again.');
+      }
+    }, 19000);
+
+    safeSendMessage({
+      action: 'CAPTURE_AND_LOOKUP_HYBRID',
+      payload: {
+        cropArea,
+        sourceUrl: window.location.href
+      }
+    }, (res) => {
+      if (hasResponded) return;
+      hasResponded = true;
+      clearTimeout(safetyTimeoutId);
+
+      if (chrome.runtime.lastError) {
+        renderPopoverError(chrome.runtime.lastError.message || 'Vision capture error.');
+        return;
+      }
+
+      if (!res || !res.success) {
+        renderPopoverError(res?.error || 'Failed to extract text from cropped area.');
+        return;
+      }
+
+      const context = {
+        word: res.data.word,
+        sentence: res.data.detected_sentence || res.data.example_sentence,
+        detected_sentence: res.data.detected_sentence,
+        raw_selected_word: res.data.raw_selected_word,
+        sourceUrl: window.location.href,
+        targetRect,
+        isCropMode: true
+      };
+
+      renderPopoverLoadedData(res.data, context);
+    });
+  }
+
+  /**
    * Helper to extract current live edited values from the Popover DOM
    */
   function getEditedCardData(originalData, context) {
@@ -635,6 +1032,10 @@
     ).trim();
     const exampleTranslation = (aiData.example_translation || aiData.example_vi || '').trim();
 
+    const detectedSentence = (aiData.detected_sentence || context?.detected_sentence || '').trim();
+    const activeWord = (aiData.word || context?.word || '').trim();
+    const rawWord = (aiData.raw_selected_word || context?.raw_selected_word || activeWord).trim();
+
     activePopoverEl.innerHTML = `
       <!-- Header: 2-Row Typography Structure -->
       <div class="anki-popover-header">
@@ -667,6 +1068,21 @@
 
       <!-- Body Content (Flat & Minimalist Shadcn Style, Inline Editable) -->
       <div class="anki-popover-content">
+        ${detectedSentence ? `
+          <div class="anki-context-chips-wrap">
+            <div class="anki-chips-header">
+              <span class="anki-chips-title">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                Captured Context
+              </span>
+              <span class="anki-chips-hint">Click word to inspect</span>
+            </div>
+            <div class="anki-context-chips-container">
+              ${renderInteractiveChips(detectedSentence, activeWord, rawWord)}
+            </div>
+          </div>
+        ` : ''}
+
         <div class="anki-meaning-row anki-editable" contenteditable="true" spellcheck="false" data-field="meaning_vi" title="Click to edit meaning" placeholder="Meaning in context...">
           ${escapeHtml(aiData.meaning_vi || '')}
         </div>
@@ -882,11 +1298,18 @@
           }
 
           // Cache fresh data and re-render loaded popover
-          activePopoverEl._originalAiData = JSON.parse(JSON.stringify(res.data));
-          renderPopoverLoadedData(res.data, {
+          const refreshedData = {
+            ...res.data,
+            detected_sentence: detectedSentence,
+            raw_selected_word: rawWord
+          };
+          activePopoverEl._originalAiData = JSON.parse(JSON.stringify(refreshedData));
+          renderPopoverLoadedData(refreshedData, {
             ...context,
             word: currentWord,
             sentence: currentSentence,
+            detected_sentence: detectedSentence,
+            raw_selected_word: rawWord,
             sourceUrl: currentSourceUrl
           });
         });
@@ -916,6 +1339,71 @@
       btnAdd.addEventListener('click', (e) => {
         e.stopPropagation();
         handleAddToAnki(btnAdd, aiData, context);
+      });
+    }
+
+    // Interactive context chips click listener (Hybrid approach: instant switch without recropping)
+    if (detectedSentence) {
+      const chipEls = activePopoverEl.querySelectorAll('.anki-chip-word');
+      chipEls.forEach(chip => {
+        chip.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const clickedWord = (chip.dataset.word || '').trim();
+          if (!clickedWord) return;
+
+          const currentHeaderWord = activePopoverEl.querySelector('[data-field="word"]')?.textContent?.trim()?.toLowerCase();
+          if (chip.classList.contains('active-chip') && currentHeaderWord === clickedWord.toLowerCase()) {
+            return;
+          }
+
+          chipEls.forEach(c => c.classList.remove('active-chip'));
+          chip.classList.add('active-chip');
+
+          // Immediately reflect in word title
+          const wordEl = activePopoverEl.querySelector('.anki-word-text');
+          if (wordEl) wordEl.textContent = clickedWord;
+
+          // Indicate loading in meaning row
+          const meaningEl = activePopoverEl.querySelector('.anki-meaning-row');
+          if (meaningEl) {
+            meaningEl.innerHTML = `<span class="anki-spinner-sm" style="display:inline-block;margin-right:6px;vertical-align:middle;"></span>Analyzing "${escapeHtml(clickedWord)}"...`;
+          }
+          const defEl = activePopoverEl.querySelector('.anki-def-row');
+          if (defEl) defEl.style.opacity = '0.35';
+
+          safeSendMessage({
+            action: 'EXPLAIN_WORD',
+            payload: {
+              word: clickedWord,
+              sentence: detectedSentence,
+              sourceUrl: context?.sourceUrl || window.location.href,
+              bypassCache: false
+            }
+          }, (res) => {
+            if (!activePopoverEl) return;
+            if (!res || !res.success) {
+              if (meaningEl) meaningEl.textContent = 'Failed to analyze word.';
+              return;
+            }
+
+            const updatedData = {
+              ...res.data,
+              detected_sentence: detectedSentence,
+              raw_selected_word: clickedWord
+            };
+
+            const updatedContext = {
+              ...context,
+              word: clickedWord,
+              sentence: detectedSentence,
+              detected_sentence: detectedSentence,
+              raw_selected_word: clickedWord
+            };
+
+            renderPopoverLoadedData(updatedData, updatedContext);
+          });
+        });
       });
     }
 
@@ -1154,6 +1642,8 @@
    * 10. Global Event Handlers: Click-Outside & Esc Dismissal
    */
   document.addEventListener('pointerdown', (e) => {
+    if (isCropModeActive) return;
+
     if (activePopoverEl) {
       if (extensionConfig?.closeOnlyOnX !== true) {
         const path = e.composedPath ? e.composedPath() : [];
@@ -1175,6 +1665,7 @@
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (isCropModeActive) return; // Handled inside crop mode
       if (shadowRoot && shadowRoot.activeElement && shadowRoot.activeElement.isContentEditable) {
         shadowRoot.activeElement.blur();
         return;
@@ -1184,7 +1675,19 @@
     }
   });
 
+  // Global Shortcut: Alt + S to launch Crop & Look Up
+  window.addEventListener('keydown', (e) => {
+    if (e.altKey && (e.code === 'KeyS' || e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      e.stopPropagation();
+      initShadowDOM();
+      startCropMode();
+    }
+  }, true);
+
   document.addEventListener('mouseup', () => {
+    if (isCropModeActive) return;
+
     setTimeout(() => {
       const selection = window.getSelection();
       const context = extractSentenceContext(selection);
@@ -1202,6 +1705,13 @@
   });
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'TRIGGER_CROP_MODE') {
+      initShadowDOM();
+      startCropMode();
+      sendResponse({ received: true });
+      return;
+    }
+
     if (request.action === 'TRIGGER_LOOKUP_FROM_CONTEXT_MENU') {
       initShadowDOM();
       const selection = window.getSelection();

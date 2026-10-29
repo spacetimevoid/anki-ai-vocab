@@ -314,7 +314,9 @@ function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourc
     context_translation: example_translation,
     sentence: example_sentence,
     collocations,
-    source_url: sourceUrl || ''
+    source_url: sourceUrl || '',
+    detected_sentence: (result.detected_sentence || '').trim() || (isRealContext ? rawFallback : ''),
+    raw_selected_word: (result.raw_selected_word || word || '').trim()
   };
 }
 
@@ -780,5 +782,317 @@ export async function testAIConnection(config) {
       ok: false,
       error: err.message || 'Unknown error while verifying API.'
     };
+  }
+}
+
+/**
+ * 4. Image Cropping via OffscreenCanvas in Service Worker
+ * Cuts a viewport rectangle from visible tab screenshot and converts to clean JPEG Base64
+ */
+export async function cropImageData(dataUrl, area) {
+  if (!area || area.width <= 0 || area.height <= 0) {
+    throw new Error('Invalid crop dimensions.');
+  }
+
+  const dpr = area.devicePixelRatio || 1;
+  const sx = Math.max(0, Math.round(area.x * dpr));
+  const sy = Math.max(0, Math.round(area.y * dpr));
+  const sWidth = Math.round(area.width * dpr);
+  const sHeight = Math.round(area.height * dpr);
+
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  const imageBitmap = await createImageBitmap(blob);
+
+  const clampedWidth = Math.min(sWidth, imageBitmap.width - sx);
+  const clampedHeight = Math.min(sHeight, imageBitmap.height - sy);
+
+  if (clampedWidth <= 0 || clampedHeight <= 0) {
+    throw new Error('Crop selection is outside visible screen area.');
+  }
+
+  const canvas = new OffscreenCanvas(clampedWidth, clampedHeight);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(imageBitmap, sx, sy, clampedWidth, clampedHeight, 0, 0, clampedWidth, clampedHeight);
+
+  const croppedBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.95 });
+  const arrayBuffer = await croppedBlob.arrayBuffer();
+
+  let binary = '';
+  const bytes = new Uint8Array(arrayBuffer);
+  const len = bytes.byteLength;
+  const chunkSize = 8192;
+  for (let i = 0; i < len; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Query Gemini Multimodal Vision API (OCR + Vocab Selection + Dictionary analysis)
+ */
+async function queryGeminiVision({ base64Image, apiKey, model, targetLang, sourceUrl }) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 16000);
+
+  const promptText = `You are an expert OCR & bilingual dictionary AI.
+Examine this cropped image (e.g. video subtitles, movie line, article text, or PDF).
+Task:
+1. OCR: Transcribe all visible text accurately into a coherent, complete English sentence: "detected_sentence".
+2. Key Vocab Selection: From "detected_sentence", select the most valuable or challenging vocabulary word or key phrase (B1-C2 level) to learn: "word".
+3. Lemmatization: Set "word" to its dictionary base/lemma form in lowercase (e.g. "families" -> "family", "ran" -> "run", "better" -> "good", "stepping stone" -> "stepping stone"). Store the exact original word from the sentence in "raw_selected_word".
+4. Dictionary Analysis:
+- "phonetic": accurate IPA pronunciation for the lemma.
+- "pos": lowercase part of speech (noun, verb, adjective, adverb, idiom, phrasal verb).
+- "meaning_vi": natural, accurate translation in ${targetLang} fitting the context of "detected_sentence".
+- "definition_en": concise English definition for flashcard learning.
+- "example_sentence": MUST be identical to "detected_sentence".
+- "example_vi": 100% full, complete translation of "detected_sentence" into ${targetLang}. Never truncate or omit any clause.
+
+Output STRICT JSON conforming to schema.`;
+
+  const requestBody = {
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          { text: promptText },
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: base64Image
+            }
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 1024,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: 'OBJECT',
+        properties: {
+          detected_sentence: { type: 'STRING' },
+          word: { type: 'STRING' },
+          raw_selected_word: { type: 'STRING' },
+          phonetic: { type: 'STRING' },
+          pos: { type: 'STRING' },
+          meaning_vi: { type: 'STRING' },
+          definition_en: { type: 'STRING' },
+          example_sentence: { type: 'STRING' },
+          example_vi: { type: 'STRING' }
+        },
+        required: [
+          'detected_sentence',
+          'word',
+          'phonetic',
+          'pos',
+          'meaning_vi',
+          'definition_en',
+          'example_sentence',
+          'example_vi'
+        ]
+      }
+    }
+  };
+
+  const thinkingCfg = getThinkingConfig(model);
+  if (thinkingCfg) {
+    requestBody.generationConfig.thinkingConfig = thinkingCfg;
+  }
+
+  const startTime = performance.now();
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        const err = new Error('API rate limit reached (429). Please wait a few seconds and try again.');
+        err.status = 429;
+        throw err;
+      }
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData.error?.message || response.statusText;
+
+      // Self-healing: retry without thinkingConfig if rejected
+      if (response.status === 400 && /thinking/i.test(errMsg) && requestBody.generationConfig?.thinkingConfig) {
+        delete requestBody.generationConfig.thinkingConfig;
+        const retryRes = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+        if (retryRes.ok) {
+          const retryData = await retryRes.json();
+          const rawText = extractJsonFromParts(retryData.candidates?.[0]?.content?.parts);
+          if (rawText) {
+            const parsed = safeParseAIJson(rawText);
+            return normalizeSchema(parsed, parsed.word, parsed.detected_sentence, sourceUrl);
+          }
+        }
+      }
+
+      const err = new Error(`Gemini Vision error (${response.status}): ${errMsg}`);
+      err.status = response.status;
+      throw err;
+    }
+
+    const data = await response.json();
+    const elapsed = Math.round(performance.now() - startTime);
+    console.log(`[Timer] Gemini Vision (${model}) succeeded in: ${elapsed}ms`);
+
+    const rawText = extractJsonFromParts(data.candidates?.[0]?.content?.parts);
+    if (!rawText) throw new Error('AI did not return any content from image.');
+
+    const parsed = safeParseAIJson(rawText);
+    return normalizeSchema(parsed, parsed.word, parsed.detected_sentence, sourceUrl);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      const timeoutErr = new Error('Gemini Vision timed out (> 16s). Please retry.');
+      timeoutErr.status = 408;
+      throw timeoutErr;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Query OpenAI Vision API (GPT-4o / GPT-4o-mini multimodal)
+ */
+async function queryOpenAIVision({ base64Image, apiKey, targetLang, sourceUrl, config }) {
+  const baseUrl = (config.customBaseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const model = config.openaiModel || 'gpt-4o-mini';
+  const endpoint = `${baseUrl}/chat/completions`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 16000);
+
+  const promptText = `You are an expert OCR & bilingual dictionary AI.
+Examine this cropped image.
+1. OCR: Transcribe visible text into "detected_sentence".
+2. Select key vocabulary/phrase to learn: "word".
+3. Lemmatize "word" to base dictionary form (lowercase). Original token in "raw_selected_word".
+4. Dictionary Analysis:
+- "phonetic": IPA pronunciation.
+- "pos": lowercase part of speech.
+- "meaning_vi": translation in ${targetLang}.
+- "definition_en": concise English definition.
+- "example_sentence": same as "detected_sentence".
+- "example_vi": 100% full translation of "detected_sentence" in ${targetLang}.
+
+Return STRICT JSON matching schema:
+{"detected_sentence":"","word":"","raw_selected_word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_sentence":"","example_vi":""}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: promptText },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Extract subtitle/text and analyze.' },
+              {
+                type: 'image_url',
+                image_url: { url: `data:image/jpeg;base64,${base64Image}` }
+              }
+            ]
+          }
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.1,
+        max_tokens: 1024
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData.error?.message || response.statusText;
+      throw new Error(`OpenAI Vision error (${response.status}): ${errMsg}`);
+    }
+
+    const data = await response.json();
+    const rawText = data.choices?.[0]?.message?.content;
+    if (!rawText) throw new Error('AI server did not return any content.');
+
+    const parsed = safeParseAIJson(rawText);
+    return normalizeSchema(parsed, parsed.word, parsed.detected_sentence, sourceUrl);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('OpenAI Vision timed out (> 16s).');
+    }
+    throw err;
+  }
+}
+
+/**
+ * Analyze Cropped Screenshot: OCR + Vocab Selection + Translation + Lemma
+ */
+export async function analyzeCroppedImage({ base64Image, sourceUrl, config }) {
+  const provider = config?.apiProvider || 'gemini';
+  const apiKey = (config?.apiKey || '').trim();
+  const targetLang = config?.targetLanguage || 'Vietnamese';
+
+  if (!apiKey && provider !== 'custom') {
+    throw new Error('Please configure your AI API Key in Extension Settings.');
+  }
+
+  if (provider === 'gemini') {
+    const configuredModel = config.geminiModel || PRIMARY_GEMINI_MODEL;
+    // Vision fallback candidates
+    const visionModels = [
+      configuredModel,
+      'gemini-2.5-flash',
+      'gemini-1.5-flash'
+    ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
+
+    let lastError = null;
+    for (const model of visionModels) {
+      try {
+        const result = await queryGeminiVision({
+          base64Image,
+          apiKey,
+          model,
+          targetLang,
+          sourceUrl
+        });
+        if (result) return result;
+      } catch (err) {
+        console.warn(`[Anki AI Vocab] Vision attempt with ${model} failed:`, err.message);
+        lastError = err;
+        if (err.status === 401 || err.status === 403) throw err;
+      }
+    }
+    throw lastError || new Error('All Gemini Vision models failed to process image.');
+  } else {
+    return await queryOpenAIVision({
+      base64Image,
+      apiKey,
+      targetLang,
+      sourceUrl,
+      config
+    });
   }
 }
