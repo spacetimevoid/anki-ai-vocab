@@ -1061,11 +1061,12 @@ export async function analyzeCroppedImage({ base64Image, sourceUrl, config }) {
 
   if (provider === 'gemini') {
     const configuredModel = config.geminiModel || PRIMARY_GEMINI_MODEL;
-    // Vision fallback candidates
+    // Vision fallback candidates (prioritize gemini-3.5-flash-lite, fallback to 2.5 and 3.1)
     const visionModels = [
       configuredModel,
+      'gemini-3.5-flash-lite',
       'gemini-2.5-flash',
-      'gemini-1.5-flash'
+      'gemini-3.1-flash-lite'
     ].filter((m, idx, arr) => m && arr.indexOf(m) === idx);
 
     let lastError = null;

@@ -16,7 +16,7 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 - **Multimodal AI Vision & OffscreenCanvas Background Pipeline:**
   - Service worker takes clean visible tab screenshots using `chrome.tabs.captureVisibleTab(windowId, { format: 'jpeg', quality: 95 })`.
   - Seamlessly crops exact selection coordinates inside Service Worker MV3 using native `OffscreenCanvas` and `createImageBitmap` without needing DOM access.
-  - Leverages Google Gemini Multimodal Vision API (`gemini-2.5-flash`, `gemini-1.5-flash`) with structured JSON schema to OCR all text into `detected_sentence` while automatically picking the most relevant vocabulary word/phrase (`word`) in lemmatized dictionary base form.
+  - Leverages Google Gemini Multimodal Vision API (`gemini-3.5-flash-lite`, `gemini-2.5-flash`, `gemini-3.1-flash-lite`) with structured JSON schema to OCR all text into `detected_sentence` while automatically picking the most relevant vocabulary word/phrase (`word`) in lemmatized dictionary base form.
   - Comprehensive fallback support for OpenAI multimodal models (`gpt-4o-mini`).
 - **Interactive Vocabulary Context Chips on Popover:**
   - Popover cleanly displays the captured sentence as interactive token chips (`.anki-context-chips-container`) directly above the meaning definition.
