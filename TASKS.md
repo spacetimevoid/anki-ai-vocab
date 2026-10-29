@@ -304,8 +304,7 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Ưu tiên 1 (Cao nhất): Nghĩa tiếng Việt theo đúng ngữ cảnh câu (`meaning_vi`).
   - Ưu tiên 2: Câu ngữ cảnh gốc và dịch trọn vẹn 100% không bỏ sót vế (`example_sentence` & `example_vi`).
   - Ưu tiên 3: Định nghĩa tiếng Anh ngắn gọn cho người học (`definition_en`).
-  - Tái cấu trúc DOM hiển thị trên Popover (`content/content.js`) và Popup (`popup/popup.js`): Nghĩa ngữ cảnh -> Khung câu ví dụ & dịch -> Định nghĩa tiếng Anh.
-  - Đồng bộ hóa thứ tự các trường trong mẫu thẻ mặc định `Back` của `Basic` trong `background/config.js`.
+  - Giữ nguyên vị trí hiển thị trực quan cổ điển (Nghĩa tiếng Việt -> Định nghĩa tiếng Anh -> Hộp ngữ cảnh & dịch) trên Popover, Popup và mẫu thẻ Anki, trong khi AI ưu tiên tối đa chất lượng phân tích nghĩa theo ngữ cảnh và dịch 100% câu.
 - [x] **Task 38.4:** Thay thế mô hình `gemini-1.5-flash` đã hết vòng đời bằng `gemini-3.5-flash-lite`, `gemini-2.5-flash`, `gemini-3.1-flash-lite` trong pipeline Vision và danh sách lựa chọn của Options.
 - [x] **Task 38.5:** Kiểm tra toàn diện cú pháp codebase, nâng version lên `[3.13.0]` trong `manifest.json`, cập nhật `CHANGELOG.md` và `TASKS.md`.
 

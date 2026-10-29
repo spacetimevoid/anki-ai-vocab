@@ -54,15 +54,14 @@ export const DEFAULT_CONFIG = {
   <span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:4px;background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb;margin-right:6px;vertical-align:middle;">{{pos}}</span>
   {{meaning_vi}}
 </div>
+<div style="font-size:13px;color:#6b7280;margin-top:4px;line-height:1.45;">{{definition_en}}</div>
 
-<div style="border-top:1px dashed #d1d5db;margin:14px 0 12px 0;"></div>
+<div style="border-top:1px dashed #d1d5db;margin:16px 0 14px 0;"></div>
 
 <div style="font-size:14px;color:#374151;line-height:1.6;">
   <div>{{example_sentence}}</div>
   <div style="font-size:12.5px;color:#6b7280;font-style:italic;margin-top:4px;">{{example_translation}}</div>
 </div>
-
-<div style="font-size:13px;color:#6b7280;margin-top:12px;line-height:1.45;">{{definition_en}}</div>
 
 <div style="margin-top:14px;font-size:11px;color:#9ca3af;text-align:right;">
   Source: <a href="{{source_url}}" style="color:#9ca3af;text-decoration:none;">web context</a>

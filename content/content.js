@@ -1199,23 +1199,20 @@
           </div>
         ` : ''}
 
-        <!-- Priority 1: Contextual Meaning (Highest Priority) -->
-        <div class="anki-meaning-row anki-editable" contenteditable="true" spellcheck="false" data-field="meaning_vi" title="Click to edit contextual meaning" placeholder="Meaning in context...">
+        <div class="anki-meaning-row anki-editable" contenteditable="true" spellcheck="false" data-field="meaning_vi" title="Click to edit meaning" placeholder="Meaning in context...">
           ${escapeHtml(aiData.meaning_vi || '')}
         </div>
 
-        <!-- Priority 2: Context Sentence & 100% Translation -->
+        ${aiData.definition_en ? `
+          <div class="anki-def-row anki-editable" contenteditable="true" spellcheck="false" data-field="definition_en" title="Click to edit English definition">
+            ${escapeHtml(aiData.definition_en)}
+          </div>
+        ` : ''}
+
         ${(exampleSentence || exampleTranslation) ? `
           <div class="anki-example-box">
             ${exampleSentence ? `<div class="anki-example-en anki-editable" contenteditable="true" spellcheck="false" data-field="example_sentence" title="Click to edit example sentence">${escapeHtml(exampleSentence)}</div>` : ''}
             ${exampleTranslation ? `<div class="anki-example-vi anki-editable" contenteditable="true" spellcheck="false" data-field="example_translation" title="Click to edit translation">${escapeHtml(exampleTranslation)}</div>` : ''}
-          </div>
-        ` : ''}
-
-        <!-- Priority 3: Concise English Definition -->
-        ${aiData.definition_en ? `
-          <div class="anki-def-row anki-editable" contenteditable="true" spellcheck="false" data-field="definition_en" title="Click to edit English definition">
-            ${escapeHtml(aiData.definition_en)}
           </div>
         ` : ''}
       </div>

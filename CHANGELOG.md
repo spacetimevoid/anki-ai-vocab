@@ -22,7 +22,7 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
   - **Priority 1 (Highest): Contextual Meaning (`meaning_vi`):** Strictly customized to fit the exact context of the provided sentence, avoiding out-of-context generic dictionary meanings.
   - **Priority 2: Context Sentence & 100% Translation (`example_sentence` / `example_vi`):** Preserves the full original context sentence and guarantees 100% complete translation without omission or summarization.
   - **Priority 3: Concise English Definition (`definition_en`):** Clear English learner definition explaining the word as used in context.
-  - Reordered DOM structure in both Floating Popover (`content/content.js`) and Popup UI (`popup/popup.js`): Meaning -> Example Box -> English Definition.
+  - Maintained classic visual presentation order (Meaning -> English Definition -> Context Example Box) while strictly focusing AI analysis prompt quality on contextual meaning and full sentence translation.
   - Updated `DEFAULT_PROMPT` and `DEFAULT_CONFIG` field mappings in `background/config.js`.
   - Updated System Instructions in `background/ai-service.js` across Gemini Fast, OpenAI, Gemini Vision, and OpenAI Vision.
 - **Gemini 3.5 Flash Lite Vision Integration:**

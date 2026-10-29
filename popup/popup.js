@@ -401,21 +401,21 @@ function renderQuickResult(data) {
       </div>
     </div>
 
-    <!-- Body: Context Meaning, Context Sentence, then English Definition -->
+    <!-- Body: Meaning & English Definition (Inline Editable) -->
     <div class="result-meaning result-editable" contenteditable="true" spellcheck="false" data-field="meaning_vi" title="Click to edit meaning">
       ${escapeHtml(data.meaning_vi || '')}
     </div>
+
+    ${data.definition_en ? `
+      <div class="result-def result-editable" contenteditable="true" spellcheck="false" data-field="definition_en" title="Click to edit English definition">
+        ${escapeHtml(data.definition_en)}
+      </div>
+    ` : ''}
 
     ${(exampleSentence || exampleTranslation) ? `
       <div class="result-example-box">
         ${exampleSentence ? `<div class="result-example-en result-editable" contenteditable="true" spellcheck="false" data-field="example_sentence" title="Click to edit example sentence">${escapeHtml(exampleSentence)}</div>` : ''}
         ${exampleTranslation ? `<div class="result-example-vi result-editable" contenteditable="true" spellcheck="false" data-field="example_translation" title="Click to edit translation">${escapeHtml(exampleTranslation)}</div>` : ''}
-      </div>
-    ` : ''}
-
-    ${data.definition_en ? `
-      <div class="result-def result-editable" contenteditable="true" spellcheck="false" data-field="definition_en" title="Click to edit English definition">
-        ${escapeHtml(data.definition_en)}
       </div>
     ` : ''}
 
