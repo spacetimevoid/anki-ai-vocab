@@ -10,13 +10,17 @@ export const FALLBACK_GEMINI_MODEL = 'gemini-3.1-flash-lite';
  */
 export const DEFAULT_PROMPT = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: {{target_lang}}.
 
-CRITICAL RULES:
-1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "phenomena" -> "phenomenon"). Never output inflected, conjugated, plural, comparative/superlative, or past tense forms for "word". The "phonetic" field must correspond to this base lemma.
-2. Complete 100% Translation: If Context is provided, you MUST translate 100% of the entire Context sentence into {{target_lang}} for example_vi. Never omit, truncate, or summarize any clause, phrase, or conjunction (including clauses connected by "and", "but", "because", "so", or relative pronouns).
-3. Standalone Word Lookup: If Context is missing, "none", empty, or identical to the target word, you MUST:
-   - Generate a clear, natural English example sentence (B1-B2 level) demonstrating real-world usage of the lemma for example_en.
-   - Translate 100% of that generated sentence completely into {{target_lang}} for example_vi without skipping any clause or word.
-4. If Context is provided, set example_en to the exact context sentence.
+STRICT PRIORITY OF ANALYSIS:
+1. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi):
+   The "meaning_vi" property is your HIGHEST priority. It MUST be the exact, natural translation of the target word/phrase fitting the SPECIFIC CONTEXT of the provided sentence. Never output a generic, out-of-context, or primary dictionary meaning if it does not fit this sentence.
+2. PRIORITY 2 - CONTEXT SENTENCE & 100% TRANSLATION (example_sentence & example_vi):
+   If Context is provided, preserve 100% of the original Context sentence for "example_sentence" (or "example_en"). You MUST translate 100% of the entire Context sentence completely into {{target_lang}} for "example_vi" without omitting, dropping, or summarizing any clause, conjunction, or relative phrase.
+3. PRIORITY 3 - CONCISE DEFINITION (definition_en):
+   Provide a concise, clear English learner definition explaining the target word/phrase specifically AS USED in this context.
+4. Lemmatization (Base Form):
+   The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "stepping stones" -> "stepping stone"). The "phonetic" field must correspond to this base lemma.
+5. Standalone Word Lookup:
+   If Context is missing, "none", or empty, generate an authentic B1-B2 English example sentence for "example_en" and translate 100% of it into {{target_lang}} for "example_vi".
 
 Word: "{{word}}"
 Context: "{{sentence}}"`;
@@ -50,14 +54,16 @@ export const DEFAULT_CONFIG = {
   <span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:4px;background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb;margin-right:6px;vertical-align:middle;">{{pos}}</span>
   {{meaning_vi}}
 </div>
-<div style="font-size:13px;color:#6b7280;margin-top:4px;line-height:1.45;">{{definition_en}}</div>
 
-<div style="border-top:1px dashed #d1d5db;margin:16px 0 14px 0;"></div>
+<div style="border-top:1px dashed #d1d5db;margin:14px 0 12px 0;"></div>
 
 <div style="font-size:14px;color:#374151;line-height:1.6;">
   <div>{{example_sentence}}</div>
   <div style="font-size:12.5px;color:#6b7280;font-style:italic;margin-top:4px;">{{example_translation}}</div>
 </div>
+
+<div style="font-size:13px;color:#6b7280;margin-top:12px;line-height:1.45;">{{definition_en}}</div>
+
 <div style="margin-top:14px;font-size:11px;color:#9ca3af;text-align:right;">
   Source: <a href="{{source_url}}" style="color:#9ca3af;text-decoration:none;">web context</a>
 </div>`.trim()

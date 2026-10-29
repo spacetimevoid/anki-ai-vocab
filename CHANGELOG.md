@@ -4,6 +4,32 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.13.0] - 2026-10-29
+
+### In-Session Chip Lookup Cache, Phrase/Collocation Selection & Reordered Quality Priorities
+- **In-Session Lookup Cache for Captured Context (`content/content.js`):**
+  - Integrated a per-popover session cache (`_sessionWordCache`) to store all analyzed words and phrases.
+  - When re-selecting a previously analyzed word or phrase from the Captured Context chips, the popover immediately renders the cached result in 0ms without making unnecessary AI API calls or incurring token costs.
+  - Automatically captures and preserves user-edited card fields before switching to another word, restoring the user's custom edits upon returning.
+  - Force refresh via the Re-analyze button (`#anki-btn-relookup`) invalidates the session cache entry to query fresh data from the AI API.
+- **Phrase and Collocation Selection in Captured Context (`content/content.js`):**
+  - Enhanced `renderInteractiveChips` to support multi-token matching, connecting consecutive words with continuous active highlight pills (`.active-chip-sep`).
+  - Implemented multi-word drag-to-select interaction across chips: users can click and drag across adjacent words to select idioms, phrasal verbs, or compound nouns (e.g. "stepping stone", "caught up").
+  - Added Shift + Click range selection for rapid phrase selection.
+  - Added support for native text selection inside the chips container.
+  - Added visual preview styling (`.chip-selecting`) and updated hint text: `"Click word or drag to select phrase"`.
+- **Strict Quality Priority Reordering Across Engine, UI, and Flashcard Templates:**
+  - **Priority 1 (Highest): Contextual Meaning (`meaning_vi`):** Strictly customized to fit the exact context of the provided sentence, avoiding out-of-context generic dictionary meanings.
+  - **Priority 2: Context Sentence & 100% Translation (`example_sentence` / `example_vi`):** Preserves the full original context sentence and guarantees 100% complete translation without omission or summarization.
+  - **Priority 3: Concise English Definition (`definition_en`):** Clear English learner definition explaining the word as used in context.
+  - Reordered DOM structure in both Floating Popover (`content/content.js`) and Popup UI (`popup/popup.js`): Meaning -> Example Box -> English Definition.
+  - Updated `DEFAULT_PROMPT` and `DEFAULT_CONFIG` field mappings in `background/config.js`.
+  - Updated System Instructions in `background/ai-service.js` across Gemini Fast, OpenAI, Gemini Vision, and OpenAI Vision.
+- **Gemini 3.5 Flash Lite Vision Integration:**
+  - Replaced deprecated `gemini-1.5-flash` with recommended `gemini-3.5-flash-lite`, `gemini-2.5-flash`, and `gemini-3.1-flash-lite` across multimodal vision pipelines and options selector.
+
+---
+
 ## [3.12.0] - 2026-10-29
 
 ### Screen Crop & Look Up (Hybrid OCR + Vocab Selection + Interactive Chips)

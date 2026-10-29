@@ -80,6 +80,8 @@
   gap: 3px 2px;
   font-size: 12.5px;
   line-height: 1.6;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .anki-chip-word {
@@ -107,9 +109,30 @@
   box-shadow: 0 1px 4px rgba(56, 189, 248, 0.35);
 }
 
+.anki-chip-word.chip-selecting {
+  background: rgba(56, 189, 248, 0.28) !important;
+  color: #38bdf8 !important;
+  border-radius: 4px;
+}
+
 .anki-chip-sep {
   color: var(--text-muted);
   white-space: pre;
+}
+
+.anki-chip-sep.active-chip-sep {
+  background: #38bdf8 !important;
+  color: #09090b !important;
+  font-weight: 600 !important;
+  display: inline-block;
+  padding: 1px 0;
+}
+
+.anki-chip-sep.chip-selecting {
+  background: rgba(56, 189, 248, 0.28) !important;
+  color: #38bdf8 !important;
+  display: inline-block;
+  padding: 1px 0;
 }
 `;
 
@@ -140,23 +163,91 @@
   }
 
   /**
-   * Splits a sentence into clickable word tokens and punctuation
+   * Splits a sentence into clickable word tokens and punctuation,
+   * supporting both single words and multi-word phrase matching.
    */
   function renderInteractiveChips(sentence, currentWord, rawWord) {
     if (!sentence) return '';
-    const tokens = sentence.split(/(\s+|[.,!?;:"'“”‘’()\[\]{}]+)/);
-    const cleanCurrent = (currentWord || '').toLowerCase().trim();
-    const cleanRaw = (rawWord || '').toLowerCase().trim();
+    const rawTokens = sentence.split(/(\s+|[.,!?;:"'“”‘’()\[\]{}]+)/).filter(t => t.length > 0);
+    const cleanCurrent = (currentWord || '').toLowerCase().trim().replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '');
+    const cleanRaw = (rawWord || '').toLowerCase().trim().replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '');
+
+    // Build structured tokens with unique index
+    const parsedTokens = rawTokens.map((token, idx) => {
+      const isWord = /[a-zA-ZÀ-ỹ0-9]/.test(token);
+      const clean = isWord ? token.toLowerCase().replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '') : '';
+      return { token, isWord, clean, idx };
+    });
+
+    const activeIndices = new Set();
+    const activeSepIndices = new Set();
+
+    // Match candidate string against parsed tokens
+    const matchPhrase = (targetStr) => {
+      if (!targetStr) return false;
+      const targetWords = targetStr.split(/\s+/).filter(Boolean);
+      if (targetWords.length === 0) return false;
+
+      if (targetWords.length === 1) {
+        let matched = false;
+        for (const pt of parsedTokens) {
+          if (pt.isWord && pt.clean === targetWords[0]) {
+            activeIndices.add(pt.idx);
+            matched = true;
+          }
+        }
+        return matched;
+      }
+
+      // Multi-word sequence match
+      let matchedAny = false;
+      for (let i = 0; i < parsedTokens.length; i++) {
+        if (!parsedTokens[i].isWord || parsedTokens[i].clean !== targetWords[0]) continue;
+
+        let wIdx = 0;
+        let matchEnd = -1;
+        const matchedTokenIdxs = [];
+        const matchedSepIdxs = [];
+
+        for (let j = i; j < parsedTokens.length; j++) {
+          if (parsedTokens[j].isWord) {
+            if (parsedTokens[j].clean === targetWords[wIdx]) {
+              matchedTokenIdxs.push(parsedTokens[j].idx);
+              wIdx++;
+              if (wIdx === targetWords.length) {
+                matchEnd = j;
+                break;
+              }
+            } else {
+              break;
+            }
+          } else {
+            matchedSepIdxs.push(parsedTokens[j].idx);
+          }
+        }
+
+        if (wIdx === targetWords.length && matchEnd !== -1) {
+          matchedTokenIdxs.forEach(idx => activeIndices.add(idx));
+          matchedSepIdxs.forEach(idx => activeSepIndices.add(idx));
+          matchedAny = true;
+        }
+      }
+      return matchedAny;
+    };
+
+    const matchedRaw = cleanRaw ? matchPhrase(cleanRaw) : false;
+    if (!matchedRaw && cleanCurrent) {
+      matchPhrase(cleanCurrent);
+    }
 
     let html = '';
-    for (const token of tokens) {
-      if (!token) continue;
-      if (/[a-zA-ZÀ-ỹ0-9]/.test(token)) {
-        const cleanToken = token.toLowerCase().replace(/^[^\w]+|[^\w]+$/g, '');
-        const isMatch = cleanToken && (cleanToken === cleanCurrent || (cleanRaw && cleanToken === cleanRaw));
-        html += `<span class="anki-chip-word ${isMatch ? 'active-chip' : ''}" data-word="${escapeHtml(token)}" title="Click to inspect '${escapeHtml(token)}'">${escapeHtml(token)}</span>`;
+    for (const pt of parsedTokens) {
+      if (pt.isWord) {
+        const isActive = activeIndices.has(pt.idx);
+        html += `<span class="anki-chip-word ${isActive ? 'active-chip' : ''}" data-token-idx="${pt.idx}" data-word="${escapeHtml(pt.token)}" title="Click or drag to select '${escapeHtml(pt.token)}'">${escapeHtml(pt.token)}</span>`;
       } else {
-        html += `<span class="anki-chip-sep">${escapeHtml(token)}</span>`;
+        const isActiveSep = activeSepIndices.has(pt.idx);
+        html += `<span class="anki-chip-sep ${isActiveSep ? 'active-chip-sep' : ''}" data-token-idx="${pt.idx}">${escapeHtml(pt.token)}</span>`;
       }
     }
     return html;
@@ -1036,6 +1127,31 @@
     const activeWord = (aiData.word || context?.word || '').trim();
     const rawWord = (aiData.raw_selected_word || context?.raw_selected_word || activeWord).trim();
 
+    // Session Cache for instant 0ms switching between previously looked up words/phrases
+    if (!activePopoverEl._sessionWordCache) {
+      activePopoverEl._sessionWordCache = new Map();
+    }
+
+    const normalizeLookupKey = (str) => {
+      if (!str) return '';
+      return str.toLowerCase().trim().replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '');
+    };
+
+    // Snapshot current AI card data into session cache
+    const currentSnapshotData = {
+      ...aiData,
+      detected_sentence: detectedSentence,
+      raw_selected_word: rawWord
+    };
+    const kWord = normalizeLookupKey(aiData.word);
+    const kRaw = normalizeLookupKey(rawWord);
+    const kCtxWord = normalizeLookupKey(context?.word);
+    const kCtxRaw = normalizeLookupKey(context?.raw_selected_word);
+    if (kWord) activePopoverEl._sessionWordCache.set(kWord, currentSnapshotData);
+    if (kRaw) activePopoverEl._sessionWordCache.set(kRaw, currentSnapshotData);
+    if (kCtxWord) activePopoverEl._sessionWordCache.set(kCtxWord, currentSnapshotData);
+    if (kCtxRaw) activePopoverEl._sessionWordCache.set(kCtxRaw, currentSnapshotData);
+
     activePopoverEl.innerHTML = `
       <!-- Header: 2-Row Typography Structure -->
       <div class="anki-popover-header">
@@ -1075,7 +1191,7 @@
                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
                 Captured Context
               </span>
-              <span class="anki-chips-hint">Click word to inspect</span>
+              <span class="anki-chips-hint">Click word or drag to select phrase</span>
             </div>
             <div class="anki-context-chips-container">
               ${renderInteractiveChips(detectedSentence, activeWord, rawWord)}
@@ -1083,20 +1199,23 @@
           </div>
         ` : ''}
 
-        <div class="anki-meaning-row anki-editable" contenteditable="true" spellcheck="false" data-field="meaning_vi" title="Click to edit meaning" placeholder="Meaning in context...">
+        <!-- Priority 1: Contextual Meaning (Highest Priority) -->
+        <div class="anki-meaning-row anki-editable" contenteditable="true" spellcheck="false" data-field="meaning_vi" title="Click to edit contextual meaning" placeholder="Meaning in context...">
           ${escapeHtml(aiData.meaning_vi || '')}
         </div>
 
-        ${aiData.definition_en ? `
-          <div class="anki-def-row anki-editable" contenteditable="true" spellcheck="false" data-field="definition_en" title="Click to edit English definition">
-            ${escapeHtml(aiData.definition_en)}
-          </div>
-        ` : ''}
-
+        <!-- Priority 2: Context Sentence & 100% Translation -->
         ${(exampleSentence || exampleTranslation) ? `
           <div class="anki-example-box">
             ${exampleSentence ? `<div class="anki-example-en anki-editable" contenteditable="true" spellcheck="false" data-field="example_sentence" title="Click to edit example sentence">${escapeHtml(exampleSentence)}</div>` : ''}
             ${exampleTranslation ? `<div class="anki-example-vi anki-editable" contenteditable="true" spellcheck="false" data-field="example_translation" title="Click to edit translation">${escapeHtml(exampleTranslation)}</div>` : ''}
+          </div>
+        ` : ''}
+
+        <!-- Priority 3: Concise English Definition -->
+        ${aiData.definition_en ? `
+          <div class="anki-def-row anki-editable" contenteditable="true" spellcheck="false" data-field="definition_en" title="Click to edit English definition">
+            ${escapeHtml(aiData.definition_en)}
           </div>
         ` : ''}
       </div>
@@ -1253,6 +1372,12 @@
 
         const currentSourceUrl = context?.sourceUrl || window.location.href;
 
+        // Invalidate in-session cache for this word/phrase to force a fresh AI call
+        const kCur = normalizeLookupKey(currentWord);
+        if (kCur && activePopoverEl._sessionWordCache) activePopoverEl._sessionWordCache.delete(kCur);
+        const kRawLookup = normalizeLookupKey(rawWord);
+        if (kRawLookup && activePopoverEl._sessionWordCache) activePopoverEl._sessionWordCache.delete(kRawLookup);
+
         // Display smooth skeleton loading in content area
         const contentEl = activePopoverEl.querySelector('.anki-popover-content');
         if (contentEl) {
@@ -1301,15 +1426,25 @@
           const refreshedData = {
             ...res.data,
             detected_sentence: detectedSentence,
-            raw_selected_word: rawWord
+            raw_selected_word: currentWord
           };
+
+          const refreshedKey = normalizeLookupKey(res.data.word);
+          const refreshedRawKey = normalizeLookupKey(currentWord);
+          if (refreshedKey && activePopoverEl._sessionWordCache) {
+            activePopoverEl._sessionWordCache.set(refreshedKey, refreshedData);
+          }
+          if (refreshedRawKey && activePopoverEl._sessionWordCache) {
+            activePopoverEl._sessionWordCache.set(refreshedRawKey, refreshedData);
+          }
+
           activePopoverEl._originalAiData = JSON.parse(JSON.stringify(refreshedData));
           renderPopoverLoadedData(refreshedData, {
             ...context,
             word: currentWord,
             sentence: currentSentence,
             detected_sentence: detectedSentence,
-            raw_selected_word: rawWord,
+            raw_selected_word: currentWord,
             sourceUrl: currentSourceUrl
           });
         });
@@ -1342,68 +1477,203 @@
       });
     }
 
-    // Interactive context chips click listener (Hybrid approach: instant switch without recropping)
-    if (detectedSentence) {
-      const chipEls = activePopoverEl.querySelectorAll('.anki-chip-word');
-      chipEls.forEach(chip => {
-        chip.addEventListener('click', (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          const clickedWord = (chip.dataset.word || '').trim();
-          if (!clickedWord) return;
+    // Helper to switch to analyzing a word or phrase with instant session cache retrieval
+    const switchToWordOrPhrase = (targetText) => {
+      const cleanTarget = (targetText || '').trim();
+      if (!cleanTarget) return;
 
-          const currentHeaderWord = activePopoverEl.querySelector('[data-field="word"]')?.textContent?.trim()?.toLowerCase();
-          if (chip.classList.contains('active-chip') && currentHeaderWord === clickedWord.toLowerCase()) {
-            return;
-          }
+      const normTarget = normalizeLookupKey(cleanTarget);
+      const currentWordInHeader = normalizeLookupKey(activePopoverEl.querySelector('[data-field="word"]')?.textContent);
 
-          chipEls.forEach(c => c.classList.remove('active-chip'));
-          chip.classList.add('active-chip');
-
-          // Immediately reflect in word title
-          const wordEl = activePopoverEl.querySelector('.anki-word-text');
-          if (wordEl) wordEl.textContent = clickedWord;
-
-          // Indicate loading in meaning row
-          const meaningEl = activePopoverEl.querySelector('.anki-meaning-row');
-          if (meaningEl) {
-            meaningEl.innerHTML = `<span class="anki-spinner-sm" style="display:inline-block;margin-right:6px;vertical-align:middle;"></span>Analyzing "${escapeHtml(clickedWord)}"...`;
-          }
-          const defEl = activePopoverEl.querySelector('.anki-def-row');
-          if (defEl) defEl.style.opacity = '0.35';
-
-          safeSendMessage({
-            action: 'EXPLAIN_WORD',
-            payload: {
-              word: clickedWord,
-              sentence: detectedSentence,
-              sourceUrl: context?.sourceUrl || window.location.href,
-              bypassCache: false
-            }
-          }, (res) => {
-            if (!activePopoverEl) return;
-            if (!res || !res.success) {
-              if (meaningEl) meaningEl.textContent = 'Failed to analyze word.';
-              return;
-            }
-
-            const updatedData = {
-              ...res.data,
-              detected_sentence: detectedSentence,
-              raw_selected_word: clickedWord
-            };
-
-            const updatedContext = {
-              ...context,
-              word: clickedWord,
-              sentence: detectedSentence,
-              detected_sentence: detectedSentence,
-              raw_selected_word: clickedWord
-            };
-
-            renderPopoverLoadedData(updatedData, updatedContext);
+      // Save user's live edits on existing card before switching
+      try {
+        const liveEdited = getEditedCardData(currentCardData || aiData, context);
+        const liveKey = normalizeLookupKey(liveEdited.word);
+        if (liveKey && activePopoverEl._sessionWordCache) {
+          activePopoverEl._sessionWordCache.set(liveKey, {
+            ...liveEdited,
+            detected_sentence: detectedSentence,
+            raw_selected_word: rawWord
           });
+        }
+      } catch {
+        // ignore live edit snapshot error
+      }
+
+      // If target is already currently displayed in header, no-op
+      if (normTarget && normTarget === currentWordInHeader && !activePopoverEl._isReanalyzing) {
+        return;
+      }
+
+      // 1. Session Cache Hit: Instant 0ms display without AI API call
+      if (normTarget && activePopoverEl._sessionWordCache && activePopoverEl._sessionWordCache.has(normTarget)) {
+        const cached = activePopoverEl._sessionWordCache.get(normTarget);
+        const nextContext = {
+          ...context,
+          word: cached.word || cleanTarget,
+          raw_selected_word: cleanTarget,
+          sentence: detectedSentence || context?.sentence,
+          detected_sentence: detectedSentence
+        };
+        renderPopoverLoadedData(cached, nextContext);
+        return;
+      }
+
+      // 2. Cache Miss: Update UI with loading state and query AI
+      const wordEl = activePopoverEl.querySelector('.anki-word-text');
+      if (wordEl) wordEl.textContent = cleanTarget;
+
+      const meaningEl = activePopoverEl.querySelector('.anki-meaning-row');
+      if (meaningEl) {
+        meaningEl.innerHTML = `<span class="anki-spinner-sm" style="display:inline-block;margin-right:6px;vertical-align:middle;"></span>Analyzing "${escapeHtml(cleanTarget)}"...`;
+      }
+      const defEl = activePopoverEl.querySelector('.anki-def-row');
+      if (defEl) defEl.style.opacity = '0.35';
+
+      safeSendMessage({
+        action: 'EXPLAIN_WORD',
+        payload: {
+          word: cleanTarget,
+          sentence: detectedSentence || context?.sentence,
+          sourceUrl: context?.sourceUrl || window.location.href,
+          bypassCache: false
+        }
+      }, (res) => {
+        if (!activePopoverEl) return;
+        if (!res || !res.success) {
+          if (meaningEl) meaningEl.textContent = 'Failed to analyze word or phrase.';
+          return;
+        }
+
+        const updatedData = {
+          ...res.data,
+          detected_sentence: detectedSentence,
+          raw_selected_word: cleanTarget
+        };
+
+        // Cache fresh response in session cache
+        const nextKey = normalizeLookupKey(res.data.word);
+        const nextRawKey = normalizeLookupKey(cleanTarget);
+        if (nextKey && activePopoverEl._sessionWordCache) activePopoverEl._sessionWordCache.set(nextKey, updatedData);
+        if (nextRawKey && activePopoverEl._sessionWordCache) activePopoverEl._sessionWordCache.set(nextRawKey, updatedData);
+
+        const updatedContext = {
+          ...context,
+          word: res.data.word || cleanTarget,
+          raw_selected_word: cleanTarget,
+          sentence: detectedSentence || context?.sentence,
+          detected_sentence: detectedSentence
+        };
+
+        renderPopoverLoadedData(updatedData, updatedContext);
+      });
+    };
+
+    // Interactive context chips listener: single click, drag-to-select phrase, shift+click, text selection
+    const chipsContainer = activePopoverEl.querySelector('.anki-context-chips-container');
+    if (chipsContainer && detectedSentence) {
+      let isDragging = false;
+      let dragStartIdx = -1;
+      let lastClickedIdx = -1;
+
+      const allTokens = Array.from(chipsContainer.querySelectorAll('[data-token-idx]'));
+
+      const clearSelectingStyles = () => {
+        chipsContainer.querySelectorAll('.chip-selecting').forEach(el => el.classList.remove('chip-selecting'));
+      };
+
+      const highlightRange = (startIdx, endIdx) => {
+        clearSelectingStyles();
+        const min = Math.min(startIdx, endIdx);
+        const max = Math.max(startIdx, endIdx);
+        allTokens.forEach(el => {
+          const idx = parseInt(el.dataset.tokenIdx, 10);
+          if (!isNaN(idx) && idx >= min && idx <= max) {
+            el.classList.add('chip-selecting');
+          }
         });
+      };
+
+      const getTokensTextInRange = (startIdx, endIdx) => {
+        const min = Math.min(startIdx, endIdx);
+        const max = Math.max(startIdx, endIdx);
+        const tokensInRange = allTokens.filter(el => {
+          const idx = parseInt(el.dataset.tokenIdx, 10);
+          return !isNaN(idx) && idx >= min && idx <= max;
+        });
+        const rawText = tokensInRange.map(el => el.textContent).join('');
+        return rawText.replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '').trim();
+      };
+
+      chipsContainer.addEventListener('mousedown', (e) => {
+        const chip = e.target.closest('.anki-chip-word');
+        if (!chip) return;
+        const idx = parseInt(chip.dataset.tokenIdx, 10);
+        if (isNaN(idx)) return;
+
+        // Shift + Click range selection
+        if (e.shiftKey && lastClickedIdx !== -1 && lastClickedIdx !== idx) {
+          e.preventDefault();
+          e.stopPropagation();
+          const phrase = getTokensTextInRange(lastClickedIdx, idx);
+          if (phrase) {
+            switchToWordOrPhrase(phrase);
+            lastClickedIdx = idx;
+          }
+          return;
+        }
+
+        isDragging = true;
+        dragStartIdx = idx;
+        highlightRange(dragStartIdx, dragStartIdx);
+      });
+
+      chipsContainer.addEventListener('mousemove', (e) => {
+        if (!isDragging || dragStartIdx === -1) return;
+        const chip = e.target.closest('[data-token-idx]');
+        if (!chip) return;
+        const idx = parseInt(chip.dataset.tokenIdx, 10);
+        if (isNaN(idx)) return;
+        highlightRange(dragStartIdx, idx);
+      });
+
+      const onMouseUp = (e) => {
+        if (!isDragging) {
+          // Native text selection in chips container
+          const sel = window.getSelection()?.toString()?.trim();
+          if (sel && sel.length >= 2 && detectedSentence.toLowerCase().includes(sel.toLowerCase())) {
+            const cleanSel = sel.replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '').trim();
+            if (cleanSel && cleanSel.length >= 2) {
+              switchToWordOrPhrase(cleanSel);
+            }
+          }
+          return;
+        }
+
+        isDragging = false;
+        const currentChip = e.target.closest('[data-token-idx]');
+        const endIdx = currentChip ? parseInt(currentChip.dataset.tokenIdx, 10) : dragStartIdx;
+        clearSelectingStyles();
+
+        if (dragStartIdx !== -1) {
+          const phrase = getTokensTextInRange(dragStartIdx, isNaN(endIdx) ? dragStartIdx : endIdx);
+          lastClickedIdx = isNaN(endIdx) ? dragStartIdx : endIdx;
+          dragStartIdx = -1;
+          if (phrase) {
+            switchToWordOrPhrase(phrase);
+          }
+        }
+      };
+
+      chipsContainer.addEventListener('mouseup', onMouseUp);
+
+      // Clean up drag if mouse releases outside
+      window.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          clearSelectingStyles();
+          dragStartIdx = -1;
+        }
       });
     }
 

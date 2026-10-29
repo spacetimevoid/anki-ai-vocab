@@ -342,19 +342,21 @@ async function lookupGeminiFast(word, sentence, apiKey, model = PRIMARY_GEMINI_M
 
   if (isRealContext) {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
-CRITICAL RULES:
-1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "phenomena" -> "phenomenon"). Never output inflected, conjugated, plural, comparative, or past tense forms for "word".
-2. The "phonetic" property MUST match the pronunciation of this base lemma form.
-3. Complete 100% Translation: Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi". Never omit, drop, or summarize any clause, phrase, or conjunction (e.g., secondary clauses joined by "and", "but", "because", "although", "which").
-4. Set "example_en" to the exact Context sentence.`;
+
+STRICT ANALYSIS PRIORITIES:
+1. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi): HIGHEST PRIORITY. You MUST provide the exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context dictionary meaning.
+2. PRIORITY 2 - CONTEXT SENTENCE & 100% TRANSLATION (example_en & example_vi): Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting, dropping, or summarizing any clause or conjunction.
+3. PRIORITY 3 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
+4. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.`;
     prompt = `Word: "${cleanWord}"\nContext: "${rawSentence}"`;
   } else {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
-CRITICAL RULES:
-1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "phenomena" -> "phenomenon"). Never output inflected, conjugated, plural, comparative, or past tense forms for "word".
-2. The "phonetic" property MUST match the pronunciation of this base lemma form.
-3. Standalone Example: No context sentence was provided. Generate a natural, practical English example sentence (B1-B2 level) demonstrating real-world usage of the lemma for "example_en".
-4. Translate 100% of this generated English example sentence completely into ${targetLang} for "example_vi" without omitting any clause or word.`;
+
+STRICT ANALYSIS PRIORITIES:
+1. PRIORITY 1 - ACCURATE MEANING (meaning_vi): Natural, high-frequency translation in ${targetLang}.
+2. PRIORITY 2 - AUTHENTIC EXAMPLE SENTENCE & 100% TRANSLATION (example_en & example_vi): Generate a practical B1-B2 English example sentence containing the lemma in "example_en", and translate 100% of it into ${targetLang} for "example_vi".
+3. PRIORITY 3 - CONCISE DEFINITION (definition_en): Clear English learner definition for flashcards.
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.`;
     prompt = `Word: "${cleanWord}"\nContext: none. Generate an authentic example sentence containing the lemma.`;
   }
 
@@ -556,17 +558,19 @@ async function queryOpenAI({ word, sentence, sourceUrl, config, isCustom = false
 
   if (isRealContext) {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
-RULES:
-1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up"). The "phonetic" field must correspond to this base lemma.
-2. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi". Never omit, drop, or summarize any clause, phrase, or conjunction (including clauses connected by "and", "but", "because", "so", or relative pronouns).
-3. Set "example_en" to the exact Context sentence.`;
+STRICT PRIORITIES:
+1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context meaning.
+2. PRIORITY 2: Context sentence & 100% Translation - Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting any clause or conjunction.
+3. PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase as used in this context.
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}".`;
   } else {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
-RULES:
-1. Lemmatization (Base Form): The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up"). The "phonetic" field must correspond to this base lemma.
-2. No context sentence was provided. Generate a natural, practical English example sentence (B1-B2 level) demonstrating real-world usage of the lemma for "example_en".
-3. Translate 100% of this generated English example sentence completely into ${targetLang} for "example_vi" without skipping any clause or word.`;
+STRICT PRIORITIES:
+1. PRIORITY 1: "meaning_vi" - Natural, high-frequency translation in ${targetLang}.
+2. PRIORITY 2: Authentic example sentence & 100% Translation - Practical B1-B2 example in "example_en", translated 100% into ${targetLang} for "example_vi".
+3. PRIORITY 3: "definition_en" - Clear English learner definition for flashcards.
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.`;
     prompt = `Word: "${cleanWord}". Context: none. Generate a natural English example sentence for this word.`;
   }
 
@@ -843,14 +847,13 @@ Examine this cropped image (e.g. video subtitles, movie line, article text, or P
 Task:
 1. OCR: Transcribe all visible text accurately into a coherent, complete English sentence: "detected_sentence".
 2. Key Vocab Selection: From "detected_sentence", select the most valuable or challenging vocabulary word or key phrase (B1-C2 level) to learn: "word".
-3. Lemmatization: Set "word" to its dictionary base/lemma form in lowercase (e.g. "families" -> "family", "ran" -> "run", "better" -> "good", "stepping stone" -> "stepping stone"). Store the exact original word from the sentence in "raw_selected_word".
-4. Dictionary Analysis:
-- "phonetic": accurate IPA pronunciation for the lemma.
-- "pos": lowercase part of speech (noun, verb, adjective, adverb, idiom, phrasal verb).
-- "meaning_vi": natural, accurate translation in ${targetLang} fitting the context of "detected_sentence".
-- "definition_en": concise English definition for flashcard learning.
-- "example_sentence": MUST be identical to "detected_sentence".
-- "example_vi": 100% full, complete translation of "detected_sentence" into ${targetLang}. Never truncate or omit any clause.
+3. STRICT PRIORITIES OF ANALYSIS:
+   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of "detected_sentence". Never return an out-of-context generic meaning.
+   - PRIORITY 2: Context & Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be 100% full, complete translation of "detected_sentence" into ${targetLang} without omitting any clause.
+   - PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase specifically as used in this context.
+4. Lemmatization: Set "word" to its dictionary base/lemma form in lowercase (e.g. "families" -> "family", "ran" -> "run", "better" -> "good", "stepping stones" -> "stepping stone"). Store the exact original word or phrase from the sentence in "raw_selected_word".
+5. "phonetic": accurate IPA pronunciation for the lemma.
+6. "pos": lowercase part of speech (noun, verb, adjective, adverb, idiom, phrasal verb).
 
 Output STRICT JSON conforming to schema.`;
 
@@ -983,14 +986,13 @@ async function queryOpenAIVision({ base64Image, apiKey, targetLang, sourceUrl, c
 Examine this cropped image.
 1. OCR: Transcribe visible text into "detected_sentence".
 2. Select key vocabulary/phrase to learn: "word".
-3. Lemmatize "word" to base dictionary form (lowercase). Original token in "raw_selected_word".
-4. Dictionary Analysis:
-- "phonetic": IPA pronunciation.
-- "pos": lowercase part of speech.
-- "meaning_vi": translation in ${targetLang}.
-- "definition_en": concise English definition.
-- "example_sentence": same as "detected_sentence".
-- "example_vi": 100% full translation of "detected_sentence" in ${targetLang}.
+3. STRICT PRIORITIES:
+   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of "detected_sentence".
+   - PRIORITY 2: Context & Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be 100% full translation in ${targetLang}.
+   - PRIORITY 3: "definition_en" - Concise English definition as used in context.
+4. Lemmatize "word" to base dictionary form (lowercase). Original token in "raw_selected_word".
+5. "phonetic": IPA pronunciation.
+6. "pos": lowercase part of speech.
 
 Return STRICT JSON matching schema:
 {"detected_sentence":"","word":"","raw_selected_word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_sentence":"","example_vi":""}`;

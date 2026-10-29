@@ -290,13 +290,25 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
 - [x] **Task 36.4:** Cung cấp bảng mã CSS Styling hợp nhất với thiết kế input bo tròn hiện đại `input#typeans` và bảng diff kết quả `code#typeans` (`.typeGood`, `.typeBad`, `.typeMissed`) hỗ trợ mượt mà cả Light Mode và Dark Mode.
 - [x] **Task 36.5:** Viết hướng dẫn chi tiết từng bước cài đặt nhiều loại thẻ (Add Card Type) trong Anki Desktop.
 
-## Phase 37: Crop & Look Up (Hybrid OCR + Vocab Selection + Interactive Chips) [DONE]
-- [x] **Task 37.1:** Xây dựng giao diện kéo thả khoanh vùng màn hình (`startCropMode` trong `content/content.js`) với fullscreen overlay, viền đứt crop box, phím `Alt + S`, nút `Escape` hủy bỏ và banner hướng dẫn.
-- [x] **Task 37.2:** Triển khai pipeline cắt ảnh bằng `OffscreenCanvas` và Service Worker MV3 trong `background/ai-service.js` (`cropImageData`), chuyển đổi sang JPEG Base64 với `devicePixelRatio` chính xác.
-- [x] **Task 37.3:** Tích hợp Gemini Vision Multimodal API (`analyzeCroppedImage`, `queryGeminiVision`) tự động OCR `detected_sentence`, thông minh chọn từ khóa tiêu biểu (`word`), chuẩn hóa về dạng từ gốc (lemmatization) và sinh định nghĩa/dịch thuật ngữ cảnh.
-- [x] **Task 37.4:** Tích hợp giao diện Interactive Vocabulary Context Chips trên Popover (`.anki-context-chips-container` và `renderInteractiveChips`): từng từ trong câu văn có thể click chuyển đổi tức thời mà không cần crop lại màn hình.
-- [x] **Task 37.5:** Bổ sung nút Crop & Look Up trên Header Popup (`popup/popup.html`, `popup/popup.js`) và Context Menu chuột phải ("Crop & Look Up (Alt+S)").
-- [x] **Task 37.6:** Kiểm tra cú pháp toàn bộ codebase, nâng version lên `[3.12.0]` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+## Phase 38: In-Session Lookup Cache, Multi-Word Phrase Selection & Reordered Quality Priorities [DONE]
+- [x] **Task 38.1:** Triển khai bộ nhớ đệm trong phiên (`_sessionWordCache` gắn trực tiếp vào Popover instance trong `content/content.js`):
+  - Khi người dùng click lại từ/cụm từ đã từng tra trong cùng một phiên ngữ cảnh, kết quả được khôi phục ngay lập tức trong 0ms mà không phải gọi lại AI API.
+  - Tự động bắt và bảo lưu các chỉnh sửa của người dùng trước khi chuyển đổi sang từ khác, hoàn nguyên đúng các chỉnh sửa khi chọn lại.
+  - Nút "Tra lại" (Re-analyze) chủ động xóa cache của từ đó và kích hoạt tra mới bằng AI với cờ `bypassCache: true`.
+- [x] **Task 38.2:** Tính năng chọn cả cụm từ/thành ngữ trong ô ngữ cảnh (Phrase & Collocation Selection trong Captured Context):
+  - Nâng cấp `renderInteractiveChips` hỗ trợ khớp chuỗi đa token, nối các từ liên tiếp bằng chip phân cách có cùng highlight (`.active-chip-sep`).
+  - Hỗ trợ thao tác kéo chuột (drag-to-select / swipe) qua nhiều từ liên tiếp với hiệu ứng xem trước viền xanh `.chip-selecting`.
+  - Hỗ trợ phím tắt `Shift + Click` để chọn dải từ nhanh chóng.
+  - Hỗ trợ bôi đen văn bản tự nhiên bằng chuột trong vùng chips.
+- [x] **Task 38.3:** Chuẩn hóa thứ tự ưu tiên chất lượng tra từ trên toàn bộ hệ thống (Prompts, UI, và Note Type):
+  - Ưu tiên 1 (Cao nhất): Nghĩa tiếng Việt theo đúng ngữ cảnh câu (`meaning_vi`).
+  - Ưu tiên 2: Câu ngữ cảnh gốc và dịch trọn vẹn 100% không bỏ sót vế (`example_sentence` & `example_vi`).
+  - Ưu tiên 3: Định nghĩa tiếng Anh ngắn gọn cho người học (`definition_en`).
+  - Tái cấu trúc DOM hiển thị trên Popover (`content/content.js`) và Popup (`popup/popup.js`): Nghĩa ngữ cảnh -> Khung câu ví dụ & dịch -> Định nghĩa tiếng Anh.
+  - Đồng bộ hóa thứ tự các trường trong mẫu thẻ mặc định `Back` của `Basic` trong `background/config.js`.
+- [x] **Task 38.4:** Thay thế mô hình `gemini-1.5-flash` đã hết vòng đời bằng `gemini-3.5-flash-lite`, `gemini-2.5-flash`, `gemini-3.1-flash-lite` trong pipeline Vision và danh sách lựa chọn của Options.
+- [x] **Task 38.5:** Kiểm tra toàn diện cú pháp codebase, nâng version lên `[3.13.0]` trong `manifest.json`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+
 
 
 
