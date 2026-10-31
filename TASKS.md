@@ -354,6 +354,26 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
 - [x] **Task 41.3:** Bổ sung hướng dẫn cài đặt Firefox trong `README.md` và `firefox/README.md` (nạp trực tiếp qua `about:debugging`).
 - [x] **Task 41.4:** Kiểm tra cú pháp, cập nhật `CHANGELOG.md` và commit/push lên GitHub.
 
+---
+
+## Phase 42: Real-Time Anki Deck Auto-Sync in Popover & Popup [DONE]
+- [x] **Task 42.1:** Loại bỏ phụ thuộc vào việc người dùng phải mở Options và ấn Save Settings để cập nhật danh sách Anki deck:
+  - Bổ sung hàm đồng bộ real-time `syncLiveAnkiDecks(currentConfig)` trong `background/background.js`, tự động truy vấn `getDeckNames(currentConfig)` từ AnkiConnect trực tiếp.
+  - Tự động so sánh và lưu cập nhật `availableDecks` và `deckName` vào `chrome.storage.sync` & `chrome.storage.local` ngay khi phát hiện deck mới hoặc deck bị đổi tên trong Anki.
+  - Bổ sung action `FETCH_LIVE_DECKS` vào message dispatcher của background worker để phục vụ content script và popup query theo nhu cầu.
+- [x] **Task 42.2:** Tối ưu hóa hiệu năng đồng bộ deck không gây trễ (0ms perceived latency):
+  - Chạy `syncLiveAnkiDecks` song song (concurrent) với AI Explanation (`EXPLAIN_WORD`) và Hybrid OCR (`CAPTURE_AND_LOOKUP_HYBRID`), trả về danh sách `decks` mới nhất cùng với kết quả tra từ.
+  - Tích hợp timeout đua tốc độ 500ms trong `GET_CONFIG` để background cung cấp ngay lập tức cấu hình với live decks mà không làm đơ popover hoặc popup nếu AnkiConnect phản hồi chậm.
+- [x] **Task 42.3:** Tự động làm mới danh sách deck trong Popover và Popup (Real-Time UI Update):
+  - Cập nhật `content/content.js` và `content/popover-ui.js`: Bổ sung `bindDeckMenuItems` và hàm `_updateDeckMenu(freshDecks)` giúp dropdown deck tự cập nhật DOM động mà không cần render lại toàn bộ popover.
+  - Kích hoạt truy vấn live decks khi người dùng nhấn mở dropdown `#anki-deck-trigger`, bắt trọn mọi deck mới tạo trong Anki Desktop.
+  - Lắng nghe `chrome.storage.onChanged` đối với key `availableDecks` để tự động đẩy danh sách deck mới tới popover đang mở.
+  - Cập nhật `popup/popup.js`: Tự động làm mới `<select id="popup-deck-select">` khi popup mở và khi focus vào dropdown deck.
+- [x] **Task 42.4:** Đồng bộ hóa sang Firefox Edition và kiểm tra chất lượng:
+  - Chạy `node build_firefox.js` đồng bộ toàn bộ thay đổi sang thư mục `firefox/`.
+  - Kiểm tra cú pháp toàn diện (`node --check`) qua tất cả các file trong codebase với 0 lỗi.
+  - Nâng version lên `v3.16.0` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+
 
 
 

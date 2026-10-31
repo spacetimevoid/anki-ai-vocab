@@ -59,6 +59,29 @@ function saveSelectedDeck(deck) {
 }
 
 /**
+ * Dynamically re-populate target deck select options in popup
+ */
+function updateDeckDropdown(decks) {
+  if (!Array.isArray(decks) || !decks.length) return;
+  if (!extensionConfig) extensionConfig = {};
+  extensionConfig.availableDecks = decks;
+  const deckSelect = document.getElementById('popup-deck-select');
+  if (deckSelect) {
+    const cur = deckSelect.value || extensionConfig.lastUsedDeck || extensionConfig.deckName || 'Default';
+    const allDecks = Array.from(new Set([cur, ...decks])).filter(Boolean);
+    deckSelect.innerHTML = allDecks.map(d => `<option value="${escapeHtml(d)}" ${d === cur ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('');
+  }
+}
+
+try {
+  chrome.storage?.onChanged?.addListener((changes) => {
+    if (changes.availableDecks?.newValue) {
+      updateDeckDropdown(changes.availableDecks.newValue);
+    }
+  });
+} catch {}
+
+/**
  * Update selection popover toggle UI state
  */
 function updatePopoverToggleUI(isEnabled) {
@@ -594,13 +617,26 @@ function renderQuickResult(data) {
     });
   }
 
-  // Deck selector change listener
+  // Deck selector change listener & live sync
   const deckSelect = quickResultBox.querySelector('#popup-deck-select');
   if (deckSelect) {
     deckSelect.addEventListener('change', (e) => {
       const selectedDeck = e.target.value;
       saveSelectedDeck(selectedDeck);
     });
+
+    const refreshPopupDecks = () => {
+      try {
+        chrome.runtime?.sendMessage?.({ action: 'FETCH_LIVE_DECKS' }, (res) => {
+          if (res?.success && Array.isArray(res.decks) && res.decks.length > 0) {
+            updateDeckDropdown(res.decks);
+          }
+        });
+      } catch {}
+    };
+
+    refreshPopupDecks();
+    deckSelect.addEventListener('focus', refreshPopupDecks);
   }
 
   // Add to Anki Listener (Reads live edited text from DOM)

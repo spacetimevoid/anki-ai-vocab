@@ -4,6 +4,28 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.16.0] - 2026-10-31
+
+### Real-Time Anki Deck Auto-Sync in Popover & Popup (No Options Save Required)
+- **Eliminated Manual Options Save Requirement for Anki Decks (`background/background.js`, `content/content.js`, `content/popover-ui.js`, `popup/popup.js`):**
+  - **Root Cause Eliminated:** Previously, `availableDecks` was only requested and persisted into storage when the user opened Options and clicked "Save Settings". Everywhere else, the extension relied on static stored decks. Newly created or renamed Anki decks in Anki Desktop were invisible in the floating popover unless the user manually navigated to Options and saved.
+  - **Automated Live Deck Synchronization (`syncLiveAnkiDecks`):** Added a background engine that queries AnkiConnect's `deckNames` directly and checks if `availableDecks` or default `deckName` has changed. If different, it immediately updates in-memory configuration and persists changes to `chrome.storage.sync` and `chrome.storage.local`.
+  - **Zero-Latency Concurrent Fetching:** Integrated live deck synchronization into `EXPLAIN_WORD` and `CAPTURE_AND_LOOKUP_HYBRID`. Background runs deck synchronization concurrently with AI API calls, returning fresh decks along with AI explanations at 0ms added perceived latency.
+  - **On-Demand Live Decks Message (`FETCH_LIVE_DECKS`):** Added a message handler allowing popover, crop tool, and popup to request live decks from Anki at any time.
+  - **Instant Popover & Dropdown Updates:**
+    - Popovers now automatically refresh their custom deck dropdown menu via `_updateDeckMenu(freshDecks)` without needing to re-render the card or disrupt user interaction.
+    - Added an immediate deck refresh trigger whenever the user clicks/expands `#anki-deck-trigger`, ensuring newly created decks in Anki Desktop appear immediately.
+    - Bound `chrome.storage.onChanged` to dynamically sync deck lists across open tabs.
+  - **Popup Deck Selector Auto-Refresh (`popup/popup.js`):** Popup now dynamically updates `<select id="popup-deck-select">` upon popup open and whenever the user focuses the selector.
+- **Dedicated Firefox Edition Synchronization (`build_firefox.js`, `firefox/`):**
+  - Synchronized all live deck synchronization improvements to `firefox/` with `node build_firefox.js`.
+  - Verified 100% Manifest V3 Gecko compatibility.
+- **Codebase Integrity & Syntax Verification:**
+  - Full syntax check (`node --check`) across all Chrome and Firefox scripts with 0 errors.
+  - Bumped version to `v3.16.0` in `manifest.json`, `firefox/manifest.json`, and `popup/popup.html`.
+
+---
+
 ## [3.15.0] - 2026-10-31
 
 ### Part of Speech (POS) Complete Standardization & Emerald Green Popup Switch

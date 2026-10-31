@@ -105,3 +105,4 @@ Phiên bản dành riêng cho Mozilla Firefox (Manifest V3 Gecko Compliant).
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   buildFirefox();
 }
+

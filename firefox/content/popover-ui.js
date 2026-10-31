@@ -367,20 +367,17 @@ export function populatePopoverData({
   const menuEl = popoverEl.querySelector('#anki-deck-menu');
   const labelEl = popoverEl.querySelector('#anki-deck-current-label');
 
-  if (triggerBtn && menuEl) {
-    triggerBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isExpanded = triggerBtn.classList.contains('active');
-      if (isExpanded) {
-        triggerBtn.classList.remove('active');
-        triggerBtn.setAttribute('aria-expanded', 'false');
-        menuEl.style.display = 'none';
-      } else {
-        triggerBtn.classList.add('active');
-        triggerBtn.setAttribute('aria-expanded', 'true');
-        menuEl.style.display = 'flex';
-      }
-    });
+  const bindDeckMenuItems = (decksList, currentDeck) => {
+    if (!menuEl) return;
+    const uniqDecks = Array.from(new Set([currentDeck, ...(decksList || [])])).filter(Boolean);
+    if (!uniqDecks.length) uniqDecks.push('Default');
+
+    menuEl.innerHTML = uniqDecks.map(d => `
+      <div class="anki-deck-item ${d === currentDeck ? 'selected' : ''}" data-deck="${escapeHtml(d)}" role="option">
+        <span class="anki-deck-item-text">${escapeHtml(d)}</span>
+        ${d === currentDeck ? `<svg class="anki-deck-item-check" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ''}
+      </div>
+    `).join('');
 
     menuEl.querySelectorAll('.anki-deck-item').forEach(item => {
       item.addEventListener('click', (e) => {
@@ -411,6 +408,47 @@ export function populatePopoverData({
           chrome.storage?.sync?.set({ deckName: deckVal });
         } catch {}
       });
+    });
+  };
+
+  popoverEl._updateDeckMenu = (freshDecks) => {
+    if (menuEl && Array.isArray(freshDecks) && freshDecks.length > 0) {
+      const cur = popoverEl._selectedDeck || selectedDeck;
+      bindDeckMenuItems(freshDecks, cur);
+    }
+  };
+
+  if (triggerBtn && menuEl) {
+    bindDeckMenuItems(allDecks, selectedDeck);
+
+    // Silently fetch and update live Anki decks in background
+    const requestLiveDecksUpdate = () => {
+      try {
+        chrome.runtime?.sendMessage?.({ action: 'FETCH_LIVE_DECKS' }, (res) => {
+          if (res?.success && Array.isArray(res.decks) && res.decks.length > 0) {
+            popoverEl?._updateDeckMenu?.(res.decks);
+          }
+        });
+      } catch {}
+    };
+
+    // Immediate live check
+    requestLiveDecksUpdate();
+
+    triggerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isExpanded = triggerBtn.classList.contains('active');
+      if (isExpanded) {
+        triggerBtn.classList.remove('active');
+        triggerBtn.setAttribute('aria-expanded', 'false');
+        menuEl.style.display = 'none';
+      } else {
+        triggerBtn.classList.add('active');
+        triggerBtn.setAttribute('aria-expanded', 'true');
+        menuEl.style.display = 'flex';
+        // Refresh live decks on dropdown expansion in case user just added a deck in Anki
+        requestLiveDecksUpdate();
+      }
     });
 
     // Close menu when clicking outside dropdown container inside popover

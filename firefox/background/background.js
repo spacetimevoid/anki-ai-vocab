@@ -107,6 +107,32 @@ chrome.storage.onChanged.addListener(() => {
   cachedConfig = null;
 });
 
+/**
+ * Automatically query AnkiConnect for live decks if Anki is running.
+ * If new decks are found, updates in-memory config and storage seamlessly.
+ */
+async function syncLiveAnkiDecks(currentConfig) {
+  try {
+    const decks = await getDeckNames(currentConfig);
+    if (Array.isArray(decks) && decks.length > 0) {
+      const prevDecks = currentConfig.availableDecks || [];
+      const hasChanged = decks.length !== prevDecks.length || decks.some((d, i) => d !== prevDecks[i]);
+      if (hasChanged) {
+        currentConfig.availableDecks = decks;
+        if (!currentConfig.deckName || !decks.includes(currentConfig.deckName)) {
+          currentConfig.deckName = decks[0];
+        }
+        await saveConfig(currentConfig);
+        cachedConfig = currentConfig;
+      }
+      return decks;
+    }
+  } catch {
+    // Anki offline or connection refused - fail quietly
+  }
+  return currentConfig.availableDecks || ['Default'];
+}
+
 // 3. Central Message Dispatcher
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { action, payload } = request;
@@ -118,7 +144,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       switch (action) {
         case 'GET_CONFIG': {
+          try {
+            const freshDecks = await Promise.race([
+              syncLiveAnkiDecks(config),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500))
+            ]);
+            if (freshDecks) {
+              config.availableDecks = freshDecks;
+            }
+          } catch {
+            // non-blocking fallback
+          }
           sendResponse({ success: true, config });
+          break;
+        }
+
+        case 'FETCH_LIVE_DECKS': {
+          const currentConfig = payload?.config || config;
+          try {
+            const freshDecks = await syncLiveAnkiDecks(currentConfig);
+            sendResponse({ success: true, decks: freshDecks });
+          } catch {
+            sendResponse({ success: false, decks: currentConfig.availableDecks || ['Default'] });
+          }
           break;
         }
 
@@ -131,8 +179,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case 'EXPLAIN_WORD': {
           const { word, sentence, sourceUrl, bypassCache, existingTranslation, reuseTranslation } = payload;
-          const result = await explainWord({ word, sentence, sourceUrl, config, bypassCache, existingTranslation, reuseTranslation });
-          sendResponse({ success: true, data: result });
+          // Concurrently fetch AI explanation and refresh live Anki decks
+          const [result, freshDecks] = await Promise.all([
+            explainWord({ word, sentence, sourceUrl, config, bypassCache, existingTranslation, reuseTranslation }),
+            syncLiveAnkiDecks(config).catch(() => config.availableDecks || ['Default'])
+          ]);
+          sendResponse({ success: true, data: result, decks: freshDecks });
           break;
         }
 
@@ -173,9 +225,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           // 2. Crop area using OffscreenCanvas
           const base64Image = await cropImageData(dataUrl, cropArea);
 
-          // 3. Process with Gemini Vision OCR + Vocab Extractor
-          const result = await analyzeCroppedImage({ base64Image, sourceUrl, config });
-          sendResponse({ success: true, data: result });
+          // 3. Process with Gemini Vision OCR + Vocab Extractor concurrently with live deck sync
+          const [result, freshDecks] = await Promise.all([
+            analyzeCroppedImage({ base64Image, sourceUrl, config }),
+            syncLiveAnkiDecks(config).catch(() => config.availableDecks || ['Default'])
+          ]);
+          sendResponse({ success: true, data: result, decks: freshDecks });
           break;
         }
 
@@ -192,7 +247,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
 
         case 'CHECK_ANKI_STATUS': {
-          const ankiStatus = await checkAnkiConnection(payload?.config || config);
+          const currentConfig = payload?.config || config;
+          const ankiStatus = await checkAnkiConnection(currentConfig);
+          if (ankiStatus.ok) {
+            syncLiveAnkiDecks(currentConfig).catch(() => {});
+          }
           sendResponse({ success: ankiStatus.ok, ...ankiStatus });
           break;
         }
@@ -203,6 +262,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             getDeckNames(currentConfig),
             getModelNames(currentConfig)
           ]);
+          if (Array.isArray(decks) && decks.length > 0) {
+            currentConfig.availableDecks = decks;
+            await saveConfig(currentConfig);
+            cachedConfig = currentConfig;
+          }
           sendResponse({ success: true, decks, models });
           break;
         }

@@ -1504,6 +1504,9 @@ svg.anki-spinning,
           for (const key in changes) {
             extensionConfig[key] = changes[key].newValue;
           }
+          if (changes.availableDecks?.newValue && Array.isArray(changes.availableDecks.newValue)) {
+            activePopoverEl?._updateDeckMenu?.(changes.availableDecks.newValue);
+          }
         }
       });
     } catch {
@@ -1847,6 +1850,15 @@ svg.anki-spinning,
       }
     }, 16000);
 
+    // Proactively refresh live decks from Anki in parallel with AI analysis
+    safeSendMessage({ action: 'FETCH_LIVE_DECKS' }, (deckRes) => {
+      if (deckRes?.success && Array.isArray(deckRes.decks) && deckRes.decks.length > 0) {
+        if (!extensionConfig) extensionConfig = {};
+        extensionConfig.availableDecks = deckRes.decks;
+        activePopoverEl?._updateDeckMenu?.(deckRes.decks);
+      }
+    });
+
     // Call Background AI Service
     safeSendMessage({
       action: 'EXPLAIN_WORD',
@@ -1868,6 +1880,11 @@ svg.anki-spinning,
       if (!res || !res.success) {
         renderPopoverError(res?.error || 'Failed to retrieve AI explanation.');
         return;
+      }
+
+      if (res.decks && Array.isArray(res.decks) && res.decks.length > 0) {
+        if (!extensionConfig) extensionConfig = {};
+        extensionConfig.availableDecks = res.decks;
       }
 
       renderPopoverLoadedData(res.data, context);
@@ -2161,6 +2178,11 @@ svg.anki-spinning,
         return;
       }
 
+      if (res.decks && Array.isArray(res.decks) && res.decks.length > 0) {
+        if (!extensionConfig) extensionConfig = {};
+        extensionConfig.availableDecks = res.decks;
+      }
+
       const rawSent = res.data.detected_sentence || res.data.example_sentence || '';
       const normalizedSentence = normalizeContextSentence(rawSent);
       const initialTrans = res.data.example_translation || res.data.example_vi || '';
@@ -2422,14 +2444,76 @@ svg.anki-spinning,
     // Ensure draggable stays active on loaded popover
     makePopoverDraggable(activePopoverEl);
 
-    // Custom Deck Dropdown Controller
+    // Custom Deck Dropdown Controller with Auto-Sync
     let selectedDeck = currentDeck;
     activePopoverEl._selectedDeck = selectedDeck;
     const triggerBtn = activePopoverEl.querySelector('#anki-deck-trigger');
     const menuEl = activePopoverEl.querySelector('#anki-deck-menu');
     const labelEl = activePopoverEl.querySelector('#anki-deck-current-label');
 
+    const bindDeckMenuItems = (decksList, activeDeck) => {
+      if (!menuEl) return;
+      const uniqueDecks = Array.from(new Set([activeDeck, ...(decksList || [])])).filter(Boolean);
+      if (!uniqueDecks.length) uniqueDecks.push('Default');
+
+      menuEl.innerHTML = uniqueDecks.map(d => `
+        <div class="anki-deck-item ${d === activeDeck ? 'selected' : ''}" data-deck="${escapeHtml(d)}" role="option">
+          <span class="anki-deck-item-text">${escapeHtml(d)}</span>
+          ${d === activeDeck ? `<svg class="anki-deck-item-check" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ''}
+        </div>
+      `).join('');
+
+      menuEl.querySelectorAll('.anki-deck-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const deckVal = item.dataset.deck;
+          selectedDeck = deckVal;
+          if (activePopoverEl) activePopoverEl._selectedDeck = deckVal;
+          if (labelEl) labelEl.textContent = deckVal;
+
+          menuEl.querySelectorAll('.anki-deck-item').forEach(i => {
+            i.classList.remove('selected');
+            const check = i.querySelector('.anki-deck-item-check');
+            if (check) check.remove();
+          });
+          item.classList.add('selected');
+          const checkWrap = document.createElement('span');
+          checkWrap.innerHTML = `<svg class="anki-deck-item-check" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+          item.appendChild(checkWrap.firstElementChild);
+
+          triggerBtn.classList.remove('active');
+          triggerBtn.setAttribute('aria-expanded', 'false');
+          menuEl.style.display = 'none';
+
+          saveSelectedDeck(deckVal);
+        });
+      });
+    };
+
+    activePopoverEl._updateDeckMenu = (freshDecks) => {
+      if (menuEl && Array.isArray(freshDecks) && freshDecks.length > 0) {
+        const cur = activePopoverEl._selectedDeck || selectedDeck;
+        bindDeckMenuItems(freshDecks, cur);
+      }
+    };
+
     if (triggerBtn && menuEl) {
+      bindDeckMenuItems(allDecks, selectedDeck);
+
+      // Silently fetch and update live Anki decks in background
+      const requestLiveDecksUpdate = () => {
+        safeSendMessage({ action: 'FETCH_LIVE_DECKS' }, (res) => {
+          if (res?.success && Array.isArray(res.decks) && res.decks.length > 0) {
+            if (!extensionConfig) extensionConfig = {};
+            extensionConfig.availableDecks = res.decks;
+            activePopoverEl?._updateDeckMenu?.(res.decks);
+          }
+        });
+      };
+
+      // Trigger immediate live check
+      requestLiveDecksUpdate();
+
       triggerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isExpanded = triggerBtn.classList.contains('active');
@@ -2441,36 +2525,9 @@ svg.anki-spinning,
           triggerBtn.classList.add('active');
           triggerBtn.setAttribute('aria-expanded', 'true');
           menuEl.style.display = 'flex';
+          // Live query when user opens dropdown to capture decks created or renamed in Anki
+          requestLiveDecksUpdate();
         }
-      });
-
-      menuEl.querySelectorAll('.anki-deck-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const deckVal = item.dataset.deck;
-          selectedDeck = deckVal;
-          activePopoverEl._selectedDeck = deckVal;
-          if (labelEl) labelEl.textContent = deckVal;
-
-          // Update item checkmark state
-          menuEl.querySelectorAll('.anki-deck-item').forEach(i => {
-            i.classList.remove('selected');
-            const check = i.querySelector('.anki-deck-item-check');
-            if (check) check.remove();
-          });
-          item.classList.add('selected');
-          const checkWrap = document.createElement('span');
-          checkWrap.innerHTML = `<svg class="anki-deck-item-check" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-          item.appendChild(checkWrap.firstElementChild);
-
-          // Close menu
-          triggerBtn.classList.remove('active');
-          triggerBtn.setAttribute('aria-expanded', 'false');
-          menuEl.style.display = 'none';
-
-          // Persist default choice
-          saveSelectedDeck(deckVal);
-        });
       });
 
       // Close menu when clicking outside dropdown container inside popover
@@ -2586,6 +2643,11 @@ svg.anki-spinning,
             const errorMsg = chrome.runtime.lastError?.message || res?.error || 'Failed to re-analyze word.';
             renderPopoverError(errorMsg);
             return;
+          }
+
+          if (res.decks && Array.isArray(res.decks) && res.decks.length > 0) {
+            extensionConfig.availableDecks = res.decks;
+            activePopoverEl?._updateDeckMenu?.(res.decks);
           }
 
           // Update mutable context so future actions (Save/Reset) reflect user's updated sentence
@@ -2771,6 +2833,11 @@ svg.anki-spinning,
             btnAdd.innerHTML = `<span>+ Add to Anki</span>`;
           }
           return;
+        }
+
+        if (res.decks && Array.isArray(res.decks) && res.decks.length > 0) {
+          extensionConfig.availableDecks = res.decks;
+          activePopoverEl?._updateDeckMenu?.(res.decks);
         }
 
         const effectiveTranslation = existingTrans || res.data.example_translation || res.data.example_vi || '';
