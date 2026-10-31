@@ -1,0 +1,885 @@
+/**
+ * Compact Floating Popover Styles (Shadow DOM Encapsulated)
+ * Design Style: Modern Linear / Shadcn UI / Clean Typography
+ * 375px Width, 2-Row Header, Muted Pastel Badges & Custom Deck Dropdown Menu
+ */
+
+:host {
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 14px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+:host, .popover-container, *:not(.phonetic-text):not(.anki-ipa-text):not(.ipa) {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+/* =========================================================
+   DESIGN TOKENS (SHADCN ZINC PALETTE)
+   ========================================================= */
+:host,
+:host([data-theme="light"]) {
+  /* Light Mode */
+  --popover-bg: #FFFFFF;
+  --border: #E4E4E7;            /* Zinc-200 */
+  --text-primary: #09090B;      /* Zinc-950 */
+  --text-secondary: #71717A;    /* Zinc-500 */
+  --text-muted: #A1A1AA;        /* Zinc-400 */
+  --badge-bg: #F4F4F5;          /* Zinc-100 */
+  --badge-text: #18181B;        /* Zinc-900 */
+  --btn-bg: #18181B;            /* Zinc-900 */
+  --btn-text: #FAFAFA;          /* Zinc-50 */
+  --btn-hover: #27272A;         /* Zinc-800 */
+  --btn-secondary-bg: #F4F4F5;
+  --btn-secondary-hover: #E4E4E7;
+  --hover-bg: #F4F4F5;          /* Zinc-100 */
+  --skeleton-bg: #F4F4F5;
+  --skeleton-shine: #E4E4E7;
+  --success: #10B981;
+  --success-bg: #ECFDF5;
+  --danger: #EF4444;
+  --danger-bg: #FEF2F2;
+  --radius: 12px;
+  --shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
+}
+
+:host([data-theme="dark"]) {
+  /* Explicit Dark Mode (PeakPlanner Theme) */
+  --popover-bg: #0E0F14;
+  --border: #242530;
+  --text-primary: #FFFFFF;
+  --text-secondary: #9698A6;
+  --text-muted: #646675;
+  --badge-bg: #1F202A;
+  --badge-text: #FFFFFF;
+  --btn-bg: #FFFFFF;
+  --btn-text: #0E0F14;
+  --btn-hover: #E4E5EB;
+  --btn-secondary-bg: #1F202A;
+  --btn-secondary-hover: #292B38;
+  --hover-bg: #171820;
+  --skeleton-bg: #171820;
+  --skeleton-shine: #242530;
+  --success: #10B981;
+  --success-bg: #064E3B;
+  --danger: #F87171;
+  --danger-bg: #450A0A;
+  --radius: 12px;
+  --shadow: 0 16px 42px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+  :host(:not([data-theme="light"])) {
+    /* Auto Dark Mode */
+    --popover-bg: #0E0F14;
+    --border: #242530;
+    --text-primary: #FFFFFF;
+    --text-secondary: #9698A6;
+    --text-muted: #646675;
+    --badge-bg: #1F202A;
+    --badge-text: #FFFFFF;
+    --btn-bg: #FFFFFF;
+    --btn-text: #0E0F14;
+    --btn-hover: #E4E5EB;
+    --btn-secondary-bg: #1F202A;
+    --btn-secondary-hover: #292B38;
+    --hover-bg: #171820;
+    --skeleton-bg: #171820;
+    --skeleton-shine: #242530;
+    --success: #10B981;
+    --success-bg: #064E3B;
+    --danger: #F87171;
+    --danger-bg: #450A0A;
+    --radius: 12px;
+    --shadow: 0 16px 42px rgba(0, 0, 0, 0.65), 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* =========================================================
+   1. QUICK TRIGGER PILL BUTTON (FLOATING NEAR SELECTION)
+   ========================================================= */
+.anki-quick-trigger {
+  position: absolute;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  background: var(--popover-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.14s ease;
+  user-select: none;
+  animation: anki-fade-in 0.12s ease-out;
+}
+
+.anki-quick-trigger:hover {
+  background: var(--hover-bg);
+  border-color: var(--text-muted);
+}
+
+.anki-quick-trigger svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   2. COMPACT FLOATING POPOVER (375PX WIDTH)
+   ========================================================= */
+.anki-floating-popover {
+  position: absolute;
+  z-index: 2147483647;
+  width: 400px;
+  max-width: 95vw;
+  max-height: 560px;
+  background: var(--popover-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: visible; /* Allows custom dropdown menu to open downward cleanly */
+  user-select: text;
+  color: var(--text-primary);
+  animation: anki-scale-in 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+/* Custom Slim Scrollbar */
+.anki-popover-content::-webkit-scrollbar {
+  width: 4px;
+}
+.anki-popover-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.anki-popover-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+.anki-popover-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* =========================================================
+   POPOVER HEADER (2-ROW TYPOGRAPHY STRUCTURE & DRAG HANDLE)
+   ========================================================= */
+.anki-popover-header {
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: grab;
+  user-select: none;
+  background: var(--popover-bg);
+  border-top-left-radius: calc(var(--radius) - 1px);
+  border-top-right-radius: calc(var(--radius) - 1px);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* Ensure interactive controls in header maintain their normal cursors */
+.anki-popover-header .anki-header-controls,
+.anki-popover-header .anki-btn-icon,
+.anki-popover-header .anki-editable,
+.anki-popover-header [contenteditable="true"] {
+  cursor: default;
+}
+
+.anki-popover-header .anki-btn-icon {
+  cursor: pointer;
+}
+
+.anki-popover-header .anki-editable,
+.anki-popover-header [contenteditable="true"] {
+  cursor: text;
+  user-select: text;
+}
+
+/* Active Dragging States */
+.anki-floating-popover.anki-is-dragging,
+.anki-floating-popover.anki-is-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.anki-floating-popover.anki-is-dragging {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  transition: box-shadow 0.15s ease;
+}
+
+:host([data-theme="light"]) .anki-floating-popover.anki-is-dragging {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18), 0 0 0 1px #E4E4E7;
+}
+
+.anki-header-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+/* Row 1: Word + Part of Speech Badge */
+.header-row,
+.anki-header-row1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 2px;
+  min-width: 0;
+}
+
+.word-text,
+.anki-word-text {
+  font-size: 19px !important;       /* Cỡ chữ to vừa phải, hiện đại */
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  color: #FAFAFA !important;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+:host([data-theme="light"]) .word-text,
+:host([data-theme="light"]) .anki-word-text {
+  color: #09090B !important;
+}
+
+/* Row 2: Phonetic IPA (Specialized Serif: Times New Roman for crisp IPA symbols) */
+.header-row-2,
+.anki-header-row2 {
+  display: flex;
+  align-items: center;
+}
+
+.phonetic-text,
+.anki-ipa-text,
+.ipa {
+  font-family: "Times New Roman", Times, serif !important;
+  font-size: 17px !important;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #A1A1AA !important;
+  margin-top: 2px;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+:host([data-theme="light"]) .phonetic-text,
+:host([data-theme="light"]) .anki-ipa-text,
+:host([data-theme="light"]) .ipa {
+  color: #71717A !important;
+}
+
+/* Part of Speech Badges (Refined Pastel / Muted Tones) */
+.pos-badge,
+.anki-pos-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 2px 7px;
+  border-radius: 4px;
+  line-height: 1.25;
+  flex-shrink: 0;
+  text-transform: lowercase;
+  letter-spacing: 0.02em;
+  transition: all 0.12s ease;
+  user-select: text;
+}
+
+/* Dark Mode POS Badges */
+.anki-pos-badge.pos-verb {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #60A5FA;
+  border: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+.anki-pos-badge.pos-noun {
+  background-color: rgba(99, 102, 241, 0.12);
+  color: #818CF8;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+}
+
+.anki-pos-badge.pos-adj {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #34D399;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+.anki-pos-badge.pos-adv,
+.anki-pos-badge.pos-other {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #FBBF24;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+/* Light Mode POS Badges */
+:host([data-theme="light"]) .anki-pos-badge.pos-verb {
+  background-color: #EFF6FF;
+  color: #2563EB;
+  border: 1px solid #BFDBFE;
+}
+
+:host([data-theme="light"]) .anki-pos-badge.pos-noun {
+  background-color: #EEF2FF;
+  color: #4F46E5;
+  border: 1px solid #C7D2FE;
+}
+
+:host([data-theme="light"]) .anki-pos-badge.pos-adj {
+  background-color: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+}
+
+:host([data-theme="light"]) .anki-pos-badge.pos-adv,
+:host([data-theme="light"]) .anki-pos-badge.pos-other {
+  background-color: #FFFBEB;
+  color: #D97706;
+  border: 1px solid #FDE68A;
+}
+
+.anki-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.anki-btn-icon {
+  background: transparent;
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+
+.anki-btn-icon:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.anki-btn-relookup:hover svg {
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.anki-spinning svg,
+svg.anki-spinning,
+.anki-btn-icon.anki-spinning svg {
+  animation: anki-spin 0.6s linear infinite !important;
+}
+
+.anki-btn-audio {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: var(--badge-bg) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+}
+
+.anki-btn-audio:hover {
+  background: var(--hover-bg) !important;
+  color: var(--text-primary) !important;
+  transform: scale(1.08);
+}
+
+/* =========================================================
+   POPOVER BODY CONTENT (CLEAR TYPOGRAPHY)
+   ========================================================= */
+.anki-popover-content {
+  padding: 14px 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* High-Legibility Meaning Row */
+.anki-meaning-row {
+  flex-shrink: 0;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* English Definition */
+.anki-def-row {
+  flex-shrink: 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Context Example with Spacious Padding & Border */
+.anki-example-box {
+  flex-shrink: 0;
+  margin-top: 2px;
+  border-left: 2px solid rgba(255, 255, 255, 0.18);
+  padding: 6px 0 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: transparent;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+
+:host([data-theme="light"]) .anki-example-box {
+  border-left: 2px solid rgba(0, 0, 0, 0.12);
+}
+
+.anki-example-en {
+  color: var(--text-primary);
+  font-size: 13.5px;
+  line-height: 1.6;
+  font-style: italic;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.anki-example-en b,
+.anki-example-en strong,
+.anki-example-highlight {
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+}
+
+:host([data-theme="light"]) .anki-example-highlight,
+:host([data-theme="light"]) .anki-example-en b,
+:host([data-theme="light"]) .anki-example-en strong {
+  color: #0284c7 !important;
+}
+
+.anki-example-vi {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  font-style: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* =========================================================
+   INLINE EDITABLE FIELDS (ZERO LAYOUT SHIFT)
+   ========================================================= */
+.anki-editable {
+  outline: none;
+  cursor: text;
+  border-radius: 4px;
+  font-size: inherit;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  position: relative;
+}
+
+.anki-editable:hover {
+  background-color: var(--hover-bg);
+}
+
+.anki-editable:focus {
+  outline: none;
+  background-color: var(--hover-bg);
+  box-shadow: 0 0 0 1px var(--text-muted);
+}
+
+.anki-word-text.anki-editable {
+  min-width: 32px;
+  display: inline-block;
+}
+
+.anki-word-text.anki-editable:focus {
+  overflow: visible;
+  text-overflow: clip;
+  max-width: 260px;
+}
+
+.anki-ipa-text.anki-editable {
+  min-width: 24px;
+  display: inline-block;
+}
+
+.anki-pos-badge.anki-editable {
+  cursor: text;
+}
+
+.anki-meaning-row.anki-editable {
+  min-height: 22px;
+}
+
+.anki-def-row.anki-editable {
+  min-height: 20px;
+}
+
+.anki-example-en.anki-editable {
+  min-height: 20px;
+}
+
+.anki-example-vi.anki-editable {
+  min-height: 18px;
+}
+
+.anki-editable[placeholder]:empty::before {
+  content: attr(placeholder);
+  color: var(--text-muted);
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* =========================================================
+   POPOVER FOOTER WITH CUSTOM DECK DROPDOWN MENU
+   ========================================================= */
+.anki-popover-footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--popover-bg);
+  position: relative;
+  border-bottom-left-radius: calc(var(--radius) - 1px);
+  border-bottom-right-radius: calc(var(--radius) - 1px);
+  background-clip: padding-box;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.anki-deck-dropdown-container {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Trigger Button */
+.anki-deck-trigger {
+  background-color: #18181B;
+  border: 1px solid #27272A;
+  border-radius: 6px;
+  height: 32px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #E4E4E7;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  transition: all 0.14s ease;
+  max-width: 175px;
+  outline: none;
+  user-select: none;
+}
+
+.anki-deck-trigger:hover {
+  background-color: #27272A;
+  border-color: #3F3F46;
+  color: #FFFFFF;
+}
+
+.anki-deck-trigger.active {
+  border-color: #52525B;
+  background-color: #27272A;
+}
+
+.anki-deck-icon {
+  width: 14px;
+  height: 14px;
+  color: #A1A1AA;
+  flex-shrink: 0;
+}
+
+.anki-deck-current-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+  color: inherit;
+}
+
+.anki-deck-chevron {
+  width: 12px;
+  height: 12px;
+  color: #71717A;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.anki-deck-trigger.active .anki-deck-chevron {
+  transform: rotate(180deg);
+}
+
+/* Custom Floating Dropdown Menu (Opens downward below trigger button) */
+.deck-menu,
+.anki-deck-menu {
+  position: absolute;
+  top: calc(100% + 6px) !important;
+  bottom: auto !important;
+  left: 0 !important;
+  min-width: 190px;
+  max-width: 270px;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: #121215;
+  border: 1px solid #27272A;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+  z-index: 100;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: anki-fade-in 0.12s ease-out;
+}
+
+/* Custom thin scrollbar for deck menu */
+.anki-deck-menu::-webkit-scrollbar {
+  width: 4px;
+}
+.anki-deck-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.anki-deck-menu::-webkit-scrollbar-thumb {
+  background: #27272A;
+  border-radius: 2px;
+}
+.anki-deck-menu::-webkit-scrollbar-thumb:hover {
+  background: #3F3F46;
+}
+
+.anki-deck-item {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #E4E4E7;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: background-color 0.12s ease, color 0.12s ease;
+  user-select: none;
+}
+
+.anki-deck-item:hover {
+  background-color: #27272A;
+  color: #FFFFFF;
+}
+
+.anki-deck-item.selected {
+  color: #FAFAFA;
+  font-weight: 500;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.anki-deck-item-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.anki-deck-item-check {
+  width: 13px;
+  height: 13px;
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+/* Light Mode Overrides for Deck Dropdown */
+:host([data-theme="light"]) .anki-deck-trigger {
+  background-color: #F4F4F5;
+  border: 1px solid #E4E4E7;
+  color: #18181B;
+}
+
+:host([data-theme="light"]) .anki-deck-trigger:hover {
+  background-color: #E4E4E7;
+  border-color: #D4D4D8;
+}
+
+:host([data-theme="light"]) .anki-deck-icon {
+  color: #71717A;
+}
+
+:host([data-theme="light"]) .deck-menu,
+:host([data-theme="light"]) .anki-deck-menu {
+  background-color: #FFFFFF;
+  border: 1px solid #E4E4E7;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+}
+
+:host([data-theme="light"]) .anki-deck-item {
+  color: #18181B;
+}
+
+:host([data-theme="light"]) .anki-deck-item:hover {
+  background-color: #F4F4F5;
+  color: #09090B;
+}
+
+:host([data-theme="light"]) .anki-deck-item.selected {
+  color: #09090B;
+  background-color: #F4F4F5;
+}
+
+:host([data-theme="light"]) .anki-deck-menu::-webkit-scrollbar-thumb {
+  background: #E4E4E7;
+}
+
+.anki-btn-add {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  transition: all 0.12s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.anki-btn-add:hover {
+  background: var(--btn-hover);
+}
+
+.anki-btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.anki-btn-add.anki-added {
+  background: var(--success);
+  color: #FFFFFF;
+}
+
+/* =========================================================
+   SKELETON SHIMMER LOADER
+   ========================================================= */
+.anki-skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.anki-skeleton {
+  background: linear-gradient(90deg, var(--skeleton-bg) 25%, var(--skeleton-shine) 50%, var(--skeleton-bg) 75%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: anki-shimmer 1.4s infinite ease-in-out;
+}
+
+.anki-skeleton-title {
+  height: 18px;
+  width: 55%;
+}
+
+.anki-skeleton-line {
+  height: 14px;
+  width: 90%;
+}
+
+.anki-skeleton-box {
+  height: 44px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+@keyframes anki-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* =========================================================
+   ERROR / WARNING BANNER
+   ========================================================= */
+.anki-popover-banner {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.anki-banner-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+/* Minimal Spinner */
+.anki-spinner-sm {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: anki-spin 0.6s linear infinite;
+  display: inline-block;
+  opacity: 0.8;
+}
+
+@keyframes anki-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes anki-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes anki-scale-in {
+  from { opacity: 0; transform: scale(0.97) translateY(2px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}

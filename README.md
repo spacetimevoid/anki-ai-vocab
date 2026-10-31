@@ -6,7 +6,8 @@
   **Context-Aware Vocabulary Flashcard Generator for Google Chrome**
 
   [![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=flat-square&logo=google-chrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-  [![Release](https://img.shields.io/badge/Release-v3.9.0-10B981?style=flat-square)](https://github.com)
+  [![Firefox Add-on](https://img.shields.io/badge/Firefox_Add--on-Manifest_V3-FF7139?style=flat-square&logo=firefox&logoColor=white)](https://addons.mozilla.org/)
+  [![Release](https://img.shields.io/badge/Release-v3.15.0-10B981?style=flat-square)](https://github.com)
   [![License: MIT](https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square)](LICENSE)
   [![AI Engine](https://img.shields.io/badge/AI_Engine-Gemini_Flash--Lite_%7C_OpenAI-8B5CF6?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
   [![AnkiConnect](https://img.shields.io/badge/Anki-AnkiConnect_Ready-F59E0B?style=flat-square&logo=anki&logoColor=white)](https://ankiweb.net/shared/info/2055492159)
@@ -90,6 +91,10 @@ anki-ai-vocab/
 │   ├── popup.html             # Manual lookup interface and status indicators
 │   ├── popup.css              # Auto-sizing flex container stylesheet
 │   └── popup.js               # Active tab text extraction and quick lookup logic
+├── firefox/                   # Dedicated Firefox Add-on build (Manifest V3 Gecko)
+│   ├── manifest.json          # Gecko-compliant manifest with browser_specific_settings
+│   └── ...                    # Bundled background, content, icons, options, popup
+├── build_firefox.js           # Automated Firefox build and synchronization tool
 └── generate_icons.js          # Node.js icon rasterizer from SVG
 ```
 
@@ -117,18 +122,30 @@ anki-ai-vocab/
      ```
    - Click **OK** and restart Anki Desktop.
 
-### 2. Install Extension in Google Chrome
+### 2. Install Extension in Google Chrome / Chromium / Edge / Brave
 
 1. Clone or download this repository:
    ```bash
-   git clone https://github.com/<your-username>/anki-ai-vocab.git
+   git clone https://github.com/spacetimevoid/anki-ai-vocab.git
    ```
-2. Open Google Chrome and navigate to `chrome://extensions/`.
+2. Open your browser and navigate to `chrome://extensions/` (or `edge://extensions/` / `brave://extensions/`).
 3. Enable **Developer mode** via the top-right toggle.
 4. Click **Load unpacked** in the top-left toolbar.
 5. Select the repository root folder.
 
-### 3. API Key Configuration
+### 3. Install Extension in Mozilla Firefox
+
+1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
+2. Click **Load Temporary Add-on...** (Tải tiện ích tạm thời...).
+3. Navigate into the `firefox/` directory in this repository and select `manifest.json`.
+4. The extension will immediately load and activate on Firefox!
+
+*Tip:* You can regenerate or re-sync the Firefox build at any time by running:
+```bash
+node build_firefox.js
+```
+
+### 4. API Key Configuration
 
 1. Right-click the extension icon in the toolbar and select **Options** (or open the gear icon in the toolbar popup).
 2. Select your AI provider (recommended: **Google Gemini**).

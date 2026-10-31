@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AnkiVocab Quick Lookup</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- Popup Shell -->
+  <div class="popup-shell">
+
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="popup-brand">
+        <div class="brand-badge" title="Anki AI Vocab">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+            <defs>
+              <linearGradient id="popBrandBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1E1F28"/>
+                <stop offset="100%" stop-color="#090A0E"/>
+              </linearGradient>
+            </defs>
+            <rect width="24" height="24" rx="6" fill="url(#popBrandBg)" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/>
+            <!-- Back Card -->
+            <rect x="7" y="4" width="10.5" height="14" rx="1.8" fill="none" stroke="rgba(56, 189, 248, 0.35)" stroke-width="0.7" transform="rotate(-6 12 11)"/>
+            <!-- Front Card -->
+            <rect x="6.5" y="5" width="11" height="14.5" rx="2" fill="#14151C" stroke="rgba(255, 255, 255, 0.2)" stroke-width="0.8"/>
+            <!-- Header line -->
+            <line x1="8.5" y1="7.5" x2="15.5" y2="7.5" stroke="rgba(255, 255, 255, 0.22)" stroke-width="0.7" stroke-linecap="round"/>
+            <!-- AI Sparkle Center -->
+            <path d="M12 9 C12 11, 10.4 12.2, 8.5 12.2 C10.4 12.2, 12 13.4, 12 15.5 C12 13.4, 13.6 12.2, 15.5 12.2 C13.6 12.2, 12 11, 12 9 Z" fill="#FFFFFF"/>
+            <!-- Satellite Sparkle -->
+            <path d="M16.5 5 C16.5 5.8, 15.8 6.5, 15 6.5 C15.8 6.5, 16.5 7.2, 16.5 8 C16.5 7.2, 17.2 6.5, 18 6.5 C17.2 6.5, 16.5 5.8, 16.5 5 Z" fill="#38BDF8"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Anki AI Vocab</span>
+          <span class="brand-version">v3.15</span>
+        </div>
+      </div>
+
+      <div class="header-right-actions">
+        <!-- Crop & Look Up Button -->
+        <button class="btn-icon-options" id="btn-crop-lookup" title="Crop & Look Up Screen Area (Alt+S)" aria-label="Crop and Look Up">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2v14a2 2 0 0 0 2 2h14"/>
+            <path d="M18 22V8a2 2 0 0 0-2-2H2"/>
+          </svg>
+        </button>
+
+        <!-- Sun / Moon Theme Capsule Toggle -->
+        <div class="theme-switch-capsule" role="radiogroup" aria-label="Theme mode">
+          <button type="button" class="theme-btn" id="popup-theme-light" title="Light Mode" aria-label="Light mode">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </button>
+          <button type="button" class="theme-btn active" id="popup-theme-dark" title="Dark Mode" aria-label="Dark mode">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Options Gear Button -->
+        <button class="btn-icon-options" id="btn-open-options-icon" title="Settings" aria-label="Open Settings">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Status Grid (AnkiConnect & AI) -->
+    <section class="status-grid" aria-label="Service statuses">
+      <div class="status-card">
+        <span class="status-label">AnkiConnect</span>
+        <div class="status-value" id="anki-status-indicator">
+          <span class="status-dot dot-warning"></span>
+          <span class="status-text">Checking...</span>
+        </div>
+      </div>
+      <div class="status-card">
+        <span class="status-label">AI Engine</span>
+        <div class="status-value" id="ai-status-indicator">
+          <span class="status-dot dot-warning"></span>
+          <span class="status-text">Checking...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Lookup Form -->
+    <section class="quick-section">
+      <div class="section-title-row">
+        <span class="section-heading">Manual Lookup</span>
+        <label class="popup-selection-toggle" id="popup-selection-toggle" title="Toggle floating popover on text selection">
+          <span class="selection-toggle-label" id="selection-toggle-label">Selection Popover</span>
+          <span class="mini-switch">
+            <input type="checkbox" id="toggle-selection-popover" checked>
+            <span class="mini-switch-slider"></span>
+          </span>
+        </label>
+      </div>
+
+      <div class="input-stack">
+        <input type="text" class="custom-input focus-blue" id="quick-word" placeholder="Enter a word (e.g., serendipity)..." autocomplete="off" spellcheck="false">
+        <input type="text" class="custom-input focus-blue input-sub" id="quick-sentence" placeholder="Context sentence (optional)..." autocomplete="off" spellcheck="false">
+      </div>
+
+      <button type="button" class="btn-lookup-primary" id="btn-quick-lookup">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+        <span>Look up with AI</span>
+      </button>
+
+      <!-- Idle Guide / Empty State Helper -->
+      <div class="idle-guide-box" id="popup-idle-guide">
+        <div class="idle-guide-item">
+          <svg class="idle-guide-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L14.39 8.26L21 9.27L16.09 13.74L17.5 20.24L12 16.9L6.5 20.24L7.91 13.74L3 9.27L9.61 8.26L12 2Z"/>
+          </svg>
+          <span class="idle-guide-text">Highlight text on any webpage & click this icon to auto-lookup</span>
+        </div>
+        <div class="idle-guide-item" style="margin-top: 5px;">
+          <svg class="idle-guide-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2v14a2 2 0 0 0 2 2h14"/>
+            <path d="M18 22V8a2 2 0 0 0-2-2H2"/>
+          </svg>
+          <span class="idle-guide-text">Press <strong>Alt+S</strong> or click Crop icon to grab subtitles, videos, or PDFs</span>
+        </div>
+      </div>
+
+      <!-- Result preview container -->
+      <div class="result-card" id="quick-result" style="display:none;" aria-live="polite"></div>
+    </section>
+
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

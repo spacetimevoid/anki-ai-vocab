@@ -341,6 +341,19 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Tinh chỉnh trạng thái màu chữ nhãn (`selectionToggleLabel`) khi bật sang `var(--text-primary)`.
 - [x] **Task 40.3:** Kiểm tra toàn diện cú pháp codebase, nâng version lên `[3.15.0]` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
 
+---
+
+## Phase 41: Mozilla Firefox Dedicated Edition [DONE]
+- [x] **Task 41.1:** Khởi tạo kiến trúc build và đóng gói riêng cho Firefox (`build_firefox.js`):
+  - Tự động đồng bộ toàn bộ mã nguồn (`background/`, `content/`, `popup/`, `options/`, `icons/`) vào thư mục chuyên dụng `firefox/`.
+  - Tự động chuyển đổi `manifest.json` sang chuẩn Firefox Manifest V3 Gecko (`browser_specific_settings.gecko.id: "anki-ai-vocab@spacetimevoid.github.io"` và `strict_min_version: "109.0"`).
+  - Cấu hình Background Script chuẩn Firefox: `background: { scripts: ["background/background.js"], type: "module" }`.
+- [x] **Task 41.2:** Tối ưu hóa khả năng tương thích chéo trình duyệt (Cross-Browser Compatibility):
+  - Cập nhật bộ chụp màn hình `CAPTURE_AND_LOOKUP_HYBRID` trong `background/background.js` hỗ trợ an toàn cả API `chrome.tabs.captureVisibleTab` và `browser.tabs.captureVisibleTab`.
+  - Loại trừ các tiền tố URL nội bộ Firefox `moz-extension://` và `about:` trong bộ lọc context menu.
+- [x] **Task 41.3:** Bổ sung hướng dẫn cài đặt Firefox trong `README.md` và `firefox/README.md` (nạp trực tiếp qua `about:debugging`).
+- [x] **Task 41.4:** Kiểm tra cú pháp, cập nhật `CHANGELOG.md` và commit/push lên GitHub.
+
 
 
 

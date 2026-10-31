@@ -57,7 +57,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab?.id) return;
 
   const url = tab.url || '';
-  if (url.startsWith('chrome://') || url.startsWith('edge://') || url.startsWith('chrome-extension://') || url.startsWith('about:') || url.startsWith('view-source:')) {
+  if (url.startsWith('chrome://') || url.startsWith('edge://') || url.startsWith('chrome-extension://') || url.startsWith('moz-extension://') || url.startsWith('about:') || url.startsWith('view-source:')) {
     console.warn('[Anki AI Vocab] Cannot run extension on internal browser pages.');
     return;
   }
@@ -140,8 +140,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           const { cropArea, sourceUrl } = payload;
           const windowId = sender.tab?.windowId || null;
 
-          // 1. Capture visible tab at high quality
-          const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'jpeg', quality: 95 });
+          // 1. Capture visible tab at high quality (Firefox & Chrome resilient)
+          let dataUrl = '';
+          const captureOpts = { format: 'jpeg', quality: 95 };
+          try {
+            if (windowId) {
+              dataUrl = await chrome.tabs.captureVisibleTab(windowId, captureOpts);
+            } else {
+              dataUrl = await chrome.tabs.captureVisibleTab(captureOpts);
+            }
+          } catch (tabErr) {
+            dataUrl = await new Promise((resolve, reject) => {
+              const api = (typeof browser !== 'undefined' && browser.tabs) ? browser.tabs : chrome.tabs;
+              const cb = (res) => {
+                const err = chrome.runtime?.lastError;
+                if (err) return reject(new Error(err.message));
+                if (res) return resolve(res);
+                reject(tabErr);
+              };
+              try {
+                if (windowId) {
+                  api.captureVisibleTab(windowId, captureOpts, cb);
+                } else {
+                  api.captureVisibleTab(captureOpts, cb);
+                }
+              } catch (innerErr) {
+                reject(innerErr);
+              }
+            });
+          }
 
           // 2. Crop area using OffscreenCanvas
           const base64Image = await cropImageData(dataUrl, cropArea);

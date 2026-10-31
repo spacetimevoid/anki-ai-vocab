@@ -19,6 +19,12 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
   - Updated the selection popover quick toggle switch in the extension popup shell to modern Emerald Green (`#10B981` in dark mode, `#059669` in light mode).
   - Configured matching emerald focus ring (`rgba(16, 185, 129, 0.4)` / `rgba(5, 150, 105, 0.3)`) and subtle hover brightness.
   - Enhanced label typography contrast when active.
+- **Dedicated Mozilla Firefox Edition (`firefox/`, `build_firefox.js`, `background/background.js`):**
+  - **Standalone Firefox Build Directory (`firefox/`):** Created a dedicated, plug-and-play directory for Mozilla Firefox users, loadable directly via `about:debugging#/runtime/this-firefox` with zero build steps required.
+  - **Firefox Manifest V3 Compliance:** Integrated `browser_specific_settings.gecko.id: "anki-ai-vocab@spacetimevoid.github.io"` and `strict_min_version: "109.0"`.
+  - **Background Event Script Architecture:** Configured `background: { scripts: ["background/background.js"], type: "module" }` for high stability across all desktop Firefox releases.
+  - **Cross-Browser Screen Capture & Internal URI Guards:** Enhanced `CAPTURE_AND_LOOKUP_HYBRID` to support both `chrome.tabs.captureVisibleTab` and `browser.tabs.captureVisibleTab`, while filtering internal Firefox protocols (`moz-extension://`, `about:`).
+  - **Automated Sync & Build Tool:** Authored `build_firefox.js` for instant one-command asset synchronization and manifest compilation.
 - **Codebase Integrity & Syntax Verification:**
   - Ran automated validation testing covering 44 POS edge cases with 100% pass rate.
   - Executed syntax checks across all modules with 0 errors.

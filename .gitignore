@@ -35,4 +35,8 @@ desktop.ini
 # Nested duplicate backup
 Ex/
 
+# Extension Builds & Archives
+*.zip
+*.xpi
+
 
