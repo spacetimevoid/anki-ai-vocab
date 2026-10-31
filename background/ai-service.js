@@ -208,7 +208,7 @@ export function safeParseAIJson(rawText) {
       return {
         word: wordMatch[1].trim(),
         phonetic: (rawText.match(/['"]?phonetic['"]?\s*:\s*['"]([^'"]+)['"]/i)?.[1] || '').trim(),
-        pos: (rawText.match(/['"]?pos['"]?\s*:\s*['"]([^'"]+)['"]/i)?.[1] || 'noun').trim(),
+        pos: normalizePos((rawText.match(/['"]?pos['"]?\s*:\s*['"]([^'"]+)['"]/i)?.[1] || 'noun').trim()),
         meaning_vi: meaningMatch[1].trim(),
         definition_en: (rawText.match(/['"]?definition_en['"]?\s*:\s*['"]([^'"]+)['"]/i)?.[1] || '').trim(),
         example_sentence: exEn,
@@ -249,7 +249,7 @@ export function safeParseAIJson(rawText) {
         const fallbackObj = {
           word: getField('word'),
           phonetic: getField('phonetic'),
-          pos: getField('pos') || 'noun',
+          pos: normalizePos(getField('pos') || 'noun'),
           meaning_vi: getField('meaning_vi'),
           definition_en: getField('definition_en'),
           example_en: getField('example_en') || getField('example_sentence'),
@@ -270,12 +270,90 @@ export function safeParseAIJson(rawText) {
 }
 
 /**
+ * Standardize Part of Speech (POS) to unified full lowercase dictionary categories
+ * Eliminates discrepancies between abbreviations ("prep", "prep.", "n", "v", "adj", "adv")
+ * and full words ("preposition", "noun", "verb", "adjective", "adverb").
+ */
+export function normalizePos(rawPos) {
+  if (!rawPos || typeof rawPos !== 'string') return 'noun';
+  const clean = rawPos.trim().toLowerCase().replace(/[()[\]{}:;]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!clean || clean === 'null' || clean === 'undefined') return 'noun';
+
+  const stripped = clean.replace(/\.+$/, '').trim();
+
+  // 1. Phrasal verb & Idiom first (prevent 'verb' from intercepting 'phrasal verb')
+  if (stripped === 'phr v' || stripped === 'phrv' || stripped.includes('phrasal')) {
+    return 'phrasal verb';
+  }
+  if (stripped === 'idm' || stripped.includes('idiom') || stripped === 'collocation') {
+    return 'idiom';
+  }
+
+  // 2. Preposition (prep, prep., preposition, etc.)
+  if (stripped === 'prep' || stripped.startsWith('prep') || stripped.includes('prepos')) {
+    return 'preposition';
+  }
+
+  // 3. Conjunction (conj, conj., conjunction, etc.)
+  if (stripped === 'conj' || stripped.startsWith('conj') || stripped.includes('conjunc')) {
+    return 'conjunction';
+  }
+
+  // 4. Pronoun (pron, pron., pronoun, etc.)
+  if (stripped === 'pron' || stripped.startsWith('pron') || stripped.includes('pronoun')) {
+    return 'pronoun';
+  }
+
+  // 5. Interjection (interj, int, interjection, exclamation, etc.)
+  if (stripped === 'interj' || stripped === 'int' || stripped.includes('interjec') || stripped.includes('exclam')) {
+    return 'interjection';
+  }
+
+  // 6. Adjective (adj, a, adjective, etc.)
+  if (stripped === 'adj' || stripped === 'a' || stripped.startsWith('adj') || stripped.includes('adjectiv')) {
+    return 'adjective';
+  }
+
+  // 7. Adverb (adv, adverb, etc.)
+  if (stripped === 'adv' || stripped.startsWith('adv') || stripped.includes('adverb')) {
+    return 'adverb';
+  }
+
+  // 8. Verb (v, vt, vi, verb, transitive verb, etc.)
+  if (stripped === 'v' || stripped === 'vt' || stripped === 'vi' || stripped.includes('verb')) {
+    return 'verb';
+  }
+
+  // 9. Noun (n, noun, proper noun, etc.)
+  if (stripped === 'n' || stripped.includes('noun')) {
+    return 'noun';
+  }
+
+  // 10. Determiner / Article
+  if (stripped === 'det' || stripped.includes('determin') || stripped === 'article') {
+    return 'determiner';
+  }
+
+  // 11. Numeral / Number
+  if (stripped === 'num' || stripped.includes('numeral') || stripped === 'number') {
+    return 'numeral';
+  }
+
+  // 12. Particle
+  if (stripped === 'part' || stripped.includes('particle')) {
+    return 'particle';
+  }
+
+  return stripped;
+}
+
+/**
  * Validate and normalize parsed AI response matching SPEC.md schema
  */
 function normalizeSchema(result, fallbackWord = '', fallbackSentence = '', sourceUrl = '', existingTranslation = '') {
   const word = (result.word || fallbackWord).trim();
   const phonetic = (result.phonetic || '').trim();
-  const pos = (result.pos || 'noun').trim().toLowerCase();
+  const pos = normalizePos(result.pos);
   const meaning_vi = (result.meaning_vi || '').trim();
   const definition_en = (result.definition_en || '').trim();
 
@@ -349,7 +427,8 @@ STRICT ANALYSIS PRIORITIES:
 2. PRIORITY 2 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
 3. CONTEXT REUSE (CRITICAL): The sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Do NOT re-translate the sentence. Output "example_en" as the context sentence and "example_vi" exactly as "${safeTrans}".
 4. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.
-5. CONTEXT NORMALIZATION: If Context is in ALL CAPS or has OCR glitches, normalize "example_en" into natural sentence casing, keeping all original words.`;
+5. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+6. CONTEXT NORMALIZATION: If Context is in ALL CAPS or has OCR glitches, normalize "example_en" into natural sentence casing, keeping all original words.`;
     prompt = `Word: "${cleanWord}"\nContext: "${rawSentence}"\nExisting Translation: "${safeTrans}"`;
   } else if (isRealContext) {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
@@ -359,7 +438,8 @@ STRICT ANALYSIS PRIORITIES:
 2. PRIORITY 2 - CONTEXT SENTENCE & 100% TRANSLATION (example_en & example_vi): Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting, dropping, or summarizing any clause or conjunction.
 3. PRIORITY 3 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
 4. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.
-5. CONTEXT NORMALIZATION: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED") or has OCR glitches, normalize "example_en" into natural, standard English sentence casing, keeping all original words.`;
+5. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+6. CONTEXT NORMALIZATION: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED") or has OCR glitches, normalize "example_en" into natural, standard English sentence casing, keeping all original words.`;
     prompt = `Word: "${cleanWord}"\nContext: "${rawSentence}"`;
   } else {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
@@ -368,7 +448,8 @@ STRICT ANALYSIS PRIORITIES:
 1. PRIORITY 1 - ACCURATE MEANING (meaning_vi): Natural, high-frequency translation in ${targetLang}.
 2. PRIORITY 2 - AUTHENTIC EXAMPLE SENTENCE & 100% TRANSLATION (example_en & example_vi): Generate a practical B1-B2 English example sentence containing the lemma in "example_en", and translate 100% of it into ${targetLang} for "example_vi".
 3. PRIORITY 3 - CONCISE DEFINITION (definition_en): Clear English learner definition for flashcards.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.`;
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+5. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
     prompt = `Word: "${cleanWord}"\nContext: none. Generate an authentic example sentence containing the lemma.`;
   }
 
@@ -399,7 +480,10 @@ STRICT ANALYSIS PRIORITIES:
         properties: {
           word: { type: "STRING" },
           phonetic: { type: "STRING" },
-          pos: { type: "STRING" },
+          pos: {
+            type: "STRING",
+            description: "Full lowercase part of speech: noun, verb, adjective, adverb, preposition, conjunction, pronoun, interjection, phrasal verb, idiom. Never abbreviated."
+          },
           meaning_vi: { type: "STRING" },
           definition_en: { type: "STRING" },
           example_en: { type: "STRING" },
@@ -576,7 +660,8 @@ STRICT PRIORITIES:
 2. PRIORITY 2: "definition_en" - Concise English definition for this context.
 3. CONTEXT REUSE: Sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Set "example_en" to Context and "example_vi" to "${safeTrans}". Do NOT re-translate.
 4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Context Normalization: Clean up noisy capitalization or spacing into natural sentence casing.`;
+5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+6. Context Normalization: Clean up noisy capitalization or spacing into natural sentence casing.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}". Existing Translation: "${safeTrans}".`;
   } else if (isRealContext) {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
@@ -585,7 +670,8 @@ STRICT PRIORITIES:
 2. PRIORITY 2: Context sentence & 100% Translation - Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting any clause or conjunction.
 3. PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase as used in this context.
 4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Context Normalization: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED"), normalize "example_en" into standard sentence casing.`;
+5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+6. Context Normalization: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED"), normalize "example_en" into standard sentence casing.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}".`;
   } else {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
@@ -593,7 +679,8 @@ STRICT PRIORITIES:
 1. PRIORITY 1: "meaning_vi" - Natural, high-frequency translation in ${targetLang}.
 2. PRIORITY 2: Authentic example sentence & 100% Translation - Practical B1-B2 example in "example_en", translated 100% into ${targetLang} for "example_vi".
 3. PRIORITY 3: "definition_en" - Clear English learner definition for flashcards.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.`;
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
     prompt = `Word: "${cleanWord}". Context: none. Generate a natural English example sentence for this word.`;
   }
 
@@ -876,7 +963,7 @@ Task:
    - PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase specifically as used in this context.
 4. Lemmatization: Set "word" to its dictionary base/lemma form in lowercase (e.g. "families" -> "family", "ran" -> "run", "better" -> "good", "stepping stones" -> "stepping stone"). Store the exact original word or phrase from the sentence in "raw_selected_word".
 5. "phonetic": accurate IPA pronunciation for the lemma.
-6. "pos": lowercase part of speech (noun, verb, adjective, adverb, idiom, phrasal verb).
+6. "pos": full lowercase standard part of speech strictly one of: noun, verb, adjective, adverb, preposition, conjunction, pronoun, interjection, phrasal verb, idiom. Never abbreviated (e.g. use "preposition" never "prep").
 
 Output STRICT JSON conforming to schema.`;
 
@@ -906,7 +993,10 @@ Output STRICT JSON conforming to schema.`;
           word: { type: 'STRING' },
           raw_selected_word: { type: 'STRING' },
           phonetic: { type: 'STRING' },
-          pos: { type: 'STRING' },
+          pos: {
+            type: 'STRING',
+            description: 'Full lowercase standard part of speech: noun, verb, adjective, adverb, preposition, conjunction, pronoun, interjection, phrasal verb, idiom. Never abbreviated.'
+          },
           meaning_vi: { type: 'STRING' },
           definition_en: { type: 'STRING' },
           example_sentence: { type: 'STRING' },
@@ -1015,7 +1105,7 @@ Examine this cropped image.
    - PRIORITY 3: "definition_en" - Concise English definition as used in context.
 4. Lemmatize "word" to base dictionary form (lowercase). Original token in "raw_selected_word".
 5. "phonetic": IPA pronunciation.
-6. "pos": lowercase part of speech.
+6. "pos": full lowercase standard part of speech: noun, verb, adjective, adverb, preposition, conjunction, pronoun, interjection, phrasal verb, idiom. Never abbreviated (e.g. use "preposition" never "prep").
 
 Return STRICT JSON matching schema:
 {"detected_sentence":"","word":"","raw_selected_word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_sentence":"","example_vi":""}`;

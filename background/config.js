@@ -19,9 +19,11 @@ STRICT PRIORITY OF ANALYSIS:
    Provide a concise, clear English learner definition explaining the target word/phrase specifically AS USED in this context.
 4. Lemmatization (Base Form):
    The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "stepping stones" -> "stepping stone"). The "phonetic" field must correspond to this base lemma.
-5. Standalone Word Lookup:
+5. Part of Speech Standardization (pos):
+   The "pos" property MUST ALWAYS be one single full English word in lowercase from standard categories: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER output abbreviations like "prep", "n", "v", "adj", "adv", or "conj" (e.g. use "preposition" never "prep", "noun" never "n").
+6. Standalone Word Lookup:
    If Context is missing, "none", or empty, generate an authentic B1-B2 English example sentence for "example_en" and translate 100% of it into {{target_lang}} for "example_vi".
-6. Context Normalization:
+7. Context Normalization:
    If Context is in ALL CAPS (e.g., "PASS THE BALL BRO, I AM INTERESTED"), has excessive capitalization, strange spaces before punctuation, or noisy artifacts, normalize "example_sentence" into natural, standard English sentence casing (e.g., "Pass the ball bro, I am interested.") with standard punctuation spacing, while preserving all original words.
 
 Word: "{{word}}"

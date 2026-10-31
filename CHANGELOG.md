@@ -4,6 +4,28 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.15.0] - 2026-10-31
+
+### Part of Speech (POS) Complete Standardization & Emerald Green Popup Switch
+- **Comprehensive Part of Speech (POS) Standardization (`background/ai-service.js`, `background/config.js`, `background/anki-service.js`, `content/content.js`, `content/popover-ui.js`, `popup/popup.js`):**
+  - **Eliminated Inconsistent Abbreviation vs Full Word Discrepancies:** Resolved issues where the AI or UI returned abbreviations (e.g., `"Prep"`, `"prep."`, `"n"`, `"v"`, `"adj"`, `"adv"`, `"conj"`, `"pron"`) in some instances and full terms (e.g., `"preposition"`, `"noun"`, `"verb"`, `"adjective"`, `"adverb"`) in others.
+  - **Single Canonical Lowercase Format:** Standardized all POS entries across the entire ecosystem into canonical lowercase English words: `noun`, `verb`, `adjective`, `adverb`, `preposition`, `conjunction`, `pronoun`, `interjection`, `phrasal verb`, `idiom`.
+  - **Robust Normalization Engine (`normalizePos(rawPos)`):** Built a multi-stage parser handling punctuation stripping, prefix mapping, dot removal, and compound POS classification (proper nouns, action verbs, phrasal verbs, idioms, etc.).
+  - **AI Prompt Enforcement:** Added explicit rule 5 in `DEFAULT_PROMPT` (`background/config.js`) and all System Instructions (`background/ai-service.js` for Gemini Fast, OpenAI, and Multimodal Vision OCR) strictly prohibiting abbreviations.
+  - **Schema Description Rationale:** Added schema constraints to Gemini API's `responseSchema` for constrained decoding.
+  - **AnkiConnect Field Safety:** Integrated `normalizePos` into `background/anki-service.js` so that created flashcards (`{{pos}}`, `{{PartOfSpeech}}`, `{{part_of_speech}}`) always receive clean, unified POS data.
+  - **Inline Editing Blur Normalization:** Bound `blur` listeners to POS editable badges on both Popover (`content/content.js`, `content/popover-ui.js`) and Popup (`popup/popup.js`) to automatically normalize manual edits.
+- **Emerald Green Selection Popover Switch (`popup/popup.css`, `popup/popup.js`):**
+  - Updated the selection popover quick toggle switch in the extension popup shell to modern Emerald Green (`#10B981` in dark mode, `#059669` in light mode).
+  - Configured matching emerald focus ring (`rgba(16, 185, 129, 0.4)` / `rgba(5, 150, 105, 0.3)`) and subtle hover brightness.
+  - Enhanced label typography contrast when active.
+- **Codebase Integrity & Syntax Verification:**
+  - Ran automated validation testing covering 44 POS edge cases with 100% pass rate.
+  - Executed syntax checks across all modules with 0 errors.
+  - Bumped version to `v3.15.0` in `manifest.json` and `popup/popup.html`.
+
+---
+
 ## [3.14.0] - 2026-10-29
 
 ### Popover Layout Overlap Fix, Context Normalizer & Context Session State Manager

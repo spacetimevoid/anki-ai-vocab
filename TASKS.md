@@ -325,6 +325,22 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Triển khai Partial Skeleton Loading: khi đổi từ trên thanh Captured Context Chips, khối câu ngữ cảnh và bản dịch tiếng Việt được giữ nguyên trên màn hình với 0ms delay, chỉ hiển thị skeleton shimmer tại các trường từ vựng mục tiêu (`word`, `pos`, `phonetic`, `meaning_vi`, `definition_en`).
 - [x] **Task 39.4:** Kiểm tra toàn diện cú pháp codebase, nâng version lên `[3.14.0]` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
 
+---
+
+## Phase 40: POS Standardization & Green Popover Toggle Switch [DONE]
+- [x] **Task 40.1:** Chuẩn hóa hoàn toàn trường Loại từ (Part of Speech - POS) theo đúng một format thống nhất:
+  - Xây dựng module chuẩn hóa `normalizePos(rawPos)` triệt để: loại bỏ hoàn toàn tình trạng lúc trả về viết tắt (e.g. `Prep`, `prep.`, `n`, `v`, `adj`, `adv`, `conj`, `pron`), lúc trả về viết đầy đủ (e.g. `preposition`, `noun`, `verb`, `adjective`, `adverb`).
+  - Quy chuẩn 100% về danh mục chuẩn từ điển viết thường (lowercase): `noun`, `verb`, `adjective`, `adverb`, `preposition`, `conjunction`, `pronoun`, `interjection`, `phrasal verb`, `idiom`.
+  - Cập nhật quy tắc bắt buộc trong `DEFAULT_PROMPT` (`background/config.js`) và toàn bộ System Instructions (`background/ai-service.js` cho Gemini Fast, OpenAI, Gemini Vision, OpenAI Vision).
+  - Tích hợp mô tả `description` ràng buộc trong `responseSchema` của Gemini API.
+  - Tự động chuẩn hóa POS ở các tầng: AI parse fallback, `normalizeSchema`, `content/content.js`, `content/popover-ui.js`, `popup/popup.js`, và `background/anki-service.js` trước khi lưu thẻ Anki.
+  - Bổ sung bộ lắng nghe sự kiện `blur` trên các badge POS có thể chỉnh sửa (`contenteditable`) để tự động hoàn nguyên về chuẩn ngay sau khi người dùng sửa.
+- [x] **Task 40.2:** Đổi màu nút bật/tắt selection popover trong icon extension thành màu xanh lá cây:
+  - Cập nhật styling trong `popup/popup.css` cho `.mini-switch input:checked + .mini-switch-slider` sang tone xanh lá Emerald (`#10B981` Dark Mode, `#059669` Light Mode).
+  - Bổ sung hiệu ứng focus ring xanh lá đồng điệu (`rgba(16, 185, 129, 0.4)` / `rgba(5, 150, 105, 0.3)`) và hover brightness.
+  - Tinh chỉnh trạng thái màu chữ nhãn (`selectionToggleLabel`) khi bật sang `var(--text-primary)`.
+- [x] **Task 40.3:** Kiểm tra toàn diện cú pháp codebase, nâng version lên `[3.15.0]` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+
 
 
 

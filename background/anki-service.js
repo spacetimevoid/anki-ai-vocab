@@ -3,6 +3,8 @@
  * Communicates with Anki via HTTP POST at http://127.0.0.1:8765
  */
 
+import { normalizePos } from './ai-service.js';
+
 /**
  * Generic AnkiConnect Invocation function with AbortController timeout
  */
@@ -218,12 +220,13 @@ export async function addAnkiNote({ cardData, config, targetDeck, targetModel })
 
   // Vietnamese translation (ContextTranslation)
   const rawTranslation = cardData.context_translation || cardData.example_translation || cardData.example_vi || '';
+  const normalizedPos = normalizePos(cardData.pos || 'noun');
 
   const dataForInterpolation = {
     // Standard keys
     word: cardData.word || '',
     phonetic: cardData.phonetic || '',
-    pos: cardData.pos || '',
+    pos: normalizedPos,
     meaning_vi: cardData.meaning_vi || '',
     definition_en: cardData.definition_en || '',
     example_sentence: highlightedSentence,
@@ -236,7 +239,7 @@ export async function addAnkiNote({ cardData, config, targetDeck, targetModel })
     // Exact note-type field names (for {{Word}}, {{Meaning}}, {{PartOfSpeech}}, etc.)
     Word: cardData.word || '',
     Phonetic: cardData.phonetic || '',
-    PartOfSpeech: cardData.pos || '',
+    PartOfSpeech: normalizedPos,
     Meaning: cardData.meaning_vi || '',
     DefinitionEN: cardData.definition_en || '',
     ContextSentence: highlightedSentence,
@@ -246,7 +249,7 @@ export async function addAnkiNote({ cardData, config, targetDeck, targetModel })
     // Convenient snake_case aliases
     context_sentence: highlightedSentence,
     context_translation: rawTranslation,
-    part_of_speech: cardData.pos || '',
+    part_of_speech: normalizedPos,
     meaning: cardData.meaning_vi || '',
     definition: cardData.definition_en || ''
   };

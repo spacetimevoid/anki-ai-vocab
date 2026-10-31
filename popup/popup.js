@@ -66,7 +66,7 @@ function updatePopoverToggleUI(isEnabled) {
     toggleSelectionPopover.checked = isEnabled;
   }
   if (selectionToggleLabel) {
-    selectionToggleLabel.style.color = isEnabled ? 'var(--text-secondary)' : 'var(--text-muted)';
+    selectionToggleLabel.style.color = isEnabled ? 'var(--text-primary)' : 'var(--text-muted)';
   }
   if (popupSelectionToggle) {
     popupSelectionToggle.title = isEnabled
@@ -76,14 +76,92 @@ function updatePopoverToggleUI(isEnabled) {
 }
 
 /**
+ * Standardize Part of Speech (POS) to unified full lowercase dictionary categories
+ * Eliminates discrepancies between abbreviations ("prep", "prep.", "n", "v", "adj", "adv")
+ * and full words ("preposition", "noun", "verb", "adjective", "adverb").
+ */
+export function normalizePos(rawPos) {
+  if (!rawPos || typeof rawPos !== 'string') return 'noun';
+  const clean = rawPos.trim().toLowerCase().replace(/[()[\]{}:;]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!clean || clean === 'null' || clean === 'undefined') return 'noun';
+
+  const stripped = clean.replace(/\.+$/, '').trim();
+
+  // 1. Phrasal verb & Idiom first (prevent 'verb' from intercepting 'phrasal verb')
+  if (stripped === 'phr v' || stripped === 'phrv' || stripped.includes('phrasal')) {
+    return 'phrasal verb';
+  }
+  if (stripped === 'idm' || stripped.includes('idiom') || stripped === 'collocation') {
+    return 'idiom';
+  }
+
+  // 2. Preposition (prep, prep., preposition, etc.)
+  if (stripped === 'prep' || stripped.startsWith('prep') || stripped.includes('prepos')) {
+    return 'preposition';
+  }
+
+  // 3. Conjunction (conj, conj., conjunction, etc.)
+  if (stripped === 'conj' || stripped.startsWith('conj') || stripped.includes('conjunc')) {
+    return 'conjunction';
+  }
+
+  // 4. Pronoun (pron, pron., pronoun, etc.)
+  if (stripped === 'pron' || stripped.startsWith('pron') || stripped.includes('pronoun')) {
+    return 'pronoun';
+  }
+
+  // 5. Interjection (interj, int, interjection, exclamation, etc.)
+  if (stripped === 'interj' || stripped === 'int' || stripped.includes('interjec') || stripped.includes('exclam')) {
+    return 'interjection';
+  }
+
+  // 6. Adjective (adj, a, adjective, etc.)
+  if (stripped === 'adj' || stripped === 'a' || stripped.startsWith('adj') || stripped.includes('adjectiv')) {
+    return 'adjective';
+  }
+
+  // 7. Adverb (adv, adverb, etc.)
+  if (stripped === 'adv' || stripped.startsWith('adv') || stripped.includes('adverb')) {
+    return 'adverb';
+  }
+
+  // 8. Verb (v, vt, vi, verb, transitive verb, etc.)
+  if (stripped === 'v' || stripped === 'vt' || stripped === 'vi' || stripped.includes('verb')) {
+    return 'verb';
+  }
+
+  // 9. Noun (n, noun, proper noun, etc.)
+  if (stripped === 'n' || stripped.includes('noun')) {
+    return 'noun';
+  }
+
+  // 10. Determiner / Article
+  if (stripped === 'det' || stripped.includes('determin') || stripped === 'article') {
+    return 'determiner';
+  }
+
+  // 11. Numeral / Number
+  if (stripped === 'num' || stripped.includes('numeral') || stripped === 'number') {
+    return 'numeral';
+  }
+
+  // 12. Particle
+  if (stripped === 'part' || stripped.includes('particle')) {
+    return 'particle';
+  }
+
+  return stripped;
+}
+
+/**
  * Returns pastel/muted color class according to part of speech
  */
 function getPosClass(pos) {
-  const p = (pos || '').toLowerCase().trim();
-  if (p.includes('verb') || p === 'v' || p === 'v.') return 'pos-verb';
-  if (p.includes('noun') || p === 'n' || p === 'n.') return 'pos-noun';
-  if (p.includes('adj') || p.includes('adjective') || p === 'a' || p === 'a.') return 'pos-adj';
-  if (p.includes('adv') || p.includes('adverb')) return 'pos-adv';
+  const p = normalizePos(pos);
+  if (p === 'verb' || p === 'phrasal verb') return 'pos-verb';
+  if (p === 'noun') return 'pos-noun';
+  if (p === 'adjective') return 'pos-adj';
+  if (p === 'adverb') return 'pos-adv';
   return 'pos-other';
 }
 
@@ -346,6 +424,7 @@ function renderQuickResult(data) {
     <option value="${escapeHtml(d)}" ${d === currentDeck ? 'selected' : ''}>${escapeHtml(d)}</option>
   `).join('');
 
+  data.pos = normalizePos(data.pos || 'noun');
   const posClass = getPosClass(data.pos);
   const formattedPhonetic = formatPhonetic(data.phonetic);
 
@@ -509,6 +588,10 @@ function renderQuickResult(data) {
     posBadgeEl.addEventListener('input', () => {
       posBadgeEl.className = `result-pos-badge ${getPosClass(posBadgeEl.innerText)} result-editable`;
     });
+    posBadgeEl.addEventListener('blur', () => {
+      posBadgeEl.innerText = normalizePos(posBadgeEl.innerText);
+      posBadgeEl.className = `result-pos-badge ${getPosClass(posBadgeEl.innerText)} result-editable`;
+    });
   }
 
   // Deck selector change listener
@@ -562,7 +645,7 @@ function renderQuickResult(data) {
         if (phonetic) {
           phonetic = phonetic.replace(/^[\/\[\s]+|[\/\]\s]+$/g, '').trim();
         }
-        const pos = getText('pos') || data.pos || 'noun';
+        const pos = normalizePos(getText('pos') || data.pos || 'noun');
         const meaning_vi = getText('meaning_vi') || data.meaning_vi || '';
         const definition_en = getText('definition_en') || data.definition_en || '';
         const example_sentence = getText('example_sentence') || data.example_sentence || data.example_en || quickSentenceInput.value.trim() || '';
