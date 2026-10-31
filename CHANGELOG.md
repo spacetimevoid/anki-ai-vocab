@@ -4,6 +4,27 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.17.0] - 2026-10-31
+
+### Redesigned Captured Context: Streamlined Natural Bôi Đen & 1-Click Lookup
+- **Eliminated Clunky Token Chip Dragging (`content/content.js`):**
+  - **Root Cause Eliminated:** Previously, captured sentences were chopped into separate rectangular chip spans with `user-select: none`. Users had to initiate a custom mousedown drag across tokens, which broke browser native text selection, failed if the cursor drifted slightly, and caused jarring accidental re-analysis on mouseup.
+  - **Natural Continuous Sentence Flow:** Redesigned the container into a flowing, readable sentence (`.anki-context-sentence`) with `user-select: text !important;`, allowing standard browser text selection (bôi đen) across any sequence of words, phrases, or punctuation.
+  - **Active Target Identification:** Clearly highlights the current word/phrase in the context sentence with `<mark class="anki-ctx-target-pill">` in soft cyan.
+- **Dual Frictionless Interaction (1-Click Lookup + Bôi Đen Action Pill):**
+  - **Instant 1-Click Lookup:** Users can simply click on any individual word in the sentence to look it up immediately (0ms if cached in session, partial skeleton if fresh) without needing to drag.
+  - **Natural Bôi Đen (Drag-to-Select) Action Pill (`#anki-selection-pill`):**
+    - Dragging to highlight any phrase or collocation immediately displays a sleek floating action pill directly above the selection: `[ 🔍 Look up "${phrase}" ↵ ]`.
+    - Also displays an action button in the context header (`#anki-ctx-header-btn`).
+    - Clicking either button or pressing the `Enter` key triggers immediate lookup.
+    - Seamlessly supports `Ctrl+C` text copying, double-click word selection, and `Escape`/click-outside dismissal.
+- **Firefox Edition Synchronization & Verification (`build_firefox.js`, `firefox/`):**
+  - Synchronized all updates to `firefox/` with `node build_firefox.js`.
+  - Clean syntax check (`node --check`) across all Chrome and Firefox scripts with 0 errors.
+  - Bumped version to `v3.17.0` in `manifest.json`, `firefox/manifest.json`, and `popup/popup.html`.
+
+---
+
 ## [3.16.0] - 2026-10-31
 
 ### Real-Time Anki Deck Auto-Sync in Popover & Popup (No Options Save Required)

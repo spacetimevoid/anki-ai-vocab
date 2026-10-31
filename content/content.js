@@ -923,13 +923,14 @@ svg.anki-spinning,
 
   const CHIPS_CSS = `
 /* =========================================================
-   INTERACTIVE CONTEXT CHIPS (CROP & SCREENSHOT LOOKUP)
+   CAPTURED CONTEXT & SELECTION LOOKUP (STREAMLINED UX)
    ========================================================= */
-.anki-context-chips-wrap {
+.anki-context-wrap {
+  position: relative;
   flex-shrink: 0;
-  max-height: 130px;
+  max-height: 140px;
   overflow-y: auto;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   padding: 8px 10px;
   background: var(--badge-bg);
   border: 1px solid var(--border);
@@ -937,26 +938,27 @@ svg.anki-spinning,
   box-sizing: border-box;
 }
 
-.anki-context-chips-wrap::-webkit-scrollbar {
+.anki-context-wrap::-webkit-scrollbar {
   width: 3px;
 }
-.anki-context-chips-wrap::-webkit-scrollbar-track {
+.anki-context-wrap::-webkit-scrollbar-track {
   background: transparent;
 }
-.anki-context-chips-wrap::-webkit-scrollbar-thumb {
+.anki-context-wrap::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 2px;
 }
 
-.anki-chips-header {
+.anki-context-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
+  min-height: 20px;
   line-height: 1;
 }
 
-.anki-chips-title {
+.anki-context-title {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -965,74 +967,143 @@ svg.anki-spinning,
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
+  user-select: none;
 }
 
-.anki-chips-hint {
+.anki-context-action-bar {
+  display: inline-flex;
+  align-items: center;
+}
+
+.anki-context-hint {
   font-size: 10.5px;
   color: var(--text-muted);
-  font-style: italic;
-}
-
-.anki-context-chips-container {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 3px 2px;
-  font-size: 12.5px;
-  line-height: 1.6;
-  user-select: text;
-  -webkit-user-select: text;
-}
-
-.anki-chip-word {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: var(--text-primary);
-  background: transparent;
-  transition: all 0.14s ease;
   user-select: none;
-  -webkit-user-select: none;
-  font-weight: 450;
 }
 
-.anki-chip-word:hover {
+/* Header Lookup Button (visible when text is selected) */
+.anki-ctx-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
   background: rgba(56, 189, 248, 0.16);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.anki-ctx-header-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+/* Flowing natural sentence container */
+.anki-context-sentence {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.anki-context-sentence::selection,
+.anki-context-sentence *::selection {
+  background: rgba(56, 189, 248, 0.35) !important;
+  color: #ffffff !important;
+}
+
+/* Interactive individual words */
+.anki-ctx-word {
+  display: inline;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background 0.12s ease, color 0.12s ease;
+  padding: 0 1px;
+}
+
+.anki-ctx-word:hover {
+  background: rgba(56, 189, 248, 0.14);
   color: #38bdf8;
 }
 
-.anki-chip-word.active-chip {
-  background: #38bdf8 !important;
-  color: #09090b !important;
-  font-weight: 600 !important;
-  box-shadow: 0 1px 4px rgba(56, 189, 248, 0.35);
-}
-
-.anki-chip-word.chip-selecting {
-  background: rgba(56, 189, 248, 0.28) !important;
-  color: #38bdf8 !important;
+/* Target currently being analyzed */
+.anki-ctx-target-pill {
+  display: inline;
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  font-weight: 600;
+  padding: 1px 4px;
   border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
-.anki-chip-sep {
-  color: var(--text-muted);
-  white-space: pre;
+/* Floating Action Pill attached to active popover */
+.anki-selection-pill {
+  position: absolute;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  animation: ankiPillFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  pointer-events: auto;
 }
 
-.anki-chip-sep.active-chip-sep {
-  background: #38bdf8 !important;
-  color: #09090b !important;
-  font-weight: 600 !important;
-  display: inline-block;
-  padding: 1px 0;
+@keyframes ankiPillFadeIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.anki-chip-sep.chip-selecting {
-  background: rgba(56, 189, 248, 0.28) !important;
-  color: #38bdf8 !important;
-  display: inline-block;
-  padding: 1px 0;
+.anki-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background 0.12s ease, transform 0.08s ease;
+  user-select: none;
+}
+
+.anki-pill-btn:hover {
+  background: #0369a1;
+  transform: scale(1.02);
+}
+
+.anki-pill-btn:active {
+  transform: scale(0.98);
+}
+
+.anki-pill-btn svg {
+  flex-shrink: 0;
+}
+
+.anki-pill-key {
+  font-size: 9.5px;
+  background: rgba(255, 255, 255, 0.22);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 2px;
+  font-family: inherit;
 }
 `;
 
@@ -1302,95 +1373,60 @@ svg.anki-spinning,
   }
 
   /**
-   * Splits a sentence into clickable word tokens and punctuation,
-   * supporting both single words and multi-word phrase matching.
+   * Renders a flowing, readable sentence with clickable individual words
+   * and distinct highlighting for the currently active target word/phrase.
+   * Completely supports native browser text selection (bôi đen).
    */
-  function renderInteractiveChips(sentence, currentWord, rawWord) {
+  function renderInteractiveSentence(sentence, currentWord, rawWord) {
     if (!sentence) return '';
-    const rawTokens = sentence.split(/(\s+|[.,!?;:"'“”‘’()\[\]{}]+)/).filter(t => t.length > 0);
-    const cleanCurrent = (currentWord || '').toLowerCase().trim().replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '');
-    const cleanRaw = (rawWord || '').toLowerCase().trim().replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '');
+    const cleanTarget = (rawWord || currentWord || '').trim();
+    const cleanTargetLower = cleanTarget.toLowerCase();
 
-    // Build structured tokens with unique index
-    const parsedTokens = rawTokens.map((token, idx) => {
-      const isWord = /[a-zA-ZÀ-ỹ0-9]/.test(token);
-      const clean = isWord ? token.toLowerCase().replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '') : '';
-      return { token, isWord, clean, idx };
-    });
+    let targetStart = -1;
+    let targetEnd = -1;
 
-    const activeIndices = new Set();
-    const activeSepIndices = new Set();
-
-    // Match candidate string against parsed tokens
-    const matchPhrase = (targetStr) => {
-      if (!targetStr) return false;
-      const targetWords = targetStr.split(/\s+/).filter(Boolean);
-      if (targetWords.length === 0) return false;
-
-      if (targetWords.length === 1) {
-        let matched = false;
-        for (const pt of parsedTokens) {
-          if (pt.isWord && pt.clean === targetWords[0]) {
-            activeIndices.add(pt.idx);
-            matched = true;
+    if (cleanTargetLower.length > 0) {
+      const sLower = sentence.toLowerCase();
+      targetStart = sLower.indexOf(cleanTargetLower);
+      if (targetStart !== -1) {
+        targetEnd = targetStart + cleanTarget.length;
+      } else {
+        const rawLower = (rawWord || '').toLowerCase().trim();
+        if (rawLower && rawLower !== cleanTargetLower) {
+          targetStart = sLower.indexOf(rawLower);
+          if (targetStart !== -1) {
+            targetEnd = targetStart + rawLower.length;
           }
         }
-        return matched;
       }
+    }
 
-      // Multi-word sequence match
-      let matchedAny = false;
-      for (let i = 0; i < parsedTokens.length; i++) {
-        if (!parsedTokens[i].isWord || parsedTokens[i].clean !== targetWords[0]) continue;
-
-        let wIdx = 0;
-        let matchEnd = -1;
-        const matchedTokenIdxs = [];
-        const matchedSepIdxs = [];
-
-        for (let j = i; j < parsedTokens.length; j++) {
-          if (parsedTokens[j].isWord) {
-            if (parsedTokens[j].clean === targetWords[wIdx]) {
-              matchedTokenIdxs.push(parsedTokens[j].idx);
-              wIdx++;
-              if (wIdx === targetWords.length) {
-                matchEnd = j;
-                break;
-              }
-            } else {
-              break;
-            }
-          } else {
-            matchedSepIdxs.push(parsedTokens[j].idx);
-          }
+    const formatTextSegment = (text) => {
+      // Splits text into words and delimiters (punctuation, spaces)
+      const parts = text.split(/([a-zA-ZÀ-ỹ0-9]+(?:['’][a-zA-ZÀ-ỹ0-9]+)?)/);
+      return parts.map(part => {
+        if (!part) return '';
+        if (/[a-zA-ZÀ-ỹ0-9]/.test(part)) {
+          return `<span class="anki-ctx-word" data-word="${escapeHtml(part)}" title="Click to look up '${escapeHtml(part)}'">${escapeHtml(part)}</span>`;
         }
-
-        if (wIdx === targetWords.length && matchEnd !== -1) {
-          matchedTokenIdxs.forEach(idx => activeIndices.add(idx));
-          matchedSepIdxs.forEach(idx => activeSepIndices.add(idx));
-          matchedAny = true;
-        }
-      }
-      return matchedAny;
+        return escapeHtml(part);
+      }).join('');
     };
 
-    const matchedRaw = cleanRaw ? matchPhrase(cleanRaw) : false;
-    if (!matchedRaw && cleanCurrent) {
-      matchPhrase(cleanCurrent);
+    if (targetStart !== -1 && targetEnd !== -1) {
+      const before = sentence.slice(0, targetStart);
+      const matched = sentence.slice(targetStart, targetEnd);
+      const after = sentence.slice(targetEnd);
+
+      return formatTextSegment(before) +
+        `<mark class="anki-ctx-target-pill" data-word="${escapeHtml(matched)}" title="Currently analyzed target">${escapeHtml(matched)}</mark>` +
+        formatTextSegment(after);
     }
 
-    let html = '';
-    for (const pt of parsedTokens) {
-      if (pt.isWord) {
-        const isActive = activeIndices.has(pt.idx);
-        html += `<span class="anki-chip-word ${isActive ? 'active-chip' : ''}" data-token-idx="${pt.idx}" data-word="${escapeHtml(pt.token)}" title="Click or drag to select '${escapeHtml(pt.token)}'">${escapeHtml(pt.token)}</span>`;
-      } else {
-        const isActiveSep = activeSepIndices.has(pt.idx);
-        html += `<span class="anki-chip-sep ${isActiveSep ? 'active-chip-sep' : ''}" data-token-idx="${pt.idx}">${escapeHtml(pt.token)}</span>`;
-      }
-    }
-    return html;
+    return formatTextSegment(sentence);
   }
+
+  const renderInteractiveChips = renderInteractiveSentence;
 
   // State
   let extensionConfig = null;
@@ -2376,16 +2412,19 @@ svg.anki-spinning,
       <!-- Body Content (Flat & Minimalist Shadcn Style, Inline Editable) -->
       <div class="anki-popover-content">
         ${detectedSentence ? `
-          <div class="anki-context-chips-wrap">
-            <div class="anki-chips-header">
-              <span class="anki-chips-title">
-                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                Captured Context
-              </span>
-              <span class="anki-chips-hint">Click word or drag to select phrase</span>
+          <div class="anki-context-wrap">
+            <div class="anki-context-header">
+              <div class="anki-context-title">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                <span>Captured Context</span>
+              </div>
+              <div class="anki-context-action-bar" id="anki-context-action-bar">
+                <span class="anki-context-hint" id="anki-context-hint">Click word or select phrase</span>
+                <button type="button" class="anki-ctx-header-btn" id="anki-ctx-header-btn" style="display: none;" title="Look up highlighted text (Enter)"></button>
+              </div>
             </div>
-            <div class="anki-context-chips-container">
-              ${renderInteractiveChips(detectedSentence, activeWord, rawWord)}
+            <div class="anki-context-sentence" id="anki-context-sentence">
+              ${renderInteractiveSentence(detectedSentence, activeWord, rawWord)}
             </div>
           </div>
         ` : ''}
@@ -2774,18 +2813,10 @@ svg.anki-spinning,
         ipaEl.style.opacity = '0.4';
       }
 
-      // Captured Context Chips: instantly highlight the clicked chip
-      const chipsContainer = activePopoverEl.querySelector('.anki-context-chips-container');
-      if (chipsContainer) {
-        chipsContainer.querySelectorAll('.active-chip').forEach(el => el.classList.remove('active-chip'));
-        chipsContainer.querySelectorAll('.active-chip-sep').forEach(el => el.classList.remove('active-chip-sep'));
-        const targetCleanLower = cleanTarget.toLowerCase();
-        chipsContainer.querySelectorAll('.anki-chip-word').forEach(chip => {
-          const w = (chip.dataset.word || chip.textContent || '').trim().toLowerCase();
-          if (w && targetCleanLower.includes(w)) {
-            chip.classList.add('active-chip');
-          }
-        });
+      // Captured Context: instantly highlight the new target in the context sentence
+      const sentenceEl = activePopoverEl.querySelector('#anki-context-sentence');
+      if (sentenceEl && detectedSentence) {
+        sentenceEl.innerHTML = renderInteractiveSentence(detectedSentence, cleanTarget, cleanTarget);
       }
 
       // Meaning & Definition rows: show lightweight shimmer skeletons
@@ -2873,112 +2904,164 @@ svg.anki-spinning,
       });
     };
 
-    // Interactive context chips listener: single click, drag-to-select phrase, shift+click, text selection
-    const chipsContainer = activePopoverEl.querySelector('.anki-context-chips-container');
-    if (chipsContainer && detectedSentence) {
-      let isDragging = false;
-      let dragStartIdx = -1;
-      let lastClickedIdx = -1;
+    // Captured Context Interactions: 1-Click Word Lookup & Natural Highlight Selection (Bôi đen)
+    const sentenceEl = activePopoverEl.querySelector('#anki-context-sentence');
+    const hintEl = activePopoverEl.querySelector('#anki-context-hint');
+    const headerBtn = activePopoverEl.querySelector('#anki-ctx-header-btn');
 
-      const allTokens = Array.from(chipsContainer.querySelectorAll('[data-token-idx]'));
+    if (sentenceEl && detectedSentence) {
+      let currentSelectionText = '';
 
-      const clearSelectingStyles = () => {
-        chipsContainer.querySelectorAll('.chip-selecting').forEach(el => el.classList.remove('chip-selecting'));
+      const removeFloatingPill = () => {
+        const existingPill = activePopoverEl.querySelector('#anki-selection-pill');
+        if (existingPill) existingPill.remove();
       };
 
-      const highlightRange = (startIdx, endIdx) => {
-        clearSelectingStyles();
-        const min = Math.min(startIdx, endIdx);
-        const max = Math.max(startIdx, endIdx);
-        allTokens.forEach(el => {
-          const idx = parseInt(el.dataset.tokenIdx, 10);
-          if (!isNaN(idx) && idx >= min && idx <= max) {
-            el.classList.add('chip-selecting');
+      const clearSelectionUI = () => {
+        currentSelectionText = '';
+        removeFloatingPill();
+        if (headerBtn) headerBtn.style.display = 'none';
+        if (hintEl) hintEl.style.display = 'inline';
+      };
+
+      const executeLookup = (text) => {
+        const clean = (text || '').replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '').trim();
+        if (!clean) return;
+        clearSelectionUI();
+        try {
+          window.getSelection()?.removeAllRanges();
+        } catch {}
+        switchToWordOrPhrase(clean);
+      };
+
+      // 1. Single Click on any word in the sentence (fast lookup without needing to drag)
+      sentenceEl.addEventListener('click', (e) => {
+        const sel = window.getSelection();
+        const selStr = sel?.toString()?.trim() || '';
+        if (selStr.length > 0) return; // Ignore if user was completing a text selection
+
+        const wordEl = e.target.closest('.anki-ctx-word');
+        if (wordEl) {
+          const clickedWord = wordEl.dataset.word || wordEl.textContent;
+          if (clickedWord) {
+            executeLookup(clickedWord);
           }
-        });
+        }
+      });
+
+      // 2. Natural Selection (Bôi đen) Handler via mouseup
+      const handleSelectionChange = () => {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+          clearSelectionUI();
+          return;
+        }
+
+        const rawText = sel.toString().trim();
+        const cleanText = rawText.replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '').trim();
+
+        if (!cleanText || cleanText.length < 1) {
+          clearSelectionUI();
+          return;
+        }
+
+        const range = sel.getRangeAt(0);
+        const isInsideContext = sentenceEl.contains(range.startContainer) || sentenceEl.contains(range.commonAncestorContainer);
+        if (!isInsideContext) {
+          clearSelectionUI();
+          return;
+        }
+
+        currentSelectionText = cleanText;
+
+        const displayPhrase = cleanText.length > 20 ? cleanText.slice(0, 18) + '...' : cleanText;
+
+        // A. Update Header Action Button
+        if (headerBtn) {
+          headerBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span>Look up "<strong>${escapeHtml(displayPhrase)}</strong>"</span>
+          `;
+          headerBtn.style.display = 'inline-flex';
+          if (hintEl) hintEl.style.display = 'none';
+        }
+
+        // B. Spawn Floating Action Pill directly above selection
+        removeFloatingPill();
+        const pillEl = document.createElement('div');
+        pillEl.className = 'anki-selection-pill';
+        pillEl.id = 'anki-selection-pill';
+        pillEl.innerHTML = `
+          <button type="button" class="anki-pill-btn" id="anki-pill-lookup-btn">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span>Look up "<strong>${escapeHtml(displayPhrase)}</strong>"</span>
+            <span class="anki-pill-key">↵</span>
+          </button>
+        `;
+
+        const selRect = range.getBoundingClientRect();
+        const popoverRect = activePopoverEl.getBoundingClientRect();
+
+        activePopoverEl.appendChild(pillEl);
+
+        const pillWidth = pillEl.offsetWidth || 150;
+        let pillLeft = selRect.left - popoverRect.left + (selRect.width / 2) - (pillWidth / 2);
+        pillLeft = Math.max(10, Math.min(popoverRect.width - pillWidth - 10, pillLeft));
+
+        let pillTop = selRect.top - popoverRect.top - 36;
+        if (pillTop < 8) {
+          pillTop = selRect.bottom - popoverRect.top + 6;
+        }
+        pillEl.style.top = `${pillTop}px`;
+        pillEl.style.left = `${pillLeft}px`;
+
+        const pillBtn = pillEl.querySelector('#anki-pill-lookup-btn');
+        if (pillBtn) {
+          pillBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            executeLookup(currentSelectionText);
+          });
+        }
       };
 
-      const getTokensTextInRange = (startIdx, endIdx) => {
-        const min = Math.min(startIdx, endIdx);
-        const max = Math.max(startIdx, endIdx);
-        const tokensInRange = allTokens.filter(el => {
-          const idx = parseInt(el.dataset.tokenIdx, 10);
-          return !isNaN(idx) && idx >= min && idx <= max;
-        });
-        const rawText = tokensInRange.map(el => el.textContent).join('');
-        return rawText.replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '').trim();
-      };
-
-      chipsContainer.addEventListener('mousedown', (e) => {
-        const chip = e.target.closest('.anki-chip-word');
-        if (!chip) return;
-        const idx = parseInt(chip.dataset.tokenIdx, 10);
-        if (isNaN(idx)) return;
-
-        // Shift + Click range selection
-        if (e.shiftKey && lastClickedIdx !== -1 && lastClickedIdx !== idx) {
-          e.preventDefault();
+      if (headerBtn) {
+        headerBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const phrase = getTokensTextInRange(lastClickedIdx, idx);
-          if (phrase) {
-            switchToWordOrPhrase(phrase);
-            lastClickedIdx = idx;
+          if (currentSelectionText) {
+            executeLookup(currentSelectionText);
           }
-          return;
-        }
+        });
+      }
 
-        isDragging = true;
-        dragStartIdx = idx;
-        highlightRange(dragStartIdx, dragStartIdx);
+      sentenceEl.addEventListener('mouseup', () => {
+        setTimeout(handleSelectionChange, 10);
       });
 
-      chipsContainer.addEventListener('mousemove', (e) => {
-        if (!isDragging || dragStartIdx === -1) return;
-        const chip = e.target.closest('[data-token-idx]');
-        if (!chip) return;
-        const idx = parseInt(chip.dataset.tokenIdx, 10);
-        if (isNaN(idx)) return;
-        highlightRange(dragStartIdx, idx);
-      });
-
-      const onMouseUp = (e) => {
-        if (!isDragging) {
-          // Native text selection in chips container
-          const sel = window.getSelection()?.toString()?.trim();
-          if (sel && sel.length >= 2 && detectedSentence.toLowerCase().includes(sel.toLowerCase())) {
-            const cleanSel = sel.replace(/^[^\w\sÀ-ỹ]+|[^\w\sÀ-ỹ]+$/g, '').trim();
-            if (cleanSel && cleanSel.length >= 2) {
-              switchToWordOrPhrase(cleanSel);
-            }
-          }
-          return;
-        }
-
-        isDragging = false;
-        const currentChip = e.target.closest('[data-token-idx]');
-        const endIdx = currentChip ? parseInt(currentChip.dataset.tokenIdx, 10) : dragStartIdx;
-        clearSelectingStyles();
-
-        if (dragStartIdx !== -1) {
-          const phrase = getTokensTextInRange(dragStartIdx, isNaN(endIdx) ? dragStartIdx : endIdx);
-          lastClickedIdx = isNaN(endIdx) ? dragStartIdx : endIdx;
-          dragStartIdx = -1;
-          if (phrase) {
-            switchToWordOrPhrase(phrase);
-          }
+      // Keyboard shortcut: press Enter to look up currently selected phrase
+      const onKeyDown = (e) => {
+        if (e.key === 'Enter' && currentSelectionText) {
+          e.preventDefault();
+          executeLookup(currentSelectionText);
+        } else if (e.key === 'Escape') {
+          clearSelectionUI();
         }
       };
+      window.addEventListener('keydown', onKeyDown);
 
-      chipsContainer.addEventListener('mouseup', onMouseUp);
-
-      // Clean up drag if mouse releases outside
-      window.addEventListener('mouseup', () => {
-        if (isDragging) {
-          isDragging = false;
-          clearSelectingStyles();
-          dragStartIdx = -1;
+      // Dismiss pill on click outside sentence or pill
+      activePopoverEl.addEventListener('pointerdown', (e) => {
+        if (!e.target.closest('#anki-selection-pill') && !e.target.closest('#anki-ctx-header-btn') && !e.target.closest('#anki-context-sentence')) {
+          clearSelectionUI();
         }
       });
+
+      // Dismiss pill on content scroll
+      const contentScrollEl = activePopoverEl.querySelector('.anki-popover-content');
+      if (contentScrollEl) {
+        contentScrollEl.addEventListener('scroll', () => {
+          removeFloatingPill();
+        }, { passive: true });
+      }
     }
 
     // Dynamic POS badge style updater when user edits part of speech

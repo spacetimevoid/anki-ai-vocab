@@ -295,6 +295,28 @@ To support uninterrupted reading, note-taking, and studying workflows:
   - When a user modifies the context sentence in `.anki-example-en` / `[data-field="example_sentence"]` to remove surrounding web page artifacts and clicks `#anki-btn-relookup`, the handler extracts the live edited string directly from the DOM before rendering skeleton shimmer.
   - Passes the edited sentence with `bypassCache = true`, updates `context.sentence`, and syncs Anki card creation to the user's curated sentence.
 
+---
+
+## 11. Captured Context UX & Natural Highlight ("Bôi Đen") Interaction
+
+### ❌ Anti-Patterns Replaced
+1. **Disjointed Chip Badges with `user-select: none`:** Previously, sentences were cut into disconnected rectangular chips. Native browser selection was blocked, requiring clunky custom `mousemove` tracking that failed if the cursor moved slightly off-token.
+2. **Premature Auto-Analysis on Mouseup:** Releasing the mouse instantly fired API requests, preventing users from copying text, adjusting selection, or canceling mis-drags.
+
+### ✅ Streamlined Natural Selection Architecture
+1. **Flowing Sentence Typography (`user-select: text !important`):**
+   - Renders context as natural, continuous text with high legibility (`12.5px`, `line-height: 1.65`, `color: var(--text-secondary)`).
+   - Real browser text selection allows effortless dragging across any word, phrase, space, or punctuation with smooth cyan highlight (`background: rgba(56, 189, 248, 0.35)`).
+   - Currently active target is clearly designated with `<mark class="anki-ctx-target-pill">`.
+2. **Dual Zero-Friction Interaction:**
+   - **Single-Click on any word:** 1 click immediately looks up that individual word (0ms latency if cached in session).
+   - **Bôi Đen (Drag-to-Select) any phrase:** Releasing the mouse spawns a sleek floating action pill (`#anki-selection-pill`) right above the selection:
+     `[ 🔍 Look up "${cleanPhrase}" ↵ ]`
+     along with a corresponding header action button (`#anki-ctx-header-btn`).
+   - Clicking either button or pressing the `Enter` key triggers immediate lookup.
+   - Standard browser copy (`Ctrl+C`), double-click word selection, and `Escape` dismissal work seamlessly.
+
+
 
 
 

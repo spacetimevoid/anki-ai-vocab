@@ -374,6 +374,23 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Kiểm tra cú pháp toàn diện (`node --check`) qua tất cả các file trong codebase với 0 lỗi.
   - Nâng version lên `v3.16.0` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
 
+---
+
+## Phase 43: Redesign Captured Context: Streamlined Natural Bôi Đen & 1-Click Lookup [DONE]
+- [x] **Task 43.1:** Tái thiết kế trải nghiệm văn bản tự nhiên trong Captured Context:
+  - Loại bỏ hoàn toàn cơ chế chip rời rạc với `user-select: none` và bộ lắng nghe `mousemove` phức tạp dễ lỗi.
+  - Chuyển đổi thành luồng văn bản liên tục tự nhiên (`user-select: text !important`), hỗ trợ bôi đen nguyên bản (native text selection) chuẩn xác 100% trên mọi trình duyệt.
+  - Đánh dấu từ/cụm từ đang được phân tích bằng thẻ `<mark class="anki-ctx-target-pill">` màu cyan nổi bật.
+- [x] **Task 43.2:** Triển khai cơ chế tương tác kép tối giản và tiện lợi:
+  - **1-Click Lookup:** Click vào bất kỳ từ đơn nào trong câu ngữ cảnh để tra cứu ngay lập tức (0ms nếu đã có trong session cache), không cần bôi đen hay thao tác phức tạp.
+  - **Bôi đen mượt mà (Natural Selection):** Khi kéo chuột bôi đen một cụm từ bất kỳ, hiển thị ngay nút nổi Floating Action Pill (`#anki-selection-pill`) phía trên vùng chọn: `Look up "..." ↵` kèm nút hành động trên thanh tiêu đề (`#anki-ctx-header-btn`).
+  - Hỗ trợ phím tắt `Enter` để kích hoạt tra cứu nhanh, phím `Escape` hoặc click ra ngoài để hủy vùng chọn mượt mà.
+  - Hỗ trợ đầy đủ sao chép văn bản (`Ctrl+C`), double-click chọn từ, và tự động ẩn nút nổi khi cuộn nội dung popover.
+- [x] **Task 43.3:** Kiểm tra cú pháp toàn diện, đồng bộ sang Firefox và nâng version `v3.17.0`:
+  - Đồng bộ mã nguồn sang thư mục `firefox/` với `node build_firefox.js`.
+  - Kiểm tra cú pháp toàn bộ file với 0 lỗi (`node --check`).
+  - Cập nhật `DESIGN.md`, `TASKS.md` và `CHANGELOG.md`.
+
 
 
 
