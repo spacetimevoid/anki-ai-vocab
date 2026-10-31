@@ -923,7 +923,7 @@ svg.anki-spinning,
 
   const CHIPS_CSS = `
 /* =========================================================
-   CAPTURED CONTEXT & SELECTION LOOKUP (STREAMLINED UX)
+   CAPTURED CONTEXT & CTRL-CLICK RANGE SELECTION
    ========================================================= */
 .anki-context-wrap {
   position: relative;
@@ -979,30 +979,12 @@ svg.anki-spinning,
   font-size: 10.5px;
   color: var(--text-muted);
   user-select: none;
+  transition: color 0.12s ease;
 }
 
-/* Header Lookup Button (visible when text is selected) */
-.anki-ctx-header-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 7px;
-  background: rgba(56, 189, 248, 0.16);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 4px;
-  font-size: 10.5px;
+.anki-context-hint.anki-hint-active {
+  color: #38bdf8 !important;
   font-weight: 600;
-  cursor: pointer;
-  line-height: 1.2;
-  transition: all 0.12s ease;
-  user-select: none;
-}
-
-.anki-ctx-header-btn:hover {
-  background: #0284c7;
-  color: #ffffff;
-  border-color: #0284c7;
 }
 
 /* Flowing natural sentence container */
@@ -1027,7 +1009,7 @@ svg.anki-spinning,
   display: inline;
   cursor: pointer;
   border-radius: 3px;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: background 0.1s ease, color 0.1s ease;
   padding: 0 1px;
 }
 
@@ -1049,61 +1031,13 @@ svg.anki-spinning,
   -webkit-box-decoration-break: clone;
 }
 
-/* Floating Action Pill attached to active popover */
-.anki-selection-pill {
-  position: absolute;
-  z-index: 2147483647;
-  display: flex;
-  align-items: center;
-  animation: ankiPillFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56, 189, 248, 0.3);
-  border-radius: 6px;
-  pointer-events: auto;
-}
-
-@keyframes ankiPillFadeIn {
-  from { opacity: 0; transform: translateY(4px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.anki-pill-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: #0284c7;
-  color: #ffffff;
-  font-size: 11.5px;
-  font-weight: 500;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  line-height: 1;
-  white-space: nowrap;
-  transition: background 0.12s ease, transform 0.08s ease;
-  user-select: none;
-}
-
-.anki-pill-btn:hover {
-  background: #0369a1;
-  transform: scale(1.02);
-}
-
-.anki-pill-btn:active {
-  transform: scale(0.98);
-}
-
-.anki-pill-btn svg {
-  flex-shrink: 0;
-}
-
-.anki-pill-key {
-  font-size: 9.5px;
-  background: rgba(255, 255, 255, 0.22);
-  padding: 1px 4px;
+/* Real-time Range preview when holding Ctrl and hovering a word */
+.anki-ctx-range-preview {
+  background: rgba(56, 189, 248, 0.28) !important;
+  color: #38bdf8 !important;
   border-radius: 3px;
-  margin-left: 2px;
-  font-family: inherit;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
+  transition: all 0.08s ease;
 }
 `;
 
@@ -1373,9 +1307,9 @@ svg.anki-spinning,
   }
 
   /**
-   * Renders a flowing, readable sentence with clickable individual words
+   * Renders a flowing, readable sentence with indexed individual words
    * and distinct highlighting for the currently active target word/phrase.
-   * Completely supports native browser text selection (bôi đen).
+   * Supports 1-Click single word lookup and Ctrl+Click range phrase selection.
    */
   function renderInteractiveSentence(sentence, currentWord, rawWord) {
     if (!sentence) return '';
@@ -1401,29 +1335,42 @@ svg.anki-spinning,
       }
     }
 
-    const formatTextSegment = (text) => {
-      // Splits text into words and delimiters (punctuation, spaces)
-      const parts = text.split(/([a-zA-ZÀ-ỹ0-9]+(?:['’][a-zA-ZÀ-ỹ0-9]+)?)/);
-      return parts.map(part => {
-        if (!part) return '';
-        if (/[a-zA-ZÀ-ỹ0-9]/.test(part)) {
-          return `<span class="anki-ctx-word" data-word="${escapeHtml(part)}" title="Click to look up '${escapeHtml(part)}'">${escapeHtml(part)}</span>`;
+    const formatSegment = (text, baseOffset) => {
+      const wordRegex = /([a-zA-ZÀ-ỹ0-9]+(?:['’][a-zA-ZÀ-ỹ0-9]+)?)/g;
+      let html = '';
+      let lastIdx = 0;
+      let match;
+
+      while ((match = wordRegex.exec(text)) !== null) {
+        const matchIdx = match.index;
+        if (matchIdx > lastIdx) {
+          html += escapeHtml(text.slice(lastIdx, matchIdx));
         }
-        return escapeHtml(part);
-      }).join('');
+        const word = match[0];
+        const start = baseOffset + matchIdx;
+        const end = start + word.length;
+        html += `<span class="anki-ctx-word" data-start="${start}" data-end="${end}" data-word="${escapeHtml(word)}" title="Click to look up • Hold Ctrl to select phrase">${escapeHtml(word)}</span>`;
+        lastIdx = matchIdx + word.length;
+      }
+      if (lastIdx < text.length) {
+        html += escapeHtml(text.slice(lastIdx));
+      }
+      return html;
     };
 
     if (targetStart !== -1 && targetEnd !== -1) {
-      const before = sentence.slice(0, targetStart);
-      const matched = sentence.slice(targetStart, targetEnd);
-      const after = sentence.slice(targetEnd);
+      const beforeText = sentence.slice(0, targetStart);
+      const matchedText = sentence.slice(targetStart, targetEnd);
+      const afterText = sentence.slice(targetEnd);
 
-      return formatTextSegment(before) +
-        `<mark class="anki-ctx-target-pill" data-word="${escapeHtml(matched)}" title="Currently analyzed target">${escapeHtml(matched)}</mark>` +
-        formatTextSegment(after);
+      const beforeHtml = formatSegment(beforeText, 0);
+      const targetHtml = `<mark class="anki-ctx-target-pill" data-start="${targetStart}" data-end="${targetEnd}" data-word="${escapeHtml(matchedText)}" title="Current target (Hold Ctrl + Click another word to select phrase)">${formatSegment(matchedText, targetStart)}</mark>`;
+      const afterHtml = formatSegment(afterText, targetEnd);
+
+      return beforeHtml + targetHtml + afterHtml;
     }
 
-    return formatTextSegment(sentence);
+    return formatSegment(sentence, 0);
   }
 
   const renderInteractiveChips = renderInteractiveSentence;
@@ -2419,8 +2366,7 @@ svg.anki-spinning,
                 <span>Captured Context</span>
               </div>
               <div class="anki-context-action-bar" id="anki-context-action-bar">
-                <span class="anki-context-hint" id="anki-context-hint">Click word or select phrase</span>
-                <button type="button" class="anki-ctx-header-btn" id="anki-ctx-header-btn" style="display: none;" title="Look up highlighted text (Enter)"></button>
+                <span class="anki-context-hint" id="anki-context-hint">Click word • Hold Ctrl to select phrase</span>
               </div>
             </div>
             <div class="anki-context-sentence" id="anki-context-sentence">
@@ -2904,164 +2850,121 @@ svg.anki-spinning,
       });
     };
 
-    // Captured Context Interactions: 1-Click Word Lookup & Natural Highlight Selection (Bôi đen)
+    // Captured Context Interactions: 1-Click Word Lookup & Ctrl+Click Phrase Range Selection
     const sentenceEl = activePopoverEl.querySelector('#anki-context-sentence');
     const hintEl = activePopoverEl.querySelector('#anki-context-hint');
-    const headerBtn = activePopoverEl.querySelector('#anki-ctx-header-btn');
 
     if (sentenceEl && detectedSentence) {
-      let currentSelectionText = '';
+      let lastClickedWord = null;
 
-      const removeFloatingPill = () => {
-        const existingPill = activePopoverEl.querySelector('#anki-selection-pill');
-        if (existingPill) existingPill.remove();
+      const clearPreview = () => {
+        sentenceEl.querySelectorAll('.anki-ctx-range-preview').forEach(el => el.classList.remove('anki-ctx-range-preview'));
+        if (hintEl) {
+          hintEl.textContent = 'Click word • Hold Ctrl to select phrase';
+          hintEl.classList.remove('anki-hint-active');
+        }
       };
 
-      const clearSelectionUI = () => {
-        currentSelectionText = '';
-        removeFloatingPill();
-        if (headerBtn) headerBtn.style.display = 'none';
-        if (hintEl) hintEl.style.display = 'inline';
+      const getCurrentTargetRange = () => {
+        const targetEl = sentenceEl.querySelector('.anki-ctx-target-pill');
+        if (targetEl && targetEl.dataset.start && targetEl.dataset.end) {
+          return {
+            start: parseInt(targetEl.dataset.start, 10),
+            end: parseInt(targetEl.dataset.end, 10)
+          };
+        }
+        if (lastClickedWord) {
+          return { start: lastClickedWord.start, end: lastClickedWord.end };
+        }
+        return null;
       };
 
-      const executeLookup = (text) => {
-        const clean = (text || '').replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '').trim();
-        if (!clean) return;
-        clearSelectionUI();
-        try {
-          window.getSelection()?.removeAllRanges();
-        } catch {}
-        switchToWordOrPhrase(clean);
-      };
-
-      // 1. Single Click on any word in the sentence (fast lookup without needing to drag)
-      sentenceEl.addEventListener('click', (e) => {
-        const sel = window.getSelection();
-        const selStr = sel?.toString()?.trim() || '';
-        if (selStr.length > 0) return; // Ignore if user was completing a text selection
+      // Real-time hover preview when holding Ctrl/Cmd/Shift
+      sentenceEl.addEventListener('mousemove', (e) => {
+        if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          clearPreview();
+          return;
+        }
 
         const wordEl = e.target.closest('.anki-ctx-word');
-        if (wordEl) {
-          const clickedWord = wordEl.dataset.word || wordEl.textContent;
-          if (clickedWord) {
-            executeLookup(clickedWord);
-          }
-        }
-      });
-
-      // 2. Natural Selection (Bôi đen) Handler via mouseup
-      const handleSelectionChange = () => {
-        const sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
-          clearSelectionUI();
+        if (!wordEl) {
+          clearPreview();
           return;
         }
 
-        const rawText = sel.toString().trim();
-        const cleanText = rawText.replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '').trim();
+        const targetRange = getCurrentTargetRange();
+        if (!targetRange) return;
 
-        if (!cleanText || cleanText.length < 1) {
-          clearSelectionUI();
-          return;
-        }
+        const wStart = parseInt(wordEl.dataset.start, 10);
+        const wEnd = parseInt(wordEl.dataset.end, 10);
+        if (isNaN(wStart) || isNaN(wEnd)) return;
 
-        const range = sel.getRangeAt(0);
-        const isInsideContext = sentenceEl.contains(range.startContainer) || sentenceEl.contains(range.commonAncestorContainer);
-        if (!isInsideContext) {
-          clearSelectionUI();
-          return;
-        }
+        const rangeMin = Math.min(targetRange.start, wStart);
+        const rangeMax = Math.max(targetRange.end, wEnd);
 
-        currentSelectionText = cleanText;
-
-        const displayPhrase = cleanText.length > 20 ? cleanText.slice(0, 18) + '...' : cleanText;
-
-        // A. Update Header Action Button
-        if (headerBtn) {
-          headerBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <span>Look up "<strong>${escapeHtml(displayPhrase)}</strong>"</span>
-          `;
-          headerBtn.style.display = 'inline-flex';
-          if (hintEl) hintEl.style.display = 'none';
-        }
-
-        // B. Spawn Floating Action Pill directly above selection
-        removeFloatingPill();
-        const pillEl = document.createElement('div');
-        pillEl.className = 'anki-selection-pill';
-        pillEl.id = 'anki-selection-pill';
-        pillEl.innerHTML = `
-          <button type="button" class="anki-pill-btn" id="anki-pill-lookup-btn">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <span>Look up "<strong>${escapeHtml(displayPhrase)}</strong>"</span>
-            <span class="anki-pill-key">↵</span>
-          </button>
-        `;
-
-        const selRect = range.getBoundingClientRect();
-        const popoverRect = activePopoverEl.getBoundingClientRect();
-
-        activePopoverEl.appendChild(pillEl);
-
-        const pillWidth = pillEl.offsetWidth || 150;
-        let pillLeft = selRect.left - popoverRect.left + (selRect.width / 2) - (pillWidth / 2);
-        pillLeft = Math.max(10, Math.min(popoverRect.width - pillWidth - 10, pillLeft));
-
-        let pillTop = selRect.top - popoverRect.top - 36;
-        if (pillTop < 8) {
-          pillTop = selRect.bottom - popoverRect.top + 6;
-        }
-        pillEl.style.top = `${pillTop}px`;
-        pillEl.style.left = `${pillLeft}px`;
-
-        const pillBtn = pillEl.querySelector('#anki-pill-lookup-btn');
-        if (pillBtn) {
-          pillBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            executeLookup(currentSelectionText);
-          });
-        }
-      };
-
-      if (headerBtn) {
-        headerBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (currentSelectionText) {
-            executeLookup(currentSelectionText);
+        sentenceEl.querySelectorAll('.anki-ctx-word').forEach(el => {
+          const s = parseInt(el.dataset.start, 10);
+          const en = parseInt(el.dataset.end, 10);
+          if (!isNaN(s) && !isNaN(en) && s >= rangeMin && en <= rangeMax) {
+            el.classList.add('anki-ctx-range-preview');
+          } else {
+            el.classList.remove('anki-ctx-range-preview');
           }
         });
-      }
 
-      sentenceEl.addEventListener('mouseup', () => {
-        setTimeout(handleSelectionChange, 10);
-      });
-
-      // Keyboard shortcut: press Enter to look up currently selected phrase
-      const onKeyDown = (e) => {
-        if (e.key === 'Enter' && currentSelectionText) {
-          e.preventDefault();
-          executeLookup(currentSelectionText);
-        } else if (e.key === 'Escape') {
-          clearSelectionUI();
-        }
-      };
-      window.addEventListener('keydown', onKeyDown);
-
-      // Dismiss pill on click outside sentence or pill
-      activePopoverEl.addEventListener('pointerdown', (e) => {
-        if (!e.target.closest('#anki-selection-pill') && !e.target.closest('#anki-ctx-header-btn') && !e.target.closest('#anki-context-sentence')) {
-          clearSelectionUI();
+        const rawPhrase = detectedSentence.slice(rangeMin, rangeMax);
+        const cleanPhrase = rawPhrase.replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '').trim();
+        if (cleanPhrase && hintEl) {
+          const displayPhrase = cleanPhrase.length > 24 ? cleanPhrase.slice(0, 22) + '...' : cleanPhrase;
+          hintEl.textContent = `Ctrl+Click: Look up "${displayPhrase}"`;
+          hintEl.classList.add('anki-hint-active');
         }
       });
 
-      // Dismiss pill on content scroll
-      const contentScrollEl = activePopoverEl.querySelector('.anki-popover-content');
-      if (contentScrollEl) {
-        contentScrollEl.addEventListener('scroll', () => {
-          removeFloatingPill();
-        }, { passive: true });
-      }
+      sentenceEl.addEventListener('mouseleave', clearPreview);
+
+      window.addEventListener('keyup', (e) => {
+        if (['Control', 'Meta', 'Shift'].includes(e.key)) {
+          clearPreview();
+        }
+      });
+
+      // Click: Single word or Ctrl+Click range phrase
+      sentenceEl.addEventListener('click', (e) => {
+        const wordEl = e.target.closest('.anki-ctx-word') || e.target.closest('.anki-ctx-target-pill');
+        if (!wordEl) return;
+
+        const wStart = parseInt(wordEl.dataset.start, 10);
+        const wEnd = parseInt(wordEl.dataset.end, 10);
+        const wText = wordEl.dataset.word || wordEl.textContent;
+
+        const isRangeKey = e.ctrlKey || e.metaKey || e.shiftKey;
+        const targetRange = getCurrentTargetRange();
+
+        if (isRangeKey && targetRange && !isNaN(wStart) && !isNaN(wEnd)) {
+          // Range selection: from current target word to Ctrl-clicked word
+          const rangeMin = Math.min(targetRange.start, wStart);
+          const rangeMax = Math.max(targetRange.end, wEnd);
+          const rawPhrase = detectedSentence.slice(rangeMin, rangeMax);
+          const cleanPhrase = rawPhrase.replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '').trim();
+
+          if (cleanPhrase) {
+            clearPreview();
+            lastClickedWord = { start: rangeMin, end: rangeMax, word: cleanPhrase };
+            switchToWordOrPhrase(cleanPhrase);
+          }
+        } else {
+          // Single word selection
+          if (wText) {
+            const cleanWord = wText.replace(/^[^\wÀ-ỹ]+|[^\wÀ-ỹ]+$/g, '').trim();
+            if (cleanWord) {
+              clearPreview();
+              lastClickedWord = { start: wStart, end: wEnd, word: cleanWord };
+              switchToWordOrPhrase(cleanWord);
+            }
+          }
+        }
+      });
     }
 
     // Dynamic POS badge style updater when user edits part of speech

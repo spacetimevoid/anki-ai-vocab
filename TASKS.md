@@ -376,16 +376,16 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
 
 ---
 
-## Phase 43: Redesign Captured Context: Streamlined Natural Bôi Đen & 1-Click Lookup [DONE]
-- [x] **Task 43.1:** Tái thiết kế trải nghiệm văn bản tự nhiên trong Captured Context:
-  - Loại bỏ hoàn toàn cơ chế chip rời rạc với `user-select: none` và bộ lắng nghe `mousemove` phức tạp dễ lỗi.
-  - Chuyển đổi thành luồng văn bản liên tục tự nhiên (`user-select: text !important`), hỗ trợ bôi đen nguyên bản (native text selection) chuẩn xác 100% trên mọi trình duyệt.
-  - Đánh dấu từ/cụm từ đang được phân tích bằng thẻ `<mark class="anki-ctx-target-pill">` màu cyan nổi bật.
-- [x] **Task 43.2:** Triển khai cơ chế tương tác kép tối giản và tiện lợi:
-  - **1-Click Lookup:** Click vào bất kỳ từ đơn nào trong câu ngữ cảnh để tra cứu ngay lập tức (0ms nếu đã có trong session cache), không cần bôi đen hay thao tác phức tạp.
-  - **Bôi đen mượt mà (Natural Selection):** Khi kéo chuột bôi đen một cụm từ bất kỳ, hiển thị ngay nút nổi Floating Action Pill (`#anki-selection-pill`) phía trên vùng chọn: `Look up "..." ↵` kèm nút hành động trên thanh tiêu đề (`#anki-ctx-header-btn`).
-  - Hỗ trợ phím tắt `Enter` để kích hoạt tra cứu nhanh, phím `Escape` hoặc click ra ngoài để hủy vùng chọn mượt mà.
-  - Hỗ trợ đầy đủ sao chép văn bản (`Ctrl+C`), double-click chọn từ, và tự động ẩn nút nổi khi cuộn nội dung popover.
+## Phase 43: Redesign Captured Context: Ctrl+Click Phrase Range Selection & 1-Click Lookup [DONE]
+- [x] **Task 43.1:** Thay thế hoàn toàn cơ chế bôi đen kéo chuột bằng phím Ctrl chọn khoảng cụm từ:
+  - Loại bỏ hoàn toàn thao tác kéo chuột bôi đen dễ trượt và nút nổi phức tạp trong ô Captured Context.
+  - Xây dựng cơ chế đánh chỉ số ký tự chính xác (`data-start`, `data-end`) cho từng từ và khối đích `<mark class="anki-ctx-target-pill">`.
+  - Hỗ trợ chọn cụm từ hai chiều (tiến và lùi) bằng cách giữ phím `Ctrl` (hoặc `Cmd` trên Mac / `Shift`) và click vào từ đích.
+- [x] **Task 43.2:** Triển khai cơ chế tương tác trực quan & Real-time Preview:
+  - **1-Click Lookup:** Click chuột vào bất kỳ từ đơn nào để chọn và tra cứu ngay lập tức từ đó (0ms qua session cache).
+  - **Hold Ctrl + Click (Range Selection):** Giữ phím `Ctrl` và click vào bất kỳ từ nào để chọn từ ô hiện tại đến ô vừa click, tự động trích xuất cụm từ chính xác và gửi tra cứu ngay lập tức.
+  - **Real-time Range Preview:** Khi giữ Ctrl và di chuột qua các từ, hiển thị visual highlight dải từ tương ứng (`.anki-ctx-range-preview`) và cập nhật hint trên header: `Ctrl+Click: Look up "..."`.
+  - Nhãn hướng dẫn tinh gọn: `Click word • Hold Ctrl to select phrase`.
 - [x] **Task 43.3:** Kiểm tra cú pháp toàn diện, đồng bộ sang Firefox và nâng version `v3.17.0`:
   - Đồng bộ mã nguồn sang thư mục `firefox/` với `node build_firefox.js`.
   - Kiểm tra cú pháp toàn bộ file với 0 lỗi (`node --check`).

@@ -297,24 +297,22 @@ To support uninterrupted reading, note-taking, and studying workflows:
 
 ---
 
-## 11. Captured Context UX & Natural Highlight ("Bôi Đen") Interaction
+## 11. Captured Context UX: 1-Click Word Lookup & Ctrl+Click Phrase Selection
 
 ### ❌ Anti-Patterns Replaced
-1. **Disjointed Chip Badges with `user-select: none`:** Previously, sentences were cut into disconnected rectangular chips. Native browser selection was blocked, requiring clunky custom `mousemove` tracking that failed if the cursor moved slightly off-token.
-2. **Premature Auto-Analysis on Mouseup:** Releasing the mouse instantly fired API requests, preventing users from copying text, adjusting selection, or canceling mis-drags.
+1. **Dragging / Highlighting to Select Phrases:** Forcing users to drag across text inside a small floating popover is cumbersome, causes mis-drags, triggers accidental selections, and blocks seamless interaction.
+2. **Disconnected Token Chips:** Chopping sentences into separate button boxes breaks natural reading rhythm and spacing.
 
-### ✅ Streamlined Natural Selection Architecture
-1. **Flowing Sentence Typography (`user-select: text !important`):**
-   - Renders context as natural, continuous text with high legibility (`12.5px`, `line-height: 1.65`, `color: var(--text-secondary)`).
-   - Real browser text selection allows effortless dragging across any word, phrase, space, or punctuation with smooth cyan highlight (`background: rgba(56, 189, 248, 0.35)`).
-   - Currently active target is clearly designated with `<mark class="anki-ctx-target-pill">`.
-2. **Dual Zero-Friction Interaction:**
-   - **Single-Click on any word:** 1 click immediately looks up that individual word (0ms latency if cached in session).
-   - **Bôi Đen (Drag-to-Select) any phrase:** Releasing the mouse spawns a sleek floating action pill (`#anki-selection-pill`) right above the selection:
-     `[ 🔍 Look up "${cleanPhrase}" ↵ ]`
-     along with a corresponding header action button (`#anki-ctx-header-btn`).
-   - Clicking either button or pressing the `Enter` key triggers immediate lookup.
-   - Standard browser copy (`Ctrl+C`), double-click word selection, and `Escape` dismissal work seamlessly.
+### ✅ Streamlined Ctrl+Click Range Selection Architecture
+1. **Flowing Sentence with Exact Character Offsets:**
+   - Renders context as clean, natural text with high legibility (`12.5px`, `line-height: 1.65`).
+   - Every word element carries precise start and end character offsets (`data-start`, `data-end`).
+   - The current active target word/phrase is designated with `<mark class="anki-ctx-target-pill">`.
+2. **Zero-Dragging Dual Interaction:**
+   - **Single-Click:** Click any single word in the sentence to look it up immediately (0ms if in session cache). That word becomes the active target.
+   - **Hold Ctrl + Click (Range Selection):** To look up a multi-word phrase, hold `Ctrl` (or `Cmd` on Mac, or `Shift`) and click the destination word. The system automatically computes `[min(targetStart, wordStart), max(targetEnd, wordEnd)]`, extracts the exact phrase from the sentence, and looks it up instantly.
+   - **Real-Time Hover Preview:** Holding `Ctrl` and moving the mouse across words highlights the previewed phrase in cyan (`.anki-ctx-range-preview`) and displays `Ctrl+Click: Look up "..."` in the header in real-time.
+   - **Bidirectional:** Works forward (start -> end) and backward (end -> start) seamlessly.
 
 
 

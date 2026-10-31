@@ -6,18 +6,16 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ## [3.17.0] - 2026-10-31
 
-### Redesigned Captured Context: Streamlined Natural Bôi Đen & 1-Click Lookup
-- **Eliminated Clunky Token Chip Dragging (`content/content.js`):**
-  - **Root Cause Eliminated:** Previously, captured sentences were chopped into separate rectangular chip spans with `user-select: none`. Users had to initiate a custom mousedown drag across tokens, which broke browser native text selection, failed if the cursor drifted slightly, and caused jarring accidental re-analysis on mouseup.
-  - **Natural Continuous Sentence Flow:** Redesigned the container into a flowing, readable sentence (`.anki-context-sentence`) with `user-select: text !important;`, allowing standard browser text selection (bôi đen) across any sequence of words, phrases, or punctuation.
-  - **Active Target Identification:** Clearly highlights the current word/phrase in the context sentence with `<mark class="anki-ctx-target-pill">` in soft cyan.
-- **Dual Frictionless Interaction (1-Click Lookup + Bôi Đen Action Pill):**
-  - **Instant 1-Click Lookup:** Users can simply click on any individual word in the sentence to look it up immediately (0ms if cached in session, partial skeleton if fresh) without needing to drag.
-  - **Natural Bôi Đen (Drag-to-Select) Action Pill (`#anki-selection-pill`):**
-    - Dragging to highlight any phrase or collocation immediately displays a sleek floating action pill directly above the selection: `[ 🔍 Look up "${phrase}" ↵ ]`.
-    - Also displays an action button in the context header (`#anki-ctx-header-btn`).
-    - Clicking either button or pressing the `Enter` key triggers immediate lookup.
-    - Seamlessly supports `Ctrl+C` text copying, double-click word selection, and `Escape`/click-outside dismissal.
+### Redesigned Captured Context: Ctrl+Click Phrase Range Selection & 1-Click Lookup
+- **Replaced Phrase Dragging with Instant Ctrl+Click Range Selection (`content/content.js`):**
+  - **Replaced Cumbersome Drag-to-Select:** Instead of having to awkwardly drag across text inside the floating popover, users can now simply hold `Ctrl` (or `Cmd` on Mac, or `Shift`) to select from the current word to the clicked word.
+  - **Precise Character Offsets (`data-start`, `data-end`):** Indexed every individual word and active target pill with exact sentence offsets, enabling mathematically exact substring extraction: `sentence.slice(min(targetStart, wordStart), max(targetEnd, wordEnd))`.
+  - **Bidirectional Range Matching:** Works effortlessly both forward (start -> end) and backward (end -> start).
+- **Dual Frictionless Interaction & Real-Time Preview:**
+  - **Instant 1-Click Word Lookup:** Clicking any single word looks it up immediately (0ms if cached in session) and sets it as the active target.
+  - **Hold Ctrl + Click Phrase Lookup:** Holding `Ctrl` and clicking any target word automatically combines the range between the current word and the clicked word into a phrase and analyzes it immediately.
+  - **Real-Time Range Hover Preview:** Moving the mouse over words while holding `Ctrl` visually highlights the entire range (`.anki-ctx-range-preview`) and displays `Ctrl+Click: Look up "..."` in the header in real-time.
+  - **Clean, Compact Header Hint:** Updated guidance to `Click word • Hold Ctrl to select phrase`.
 - **Firefox Edition Synchronization & Verification (`build_firefox.js`, `firefox/`):**
   - Synchronized all updates to `firefox/` with `node build_firefox.js`.
   - Clean syntax check (`node --check`) across all Chrome and Firefox scripts with 0 errors.
