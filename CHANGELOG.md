@@ -4,6 +4,36 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.19.0] - 2026-11-01
+
+### In-Popover Card Type Selector, 1s Action Auto-Reset & Standardized Toast System
+- **In-Popover Card Type (Note Type) Selector (`content/content.js`, `content/content.css`, `background/background.js`):**
+  - **Direct Card Type Dropdown on Popover Footer:** Added a minimalist companion dropdown alongside the Target Deck dropdown, allowing users to effortlessly switch note types (e.g., Basic, Anki AI Vocab, Cloze) directly from the popover without navigating to Options.
+  - **Sleek Dark Mode Aesthetics:** Designed with minimalist shadcn tokens (`#18181B` background, `1px solid #27272A` border, `12px` font, card icon, and emerald green selection checkmark).
+  - **Real-Time Live Model Sync:** Background worker automatically queries AnkiConnect's `modelNames` concurrently with AI lookups, syncing freshly created note types without requiring an extension reload.
+  - **Sticky Model Selection:** Persists the selected card type into `chrome.storage.local` and `sync` via `saveSelectedModel`, immediately remembering preferences across lookups.
+  - **Accurate Payload Dispatch:** Sends `targetModel: selectedModel` into `ADD_ANKI_NOTE` to guarantee cards are instantiated under the exact chosen note type.
+- **Enhanced "Add to Anki" Experience with 1-Second Auto-Reset:**
+  - **Loading State:** Button disables with spinner and displays `Adding...` to prevent accidental multi-clicks.
+  - **Success Animation:** On successful card creation, the button transitions to vibrant emerald green (`.anki-added`) with a checkmark and displays `Added!`.
+  - **1,000ms Auto-Reset:** Exactly after 1,000ms (1 second), the button smoothly transitions back to its default state (`+ Add to Anki`) and re-enables itself. This allows users to quickly change the Note Type or Target Deck and create additional card variants without closing and reopening the popover.
+- **Standardized Error System & Non-Intrusive Toast Component (`formatErrorMessage`, `showPopoverToast`):**
+  - **Unified Error Message Formatter:** Standardized all technical exceptions from AnkiConnect and AI APIs into friendly, concise, 100% English notifications:
+    - *Duplicate Note:* `"Card already exists in your Anki deck."`
+    - *AnkiConnect Connection Error:* `"Cannot connect to Anki. Please ensure Anki Desktop is running with AnkiConnect enabled."`
+    - *API Key Missing/Invalid:* `"AI API key is missing or invalid. Please check Extension Options."`
+    - *Rate Limit / Quota Exceeded (429):*`"API quota or rate limit reached. Please wait a moment before trying again."`
+    - *Card Type Mismatch:* `"Current card type is missing required fields. Please select a compatible card type."`
+    - *Network / Timeout:* `"Request timed out. Please check your network and Anki Desktop."`
+  - **Non-Intrusive Toast Notification:** Displays directly above the Popover footer, ensuring it never obscures or overlaps the vocabulary definition and example sentence. Auto-dismisses after 3.5s or via the "×" close button.
+  - **Duplicate Note Visual Treatment:** Renders an amber warning toast, updates the Add button to amber `Exists` state, and automatically reverts to normal after 1.5s.
+- **Firefox Edition Synchronization & Codebase Verification:**
+  - Synchronized all updates across background, content, and options to `firefox/` via `build_firefox.js`.
+  - Passed 100% syntax compliance check (`node --check`) across all Chrome and Firefox scripts with 0 errors.
+  - Bumped version to `v3.19.0` across `manifest.json`, `popup/popup.html`, and `README.md`.
+
+---
+
 ## [3.18.0] - 2026-10-31
 
 ### Minimalist Options Architecture, Quick Onboarding & Unsaved Changes Protection

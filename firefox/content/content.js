@@ -610,110 +610,141 @@ svg.anki-spinning,
   box-sizing: border-box;
 }
 
-.anki-deck-dropdown-container {
-  position: relative;
-  display: inline-flex;
+
+.anki-footer-selectors {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-/* Trigger Button */
-.anki-deck-trigger {
+.anki-deck-dropdown-container,
+.anki-model-dropdown-container {
+  position: relative;
+  display: inline-flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Trigger Buttons */
+.anki-deck-trigger,
+.anki-model-trigger {
   background-color: #18181B;
   border: 1px solid #27272A;
   border-radius: 6px;
   height: 32px;
-  padding: 0 10px;
+  padding: 0 8px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   color: #E4E4E7;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   transition: all 0.14s ease;
-  max-width: 175px;
+  width: 100%;
+  max-width: 125px;
   outline: none;
   user-select: none;
+  box-sizing: border-box;
 }
 
-.anki-deck-trigger:hover {
+.anki-deck-trigger:hover,
+.anki-model-trigger:hover {
   background-color: #27272A;
-  border-color: #3F3F46;
+  border-color: #52525B;
   color: #FFFFFF;
 }
 
-.anki-deck-trigger.active {
-  border-color: #52525B;
+.anki-deck-trigger.active,
+.anki-model-trigger.active {
+  border-color: #10B981;
   background-color: #27272A;
 }
 
-.anki-deck-icon {
-  width: 14px;
-  height: 14px;
+.anki-deck-icon,
+.anki-model-icon {
+  width: 13px;
+  height: 13px;
   color: #A1A1AA;
   flex-shrink: 0;
 }
 
-.anki-deck-current-label {
+.anki-deck-current-label,
+.anki-model-current-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 110px;
+  flex: 1 1 auto;
+  min-width: 0;
   color: inherit;
+  font-size: 12px;
 }
 
-.anki-deck-chevron {
-  width: 12px;
-  height: 12px;
+.anki-deck-chevron,
+.anki-model-chevron {
+  width: 11px;
+  height: 11px;
   color: #71717A;
   flex-shrink: 0;
   transition: transform 0.15s ease;
 }
 
-.anki-deck-trigger.active .anki-deck-chevron {
+.anki-deck-trigger.active .anki-deck-chevron,
+.anki-model-trigger.active .anki-model-chevron {
   transform: rotate(180deg);
 }
 
-/* Custom Floating Dropdown Menu (Opens downward below trigger button) */
+/* Custom Floating Dropdown Menus */
 .deck-menu,
-.anki-deck-menu {
+.anki-deck-menu,
+.model-menu,
+.anki-model-menu {
   position: absolute;
   top: calc(100% + 6px) !important;
   bottom: auto !important;
   left: 0 !important;
-  min-width: 190px;
-  max-width: 270px;
+  min-width: 155px;
+  max-width: 230px;
   max-height: 200px;
   overflow-y: auto;
   background-color: #121215;
   border: 1px solid #27272A;
   border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
   z-index: 100;
   padding: 4px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   animation: anki-fade-in 0.12s ease-out;
+  box-sizing: border-box;
 }
 
-/* Custom thin scrollbar for deck menu */
-.anki-deck-menu::-webkit-scrollbar {
+/* Custom thin scrollbars */
+.anki-deck-menu::-webkit-scrollbar,
+.anki-model-menu::-webkit-scrollbar {
   width: 4px;
 }
-.anki-deck-menu::-webkit-scrollbar-track {
+.anki-deck-menu::-webkit-scrollbar-track,
+.anki-model-menu::-webkit-scrollbar-track {
   background: transparent;
 }
-.anki-deck-menu::-webkit-scrollbar-thumb {
+.anki-deck-menu::-webkit-scrollbar-thumb,
+.anki-model-menu::-webkit-scrollbar-thumb {
   background: #27272A;
   border-radius: 2px;
 }
-.anki-deck-menu::-webkit-scrollbar-thumb:hover {
+.anki-deck-menu::-webkit-scrollbar-thumb:hover,
+.anki-model-menu::-webkit-scrollbar-thumb:hover {
   background: #3F3F46;
 }
 
-.anki-deck-item {
-  padding: 8px 10px;
-  font-size: 13px;
+.anki-deck-item,
+.anki-model-item {
+  padding: 7px 9px;
+  font-size: 12.5px;
   color: #E4E4E7;
   border-radius: 4px;
   cursor: pointer;
@@ -725,75 +756,88 @@ svg.anki-spinning,
   user-select: none;
 }
 
-.anki-deck-item:hover {
+.anki-deck-item:hover,
+.anki-model-item:hover {
   background-color: #27272A;
   color: #FFFFFF;
 }
 
-.anki-deck-item.selected {
+.anki-deck-item.selected,
+.anki-model-item.selected {
   color: #FAFAFA;
   font-weight: 500;
   background-color: rgba(255, 255, 255, 0.05);
 }
 
-.anki-deck-item-text {
+.anki-deck-item-text,
+.anki-model-item-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.anki-deck-item-check {
+.anki-deck-item-check,
+.anki-model-item-check {
   width: 13px;
   height: 13px;
   color: var(--success);
   flex-shrink: 0;
 }
 
-/* Light Mode Overrides for Deck Dropdown */
-:host([data-theme="light"]) .anki-deck-trigger {
+/* Light Mode Overrides for Dropdowns */
+:host([data-theme="light"]) .anki-deck-trigger,
+:host([data-theme="light"]) .anki-model-trigger {
   background-color: #F4F4F5;
   border: 1px solid #E4E4E7;
   color: #18181B;
 }
 
-:host([data-theme="light"]) .anki-deck-trigger:hover {
+:host([data-theme="light"]) .anki-deck-trigger:hover,
+:host([data-theme="light"]) .anki-model-trigger:hover {
   background-color: #E4E4E7;
   border-color: #D4D4D8;
 }
 
-:host([data-theme="light"]) .anki-deck-icon {
+:host([data-theme="light"]) .anki-deck-icon,
+:host([data-theme="light"]) .anki-model-icon {
   color: #71717A;
 }
 
 :host([data-theme="light"]) .deck-menu,
-:host([data-theme="light"]) .anki-deck-menu {
+:host([data-theme="light"]) .anki-deck-menu,
+:host([data-theme="light"]) .model-menu,
+:host([data-theme="light"]) .anki-model-menu {
   background-color: #FFFFFF;
   border: 1px solid #E4E4E7;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
-:host([data-theme="light"]) .anki-deck-item {
+:host([data-theme="light"]) .anki-deck-item,
+:host([data-theme="light"]) .anki-model-item {
   color: #18181B;
 }
 
-:host([data-theme="light"]) .anki-deck-item:hover {
+:host([data-theme="light"]) .anki-deck-item:hover,
+:host([data-theme="light"]) .anki-model-item:hover {
   background-color: #F4F4F5;
   color: #09090B;
 }
 
-:host([data-theme="light"]) .anki-deck-item.selected {
+:host([data-theme="light"]) .anki-deck-item.selected,
+:host([data-theme="light"]) .anki-model-item.selected {
   color: #09090B;
   background-color: #F4F4F5;
 }
 
-:host([data-theme="light"]) .anki-deck-menu::-webkit-scrollbar-thumb {
+:host([data-theme="light"]) .anki-deck-menu::-webkit-scrollbar-thumb,
+:host([data-theme="light"]) .anki-model-menu::-webkit-scrollbar-thumb {
   background: #E4E4E7;
 }
 
 .anki-btn-add {
   height: 32px;
-  padding: 0 14px;
-  font-size: 13px;
+  padding: 0 12px;
+  font-size: 12.5px;
   font-weight: 600;
   border-radius: 6px;
   border: 1px solid transparent;
@@ -804,9 +848,10 @@ svg.anki-spinning,
   gap: 6px;
   background: var(--btn-bg);
   color: var(--btn-text);
-  transition: all 0.12s ease;
+  transition: all 0.18s ease;
   user-select: none;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .anki-btn-add:hover {
@@ -814,13 +859,105 @@ svg.anki-spinning,
 }
 
 .anki-btn-add:disabled {
-  opacity: 0.5;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
 .anki-btn-add.anki-added {
-  background: var(--success);
-  color: #FFFFFF;
+  background: var(--success) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+}
+
+.anki-btn-add.anki-btn-warning {
+  background: #F59E0B !important;
+  color: #09090B !important;
+  border-color: transparent !important;
+}
+
+.anki-btn-add.anki-btn-error {
+  background: var(--danger) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+}
+
+/* =========================================================
+   POPOVER TOAST / INLINE NOTIFICATIONS
+   ========================================================= */
+.anki-toast-container {
+  padding: 0 14px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.anki-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  animation: anki-fade-in 0.14s ease-out;
+  box-sizing: border-box;
+}
+
+.anki-toast-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.anki-toast-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.anki-toast-content {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.anki-toast-icon {
+  width: 13px;
+  height: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.anki-toast-close {
+  background: none;
+  border: none;
+  color: currentColor;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: opacity 0.12s;
+}
+
+.anki-toast-close:hover {
+  opacity: 1;
+}
+
+.anki-toast-close svg {
+  width: 12px;
+  height: 12px;
 }
 
 /* =========================================================
@@ -916,6 +1053,8 @@ svg.anki-spinning,
     check: `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
     alert: `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
     deck: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+    card: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h4M7 9h10"/></svg>`,
+    alertAmber: `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
     folder: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`,
     chevron: `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>`,
     crop: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>`
@@ -1295,7 +1434,167 @@ svg.anki-spinning,
   /**
    * Formats phonetic string cleanly as [ phonetic ] or / phonetic /
    */
-  function formatPhonetic(raw) {
+  /**
+   * Standardized Error Message Formatter
+   * Maps technical and network exceptions into clear, friendly English notifications.
+   */
+  function formatErrorMessage(rawError) {
+    if (!rawError) return { message: 'An unexpected error occurred. Please try again.', type: 'error' };
+
+    const str = (typeof rawError === 'string' ? rawError : (rawError.message || rawError.error || String(rawError))).trim();
+    const lower = str.toLowerCase();
+
+    // 1. Duplicate Note in Anki
+    if (lower.includes('duplicate')) {
+      return {
+        message: 'Card already exists in your Anki deck.',
+        type: 'warning',
+        isDuplicate: true
+      };
+    }
+
+    // 2. AnkiConnect Connection Error / Anki Not Running
+    if (lower.includes('unable to connect') || 
+        lower.includes('failed to fetch') || 
+        lower.includes('connection refused') || 
+        lower.includes('econnrefused') || 
+        lower.includes('127.0.0.1:8765') || 
+        lower.includes('localhost:8765') ||
+        lower.includes('networkerror')) {
+      return {
+        message: 'Cannot connect to Anki. Please ensure Anki Desktop is running with AnkiConnect enabled.',
+        type: 'error',
+        isConnection: true
+      };
+    }
+
+    // 3. AI API Key Missing or Invalid
+    if (lower.includes('api_key') || 
+        lower.includes('unauthenticated') || 
+        lower.includes('invalid api key') || 
+        lower.includes('missing api key') || 
+        lower.includes('api key not valid')) {
+      return {
+        message: 'AI API key is missing or invalid. Please check Extension Options.',
+        type: 'error'
+      };
+    }
+
+    // 4. Rate Limit / Quota Exceeded (429)
+    if (lower.includes('429') || lower.includes('resource_exhausted') || lower.includes('quota') || lower.includes('rate limit')) {
+      return {
+        message: 'API quota or rate limit reached. Please wait a moment before trying again.',
+        type: 'warning'
+      };
+    }
+
+    // 5. Note Type / Model Fields Mismatch or Not Found
+    if (lower.includes('model was not found') || (lower.includes('field') && lower.includes('missing'))) {
+      return {
+        message: 'Current card type is missing required fields. Please select a compatible card type.',
+        type: 'error'
+      };
+    }
+
+    // 6. Target Deck Not Found
+    if (lower.includes('deck was not found')) {
+      return {
+        message: 'Target deck was not found in Anki. Please select a valid deck.',
+        type: 'error'
+      };
+    }
+
+    // 7. Request Timeout
+    if (lower.includes('timed out') || lower.includes('timeout') || lower.includes('aborterror')) {
+      return {
+        message: 'Request timed out. Please check your network and Anki Desktop.',
+        type: 'error'
+      };
+    }
+
+    // 8. Extension Context Invalidated (after reload)
+    if (lower.includes('context invalidated') || lower.includes('extension updated')) {
+      return {
+        message: 'Extension was updated. Please refresh (F5) this webpage.',
+        type: 'warning'
+      };
+    }
+
+    // Clean fallback: strip technical prefixes
+    const clean = str
+      .replace(/^error:\s*/i, '')
+      .replace(/^\[.*?\]\s*/, '')
+      .trim();
+
+    return {
+      message: clean.length > 95 ? clean.substring(0, 92) + '...' : clean,
+      type: 'error'
+    };
+  }
+
+  /**
+   * Displays a compact, non-intrusive Toast notification right above the Popover footer
+   */
+  function showPopoverToast(rawMsg, explicitType = null, duration = 3500) {
+    if (!activePopoverEl) return;
+    const formatted = formatErrorMessage(rawMsg);
+    const msg = explicitType ? (typeof rawMsg === 'string' ? rawMsg : formatted.message) : formatted.message;
+    const type = explicitType || formatted.type || 'error';
+
+    let toastContainer = activePopoverEl.querySelector('#anki-toast-container');
+    if (!toastContainer) {
+      const footerEl = activePopoverEl.querySelector('.anki-popover-footer');
+      toastContainer = document.createElement('div');
+      toastContainer.id = 'anki-toast-container';
+      toastContainer.className = 'anki-toast-container';
+      if (footerEl) {
+        activePopoverEl.insertBefore(toastContainer, footerEl);
+      } else {
+        activePopoverEl.appendChild(toastContainer);
+      }
+    }
+
+    toastContainer.style.display = 'flex';
+    toastContainer.innerHTML = '';
+
+    const toastEl = document.createElement('div');
+    toastEl.className = `anki-toast anki-toast-${type}`;
+
+    const iconSvg = type === 'warning' ? ICONS.alertAmber : (type === 'error' ? ICONS.alert : ICONS.check);
+    toastEl.innerHTML = `
+      <div class="anki-toast-content">
+        <span class="anki-toast-icon">${iconSvg}</span>
+        <span>${escapeHtml(msg)}</span>
+      </div>
+      <button type="button" class="anki-toast-close" title="Dismiss">${ICONS.close}</button>
+    `;
+
+    toastContainer.appendChild(toastEl);
+
+    const dismissToast = () => {
+      if (toastEl.parentNode) {
+        toastEl.style.opacity = '0';
+        toastEl.style.transition = 'opacity 0.14s ease-out';
+        setTimeout(() => {
+          if (toastEl.parentNode) toastEl.parentNode.removeChild(toastEl);
+          if (toastContainer && toastContainer.children.length === 0) {
+            toastContainer.style.display = 'none';
+          }
+        }, 140);
+      }
+    };
+
+    toastEl.querySelector('.anki-toast-close')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismissToast();
+    });
+
+    if (duration > 0) {
+      setTimeout(dismissToast, duration);
+    }
+  }
+
+    function formatPhonetic(raw) {
     if (!raw) return '';
     const trimmed = raw.trim();
     if (!trimmed) return '';
@@ -1383,6 +1682,25 @@ svg.anki-spinning,
   let currentSelectionContext = null;
   let currentCardData = null;
   let lastUsedDeck = null;
+  let lastUsedModel = null;
+
+  /**
+   * Persist selected model across lookups and browser sessions (local + sync)
+   */
+  function saveSelectedModel(model) {
+    if (!model) return;
+    lastUsedModel = model;
+    if (extensionConfig) {
+      extensionConfig.noteType = model;
+      extensionConfig.lastUsedModel = model;
+    }
+    try {
+      chrome.storage?.local?.set({ noteType: model, lastUsedModel: model });
+      chrome.storage?.sync?.set({ noteType: model, lastUsedModel: model });
+    } catch {
+      // ignore storage error
+    }
+  }
   let isCropModeActive = false;
   let cropOverlayEl = null;
 
@@ -1466,6 +1784,9 @@ svg.anki-spinning,
         if (extensionConfig?.lastUsedDeck || extensionConfig?.deckName) {
           lastUsedDeck = extensionConfig.lastUsedDeck || extensionConfig.deckName;
         }
+        if (extensionConfig?.lastUsedModel || extensionConfig?.noteType) {
+          lastUsedModel = extensionConfig.lastUsedModel || extensionConfig.noteType;
+        }
       }
     });
 
@@ -1481,6 +1802,11 @@ svg.anki-spinning,
           } else if (changes.deckName?.newValue) {
             lastUsedDeck = changes.deckName.newValue;
           }
+          if (changes.lastUsedModel?.newValue) {
+            lastUsedModel = changes.lastUsedModel.newValue;
+          } else if (changes.noteType?.newValue) {
+            lastUsedModel = changes.noteType.newValue;
+          }
           if (!extensionConfig) {
             extensionConfig = {};
           }
@@ -1489,6 +1815,9 @@ svg.anki-spinning,
           }
           if (changes.availableDecks?.newValue && Array.isArray(changes.availableDecks.newValue)) {
             activePopoverEl?._updateDeckMenu?.(changes.availableDecks.newValue);
+          }
+          if (changes.availableModels?.newValue && Array.isArray(changes.availableModels.newValue)) {
+            activePopoverEl?._updateModelMenu?.(changes.availableModels.newValue);
           }
         }
       });
@@ -1869,6 +2198,10 @@ svg.anki-spinning,
         if (!extensionConfig) extensionConfig = {};
         extensionConfig.availableDecks = res.decks;
       }
+      if (res.models && Array.isArray(res.models) && res.models.length > 0) {
+        if (!extensionConfig) extensionConfig = {};
+        extensionConfig.availableModels = res.models;
+      }
 
       renderPopoverLoadedData(res.data, context);
     });
@@ -2165,6 +2498,10 @@ svg.anki-spinning,
         if (!extensionConfig) extensionConfig = {};
         extensionConfig.availableDecks = res.decks;
       }
+      if (res.models && Array.isArray(res.models) && res.models.length > 0) {
+        if (!extensionConfig) extensionConfig = {};
+        extensionConfig.availableModels = res.models;
+      }
 
       const rawSent = res.data.detected_sentence || res.data.example_sentence || '';
       const normalizedSentence = normalizeContextSentence(rawSent);
@@ -2256,6 +2593,10 @@ svg.anki-spinning,
     const allDecks = Array.from(new Set([currentDeck, ...(extensionConfig?.availableDecks || [])])).filter(Boolean);
     if (!allDecks.length) allDecks.push('Default');
 
+    const currentModel = activePopoverEl._selectedModel || lastUsedModel || extensionConfig?.lastUsedModel || extensionConfig?.noteType || 'Basic';
+    const allModels = Array.from(new Set([currentModel, ...(extensionConfig?.availableModels || ['Basic'])])).filter(Boolean);
+    if (!allModels.length) allModels.push('Basic');
+
     aiData.pos = normalizePos(aiData.pos || 'noun');
     const posClass = getPosClass(aiData.pos);
     const formattedPhonetic = formatPhonetic(aiData.phonetic);
@@ -2264,6 +2605,13 @@ svg.anki-spinning,
       <div class="anki-deck-item ${d === currentDeck ? 'selected' : ''}" data-deck="${escapeHtml(d)}" role="option">
         <span class="anki-deck-item-text">${escapeHtml(d)}</span>
         ${d === currentDeck ? `<svg class="anki-deck-item-check" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ''}
+      </div>
+    `).join('');
+
+    const modelItemsHtml = allModels.map(m => `
+      <div class="anki-model-item ${m === currentModel ? 'selected' : ''}" data-model="${escapeHtml(m)}" role="option">
+        <span class="anki-model-item-text">${escapeHtml(m)}</span>
+        ${m === currentModel ? `<svg class="anki-model-item-check" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ''}
       </div>
     `).join('');
 
@@ -2393,18 +2741,37 @@ svg.anki-spinning,
         ` : ''}
       </div>
 
-      <!-- Footer with Custom Floating Deck Dropdown Menu -->
+      <!-- Toast Notification Container (Positioned directly above footer) -->
+      <div class="anki-toast-container" id="anki-toast-container" style="display: none;"></div>
+
+      <!-- Footer with Target Deck & Card Type Dropdowns -->
       <div class="anki-popover-footer">
-        <div class="anki-deck-dropdown-container">
-          <button type="button" class="anki-deck-trigger" id="anki-deck-trigger" aria-haspopup="listbox" aria-expanded="false" title="Target Anki Deck">
-            ${ICONS.folder}
-            <span class="anki-deck-current-label" id="anki-deck-current-label">${escapeHtml(currentDeck)}</span>
-            ${ICONS.chevron}
-          </button>
-          <div class="anki-deck-menu deck-menu" id="anki-deck-menu" role="listbox" style="display: none;">
-            ${deckItemsHtml}
+        <div class="anki-footer-selectors">
+          <!-- Deck Dropdown -->
+          <div class="anki-deck-dropdown-container">
+            <button type="button" class="anki-deck-trigger" id="anki-deck-trigger" aria-haspopup="listbox" aria-expanded="false" title="Target Anki Deck">
+              ${ICONS.folder}
+              <span class="anki-deck-current-label" id="anki-deck-current-label">${escapeHtml(currentDeck)}</span>
+              ${ICONS.chevron}
+            </button>
+            <div class="anki-deck-menu deck-menu" id="anki-deck-menu" role="listbox" style="display: none;">
+              ${deckItemsHtml}
+            </div>
+          </div>
+
+          <!-- Card Type Dropdown -->
+          <div class="anki-model-dropdown-container">
+            <button type="button" class="anki-model-trigger" id="anki-model-trigger" aria-haspopup="listbox" aria-expanded="false" title="Card Type (Note Type)">
+              ${ICONS.card}
+              <span class="anki-model-current-label" id="anki-model-current-label">${escapeHtml(currentModel)}</span>
+              ${ICONS.chevron}
+            </button>
+            <div class="anki-model-menu model-menu" id="anki-model-menu" role="listbox" style="display: none;">
+              ${modelItemsHtml}
+            </div>
           </div>
         </div>
+
         <button class="anki-btn-add" id="anki-btn-add">
           <span>+ Add to Anki</span>
         </button>
@@ -2429,12 +2796,18 @@ svg.anki-spinning,
     // Ensure draggable stays active on loaded popover
     makePopoverDraggable(activePopoverEl);
 
-    // Custom Deck Dropdown Controller with Auto-Sync
+    // Custom Deck & Card Type Dropdown Controllers with Auto-Sync
     let selectedDeck = currentDeck;
     activePopoverEl._selectedDeck = selectedDeck;
     const triggerBtn = activePopoverEl.querySelector('#anki-deck-trigger');
     const menuEl = activePopoverEl.querySelector('#anki-deck-menu');
     const labelEl = activePopoverEl.querySelector('#anki-deck-current-label');
+
+    let selectedModel = currentModel;
+    activePopoverEl._selectedModel = selectedModel;
+    const modelTriggerBtn = activePopoverEl.querySelector('#anki-model-trigger');
+    const modelMenuEl = activePopoverEl.querySelector('#anki-model-menu');
+    const modelLabelEl = activePopoverEl.querySelector('#anki-model-current-label');
 
     const bindDeckMenuItems = (decksList, activeDeck) => {
       if (!menuEl) return;
@@ -2475,6 +2848,45 @@ svg.anki-spinning,
       });
     };
 
+    const bindModelMenuItems = (modelsList, activeModel) => {
+      if (!modelMenuEl) return;
+      const uniqueModels = Array.from(new Set([activeModel, ...(modelsList || [])])).filter(Boolean);
+      if (!uniqueModels.length) uniqueModels.push('Basic');
+
+      modelMenuEl.innerHTML = uniqueModels.map(m => `
+        <div class="anki-model-item ${m === activeModel ? 'selected' : ''}" data-model="${escapeHtml(m)}" role="option">
+          <span class="anki-model-item-text">${escapeHtml(m)}</span>
+          ${m === activeModel ? `<svg class="anki-model-item-check" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>` : ''}
+        </div>
+      `).join('');
+
+      modelMenuEl.querySelectorAll('.anki-model-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const modelVal = item.dataset.model;
+          selectedModel = modelVal;
+          if (activePopoverEl) activePopoverEl._selectedModel = modelVal;
+          if (modelLabelEl) modelLabelEl.textContent = modelVal;
+
+          modelMenuEl.querySelectorAll('.anki-model-item').forEach(i => {
+            i.classList.remove('selected');
+            const check = i.querySelector('.anki-model-item-check');
+            if (check) check.remove();
+          });
+          item.classList.add('selected');
+          const checkWrap = document.createElement('span');
+          checkWrap.innerHTML = `<svg class="anki-model-item-check" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+          item.appendChild(checkWrap.firstElementChild);
+
+          modelTriggerBtn.classList.remove('active');
+          modelTriggerBtn.setAttribute('aria-expanded', 'false');
+          modelMenuEl.style.display = 'none';
+
+          saveSelectedModel(modelVal);
+        });
+      });
+    };
+
     activePopoverEl._updateDeckMenu = (freshDecks) => {
       if (menuEl && Array.isArray(freshDecks) && freshDecks.length > 0) {
         const cur = activePopoverEl._selectedDeck || selectedDeck;
@@ -2482,10 +2894,16 @@ svg.anki-spinning,
       }
     };
 
+    activePopoverEl._updateModelMenu = (freshModels) => {
+      if (modelMenuEl && Array.isArray(freshModels) && freshModels.length > 0) {
+        const cur = activePopoverEl._selectedModel || selectedModel;
+        bindModelMenuItems(freshModels, cur);
+      }
+    };
+
     if (triggerBtn && menuEl) {
       bindDeckMenuItems(allDecks, selectedDeck);
 
-      // Silently fetch and update live Anki decks in background
       const requestLiveDecksUpdate = () => {
         safeSendMessage({ action: 'FETCH_LIVE_DECKS' }, (res) => {
           if (res?.success && Array.isArray(res.decks) && res.decks.length > 0) {
@@ -2496,11 +2914,17 @@ svg.anki-spinning,
         });
       };
 
-      // Trigger immediate live check
       requestLiveDecksUpdate();
 
       triggerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        // Close model menu if open
+        if (modelTriggerBtn && modelMenuEl) {
+          modelTriggerBtn.classList.remove('active');
+          modelTriggerBtn.setAttribute('aria-expanded', 'false');
+          modelMenuEl.style.display = 'none';
+        }
+
         const isExpanded = triggerBtn.classList.contains('active');
         if (isExpanded) {
           triggerBtn.classList.remove('active');
@@ -2510,20 +2934,62 @@ svg.anki-spinning,
           triggerBtn.classList.add('active');
           triggerBtn.setAttribute('aria-expanded', 'true');
           menuEl.style.display = 'flex';
-          // Live query when user opens dropdown to capture decks created or renamed in Anki
           requestLiveDecksUpdate();
         }
       });
+    }
 
-      // Close menu when clicking outside dropdown container inside popover
-      activePopoverEl.addEventListener('pointerdown', (e) => {
-        if (!e.target.closest('.anki-deck-dropdown-container')) {
+    if (modelTriggerBtn && modelMenuEl) {
+      bindModelMenuItems(allModels, selectedModel);
+
+      const requestLiveModelsUpdate = () => {
+        safeSendMessage({ action: 'FETCH_LIVE_MODELS' }, (res) => {
+          if (res?.success && Array.isArray(res.models) && res.models.length > 0) {
+            if (!extensionConfig) extensionConfig = {};
+            extensionConfig.availableModels = res.models;
+            activePopoverEl?._updateModelMenu?.(res.models);
+          }
+        });
+      };
+
+      requestLiveModelsUpdate();
+
+      modelTriggerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Close deck menu if open
+        if (triggerBtn && menuEl) {
           triggerBtn.classList.remove('active');
           triggerBtn.setAttribute('aria-expanded', 'false');
           menuEl.style.display = 'none';
         }
+
+        const isExpanded = modelTriggerBtn.classList.contains('active');
+        if (isExpanded) {
+          modelTriggerBtn.classList.remove('active');
+          modelTriggerBtn.setAttribute('aria-expanded', 'false');
+          modelMenuEl.style.display = 'none';
+        } else {
+          modelTriggerBtn.classList.add('active');
+          modelTriggerBtn.setAttribute('aria-expanded', 'true');
+          modelMenuEl.style.display = 'flex';
+          requestLiveModelsUpdate();
+        }
       });
     }
+
+    // Close both menus when clicking outside within popover
+    activePopoverEl.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('.anki-deck-dropdown-container')) {
+        triggerBtn?.classList.remove('active');
+        triggerBtn?.setAttribute('aria-expanded', 'false');
+        if (menuEl) menuEl.style.display = 'none';
+      }
+      if (!e.target.closest('.anki-model-dropdown-container')) {
+        modelTriggerBtn?.classList.remove('active');
+        modelTriggerBtn?.setAttribute('aria-expanded', 'false');
+        if (modelMenuEl) modelMenuEl.style.display = 'none';
+      }
+    });
 
     // Audio Playback Listener (reads live word from editable element)
     const btnAudio = activePopoverEl.querySelector('#anki-btn-audio');
@@ -2633,6 +3099,10 @@ svg.anki-spinning,
           if (res.decks && Array.isArray(res.decks) && res.decks.length > 0) {
             extensionConfig.availableDecks = res.decks;
             activePopoverEl?._updateDeckMenu?.(res.decks);
+          }
+          if (res.models && Array.isArray(res.models) && res.models.length > 0) {
+            extensionConfig.availableModels = res.models;
+            activePopoverEl?._updateModelMenu?.(res.models);
           }
 
           // Update mutable context so future actions (Save/Reset) reflect user's updated sentence
@@ -2815,6 +3285,10 @@ svg.anki-spinning,
         if (res.decks && Array.isArray(res.decks) && res.decks.length > 0) {
           extensionConfig.availableDecks = res.decks;
           activePopoverEl?._updateDeckMenu?.(res.decks);
+        }
+        if (res.models && Array.isArray(res.models) && res.models.length > 0) {
+          extensionConfig.availableModels = res.models;
+          activePopoverEl?._updateModelMenu?.(res.models);
         }
 
         const effectiveTranslation = existingTrans || res.data.example_translation || res.data.example_vi || '';
@@ -3002,19 +3476,20 @@ svg.anki-spinning,
   /**
    * 7. Error Rendering inside Popover
    */
-  function renderPopoverError(errorMessage) {
+  function renderPopoverError(rawErrorMessage) {
     if (!activePopoverEl) return;
 
+    const formatted = formatErrorMessage(rawErrorMessage);
     const contentEl = activePopoverEl.querySelector('.anki-popover-content');
     const footerEl = activePopoverEl.querySelector('.anki-popover-footer');
 
     if (contentEl) {
       contentEl.innerHTML = `
-        <div class="anki-popover-banner anki-banner-error">
-          ${ICONS.alert}
+        <div class="anki-popover-banner anki-banner-${formatted.type === 'warning' ? 'warning' : 'error'}">
+          ${formatted.type === 'warning' ? ICONS.alertAmber : ICONS.alert}
           <div>
-            <b>AI Lookup Error:</b><br>
-            ${escapeHtml(errorMessage)}
+            <b>${formatted.type === 'warning' ? 'Lookup Notice:' : 'AI Lookup Error:'}</b><br>
+            ${escapeHtml(formatted.message)}
           </div>
         </div>
       `;
@@ -3051,12 +3526,14 @@ svg.anki-spinning,
     if (!btnEl || btnEl.disabled) return;
 
     btnEl.disabled = true;
+    btnEl.className = 'anki-btn-add';
+    btnEl.style.background = '';
     btnEl.innerHTML = `<span class="anki-spinner-sm"></span> <span>Adding...</span>`;
 
     let watchdogTimer = null;
     let isSettled = false;
 
-    const resetButton = (errorMsg) => {
+    const handleFailure = (rawError) => {
       if (isSettled) return;
       isSettled = true;
       if (watchdogTimer) {
@@ -3064,27 +3541,35 @@ svg.anki-spinning,
         watchdogTimer = null;
       }
 
-      btnEl.disabled = false;
-      btnEl.innerHTML = `<span>Retry</span>`;
-      btnEl.style.background = 'var(--danger)';
+      const formatted = formatErrorMessage(rawError);
 
-      if (errorMsg && activePopoverEl) {
-        const contentEl = activePopoverEl.querySelector('.anki-popover-content');
-        if (contentEl) {
-          let errBanner = contentEl.querySelector('.anki-banner-error');
-          if (!errBanner) {
-            errBanner = document.createElement('div');
-            errBanner.className = 'anki-popover-banner anki-banner-error';
-            contentEl.appendChild(errBanner);
+      if (formatted.isDuplicate) {
+        // Warning state for duplicate note
+        btnEl.disabled = false;
+        btnEl.className = 'anki-btn-add anki-btn-warning';
+        btnEl.innerHTML = `${ICONS.alertAmber} <span>Exists</span>`;
+        showPopoverToast(formatted.message, 'warning', 3500);
+
+        // Auto-revert button back to normal state after 1500ms
+        setTimeout(() => {
+          if (activePopoverEl && btnEl && btnEl.classList.contains('anki-btn-warning')) {
+            btnEl.className = 'anki-btn-add';
+            btnEl.style.background = '';
+            btnEl.innerHTML = `<span>+ Add to Anki</span>`;
           }
-          errBanner.innerHTML = `${ICONS.alert} <span>${escapeHtml(errorMsg)}</span>`;
-        }
+        }, 1500);
+      } else {
+        // Error state
+        btnEl.disabled = false;
+        btnEl.className = 'anki-btn-add anki-btn-error';
+        btnEl.innerHTML = `<span>Retry</span>`;
+        showPopoverToast(formatted.message, 'error', 4000);
       }
     };
 
     // Client-side watchdog timer (7 seconds): guarantee button NEVER gets stuck spinning forever
     watchdogTimer = setTimeout(() => {
-      resetButton('Card save timed out (> 7s). Please check Anki Desktop and AnkiConnect.');
+      handleFailure('Card save timed out (> 7s). Please check Anki Desktop and AnkiConnect.');
     }, 7000);
 
     try {
@@ -3094,13 +3579,19 @@ svg.anki-spinning,
       // Selected Target Deck from dropdown
       const selectedDeck = activePopoverEl?.querySelector('#anki-popover-deck-select')?.value 
         || activePopoverEl?._selectedDeck 
-        || lastUsedDeck
-        || extensionConfig?.lastUsedDeck
+        || lastUsedDeck 
+        || extensionConfig?.lastUsedDeck 
         || extensionConfig?.deckName 
         || 'Default';
-
-      // Remember latest selected deck for future lookups
       saveSelectedDeck(selectedDeck);
+
+      // Selected Target Model (Card Type) from dropdown
+      const selectedModel = activePopoverEl?._selectedModel 
+        || lastUsedModel 
+        || extensionConfig?.lastUsedModel 
+        || extensionConfig?.noteType 
+        || 'Basic';
+      saveSelectedModel(selectedModel);
 
       // English sentence (guaranteed original English from webpage)
       const rawEnglishSentence = editedCardData.example_sentence || context?.sentence || '';
@@ -3124,7 +3615,7 @@ svg.anki-spinning,
         payload: {
           cardData: enrichedCardData,
           targetDeck: selectedDeck,
-          targetModel: extensionConfig?.noteType
+          targetModel: selectedModel
         }
       }, (res) => {
         if (isSettled) return;
@@ -3135,16 +3626,26 @@ svg.anki-spinning,
         isSettled = true;
 
         if (chrome.runtime.lastError || !res || !res.success) {
-          const errorMsg = chrome.runtime.lastError?.message || res?.error || 'Failed to add card';
-          resetButton(errorMsg);
+          const rawErr = chrome.runtime.lastError?.message || res?.error || 'Failed to add card';
+          handleFailure(rawErr);
           return;
         }
 
-        // Success!
+        // Success! Transition to "Added!" state
         btnEl.disabled = true;
         btnEl.className = 'anki-btn-add anki-added';
         btnEl.style.background = '';
-        btnEl.innerHTML = `${ICONS.check} <span>Added</span>`;
+        btnEl.innerHTML = `${ICONS.check} <span>Added!</span>`;
+
+        // Exactly after 1000ms (1 second), smoothly revert button to initial state
+        setTimeout(() => {
+          if (activePopoverEl && btnEl && btnEl.classList.contains('anki-added')) {
+            btnEl.disabled = false;
+            btnEl.className = 'anki-btn-add';
+            btnEl.style.background = '';
+            btnEl.innerHTML = `<span>+ Add to Anki</span>`;
+          }
+        }, 1000);
 
         // Auto-dismiss after configured delay
         if (extensionConfig?.autoCloseOnSuccess !== false) {
@@ -3155,14 +3656,11 @@ svg.anki-spinning,
       });
     } catch (err) {
       console.error('[Anki AI Vocab] Error preparing card data:', err);
-      resetButton(`Data error: ${err.message}`);
+      handleFailure(err);
     }
   }
 
-  /**
-   * 9. Pronunciation Audio via SpeechSynthesis
-   */
-  function playAudioPronunciation(word) {
+    function playAudioPronunciation(word) {
     if (!word || !('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
@@ -3212,7 +3710,7 @@ svg.anki-spinning,
     if (activePopoverEl) {
       if (extensionConfig?.closeOnlyOnX !== true) {
         const path = e.composedPath ? e.composedPath() : [];
-        const isInside = path.some(el => el && (el.id === 'anki-floating-popover' || el.className === 'anki-quick-trigger' || (typeof el.className === 'string' && el.className.includes('anki-deck-menu'))));
+        const isInside = path.some(el => el && (el.id === 'anki-floating-popover' || el.className === 'anki-quick-trigger' || (typeof el.className === 'string' && (el.className.includes('anki-deck-menu') || el.className.includes('anki-model-menu')))));
         if (!isInside) {
           closeFloatingPopover();
         }

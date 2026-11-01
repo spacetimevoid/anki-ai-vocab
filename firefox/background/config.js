@@ -48,6 +48,8 @@ export const DEFAULT_CONFIG = {
   lastUsedDeck: 'Default',
   availableDecks: ['Default'],
   noteType: 'Basic',
+  lastUsedModel: 'Basic',
+  availableModels: ['Basic', 'Anki AI Vocab'],
   tags: 'anki-ai-vocab',
 
   // Field Mapping for Anki Note Types

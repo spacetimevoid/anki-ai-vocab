@@ -133,6 +133,32 @@ async function syncLiveAnkiDecks(currentConfig) {
   return currentConfig.availableDecks || ['Default'];
 }
 
+/**
+ * Automatically query AnkiConnect for live note types (models) if Anki is running.
+ * If new models are found, updates in-memory config and storage seamlessly.
+ */
+async function syncLiveAnkiModels(currentConfig) {
+  try {
+    const models = await getModelNames(currentConfig);
+    if (Array.isArray(models) && models.length > 0) {
+      const prevModels = currentConfig.availableModels || [];
+      const hasChanged = models.length !== prevModels.length || models.some((m, i) => m !== prevModels[i]);
+      if (hasChanged) {
+        currentConfig.availableModels = models;
+        if (!currentConfig.noteType || !models.includes(currentConfig.noteType)) {
+          currentConfig.noteType = models[0];
+        }
+        await saveConfig(currentConfig);
+        cachedConfig = currentConfig;
+      }
+      return models;
+    }
+  } catch {
+    // Anki offline or connection refused - fail quietly
+  }
+  return currentConfig.availableModels || ['Basic'];
+}
+
 // 3. Central Message Dispatcher
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { action, payload } = request;
@@ -145,13 +171,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       switch (action) {
         case 'GET_CONFIG': {
           try {
-            const freshDecks = await Promise.race([
-              syncLiveAnkiDecks(config),
+            const [freshDecks, freshModels] = await Promise.race([
+              Promise.all([syncLiveAnkiDecks(config), syncLiveAnkiModels(config)]),
               new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500))
             ]);
-            if (freshDecks) {
-              config.availableDecks = freshDecks;
-            }
+            if (freshDecks) config.availableDecks = freshDecks;
+            if (freshModels) config.availableModels = freshModels;
           } catch {
             // non-blocking fallback
           }
@@ -170,6 +195,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           break;
         }
 
+        case 'FETCH_LIVE_MODELS': {
+          const currentConfig = payload?.config || config;
+          try {
+            const freshModels = await syncLiveAnkiModels(currentConfig);
+            sendResponse({ success: true, models: freshModels });
+          } catch {
+            sendResponse({ success: false, models: currentConfig.availableModels || ['Basic'] });
+          }
+          break;
+        }
+
+        case 'FETCH_LIVE_DECKS_AND_MODELS': {
+          const currentConfig = payload?.config || config;
+          try {
+            const [freshDecks, freshModels] = await Promise.all([
+              syncLiveAnkiDecks(currentConfig),
+              syncLiveAnkiModels(currentConfig)
+            ]);
+            sendResponse({ success: true, decks: freshDecks, models: freshModels });
+          } catch {
+            sendResponse({
+              success: false,
+              decks: currentConfig.availableDecks || ['Default'],
+              models: currentConfig.availableModels || ['Basic']
+            });
+          }
+          break;
+        }
+
         case 'SAVE_CONFIG': {
           await saveConfig(payload.config);
           cachedConfig = payload.config;
@@ -179,12 +233,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case 'EXPLAIN_WORD': {
           const { word, sentence, sourceUrl, bypassCache, existingTranslation, reuseTranslation } = payload;
-          // Concurrently fetch AI explanation and refresh live Anki decks
-          const [result, freshDecks] = await Promise.all([
+          // Concurrently fetch AI explanation and refresh live Anki decks & models
+          const [result, freshDecks, freshModels] = await Promise.all([
             explainWord({ word, sentence, sourceUrl, config, bypassCache, existingTranslation, reuseTranslation }),
-            syncLiveAnkiDecks(config).catch(() => config.availableDecks || ['Default'])
+            syncLiveAnkiDecks(config).catch(() => config.availableDecks || ['Default']),
+            syncLiveAnkiModels(config).catch(() => config.availableModels || ['Basic'])
           ]);
-          sendResponse({ success: true, data: result, decks: freshDecks });
+          sendResponse({ success: true, data: result, decks: freshDecks, models: freshModels });
           break;
         }
 
@@ -225,12 +280,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           // 2. Crop area using OffscreenCanvas
           const base64Image = await cropImageData(dataUrl, cropArea);
 
-          // 3. Process with Gemini Vision OCR + Vocab Extractor concurrently with live deck sync
-          const [result, freshDecks] = await Promise.all([
+          // 3. Process with Gemini Vision OCR + Vocab Extractor concurrently with live deck & model sync
+          const [result, freshDecks, freshModels] = await Promise.all([
             analyzeCroppedImage({ base64Image, sourceUrl, config }),
-            syncLiveAnkiDecks(config).catch(() => config.availableDecks || ['Default'])
+            syncLiveAnkiDecks(config).catch(() => config.availableDecks || ['Default']),
+            syncLiveAnkiModels(config).catch(() => config.availableModels || ['Basic'])
           ]);
-          sendResponse({ success: true, data: result, decks: freshDecks });
+          sendResponse({ success: true, data: result, decks: freshDecks, models: freshModels });
           break;
         }
 
@@ -264,9 +320,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           ]);
           if (Array.isArray(decks) && decks.length > 0) {
             currentConfig.availableDecks = decks;
-            await saveConfig(currentConfig);
-            cachedConfig = currentConfig;
           }
+          if (Array.isArray(models) && models.length > 0) {
+            currentConfig.availableModels = models;
+          }
+          await saveConfig(currentConfig);
+          cachedConfig = currentConfig;
           sendResponse({ success: true, decks, models });
           break;
         }

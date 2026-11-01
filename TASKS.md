@@ -411,6 +411,26 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Nâng version lên `v3.18.0` trên `manifest.json` và `firefox/manifest.json`.
   - Cập nhật `DESIGN.md`, `TASKS.md` và `CHANGELOG.md`.
 
+## Phase 45: In-Popover Card Type Selector, 1s Action Auto-Reset & Standardized Toast System (v3.19.0)
+- [x] **Task 45.1:** Bổ sung dropdown Card Type (Note Type) trực tiếp tại Footer của Popover tra từ (`content/content.js`, `content/content.css`):
+  - Thiết kế dropdown Card Type đồng bộ phong cách Dark Mode tối giản (`#18181B`, viền mỏng `#27272A`, icon thẻ bài `#A1A1AA`, hover `#52525B`, active Emerald green `#10B981`).
+  - Tự động nạp và cập nhật danh sách loại thẻ (`modelNames`) từ AnkiConnect trong thời gian thực qua background (`FETCH_LIVE_MODELS` và concurrent sync).
+  - Ghi nhớ tùy chọn loại thẻ vào `chrome.storage.local` và `chrome.storage.sync` (`saveSelectedModel`), tự động đồng bộ sang các phiên tra cứu tiếp theo.
+  - Truyền chính xác `targetModel: selectedModel` vào payload `ADD_ANKI_NOTE` khi thêm thẻ vào Anki.
+- [x] **Task 45.2:** Nâng cấp trải nghiệm nút "Add to Anki" với bộ đếm tự động khôi phục sau đúng 1 giây (1000ms):
+  - Khi click: Nút hiển thị spinner + nhãn `Adding...` và bị disable chống spam click.
+  - Khi thành công: Nút chuyển sang nền xanh Emerald (`.anki-added`), icon checkmark và nhãn `Added!`.
+  - Sau đúng 1,000ms (`setTimeout(..., 1000)`): Nút tự động mượt mà quay trở về trạng thái ban đầu (`+ Add to Anki`), bỏ disable để người dùng có thể tiếp tục đổi Card Type / Deck và lưu thêm các biến thể khác mà không cần đóng mở lại Popover.
+- [x] **Task 45.3:** Chuẩn hóa và làm mới toàn bộ hệ thống thông báo lỗi (Error Toast Component & Formatter):
+  - Xây dựng module `formatErrorMessage(rawError)` chuyển ngữ toàn bộ các mã lỗi kỹ thuật từ AnkiConnect và Gemini sang thông điệp tiếng Anh ngắn gọn, rõ ràng, thân thiện (Duplicate card, Connection offline, Missing API key, Rate limit 429, Field mismatch, Timeout).
+  - Thiết kế `showPopoverToast(msg, type)` nhỏ gọn đặt ngay phía trên Footer, không che mất phần hiển thị ngữ nghĩa từ vựng, tự động ẩn sau 3.5s kèm nút "×" đóng nhanh.
+  - Xử lý trạng thái cảnh báo thẻ trùng (Duplicate Note): Hiển thị toast cảnh báo màu hổ phách, nút Add chuyển sang màu amber `Exists` và tự động khôi phục sau 1.5s.
+- [x] **Task 45.4:** Kiểm tra cú pháp toàn diện, đồng bộ Firefox Add-on và nâng version `v3.19.0`:
+  - Đồng bộ hóa toàn bộ sang thư mục `firefox/` với `node build_firefox.js`.
+  - Kiểm tra toàn bộ cú pháp JS với `node --check` (100% pass, 0 lỗi).
+  - Cập nhật `CHANGELOG.md`, `TASKS.md`, `README.md`.
+
+
 
 
 
