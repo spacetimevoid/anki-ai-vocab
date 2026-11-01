@@ -49,12 +49,16 @@ export async function ankiInvoke(action, params = {}, config = {}, timeoutMs = 5
   } catch (err) {
     clearTimeout(timer);
 
-    const message = err.message || '';
-    if (err.name === 'AbortError' || message.includes('aborted') || message.includes('AbortError')) {
+    const message = (err.message || '').toLowerCase();
+    if (err.name === 'AbortError' || message.includes('aborted') || message.includes('aborterror')) {
       throw new Error(`AnkiConnect connection timed out (> ${Math.round(timeoutMs / 1000)}s). Anki responded too slowly.`);
     }
 
-    if (message.includes('Failed to fetch') || message.includes('NetworkError') || message.includes('ECONNREFUSED')) {
+    if (message.includes('failed to fetch') || 
+        message.includes('fetch failed') || 
+        message.includes('networkerror') || 
+        message.includes('econnrefused') || 
+        (err.cause && String(err.cause).toLowerCase().includes('econnrefused'))) {
       throw new Error(
         'Unable to connect to AnkiConnect (127.0.0.1:8765).\n' +
         '1. Ensure Anki Desktop is running on your computer.\n' +
@@ -202,6 +206,14 @@ export async function addAnkiNote({ cardData, config, targetDeck, targetModel })
       audioFieldVal = `[sound:${audioFileName}]`;
       console.log(`[AnkiConnect] Stored audio "${audioFileName}" (${voiceType}) successfully.`);
     } catch (audioErr) {
+      // Fast-fail if AnkiConnect is unreachable: avoids secondary requests and multiple timeouts
+      const audioErrMsg = (audioErr.message || '').toLowerCase();
+      if (audioErrMsg.includes('unable to connect') || 
+          audioErrMsg.includes('fetch failed') || 
+          audioErrMsg.includes('failed to fetch') || 
+          audioErrMsg.includes('econnrefused')) {
+        throw audioErr;
+      }
       console.warn(`[AnkiConnect] Could not store audio file (${audioErr.message}). Using fallback audio.`);
       if (!audioFieldVal) {
         audioFieldVal = `[sound:${audioFileName}]`;

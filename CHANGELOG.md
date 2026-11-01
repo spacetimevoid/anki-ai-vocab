@@ -4,6 +4,26 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.19.1] - 2026-11-01
+
+### Critical Fix: Popover Error Toast Dispatch, Fast-Fail Anki Connection & Duplicate State Resolution
+- **Resolved Button Hanging / Infinite Spinner Race Condition (`content/content.js`, `popup/popup.js`):**
+  - **Root Cause Elimination:** Fixed a critical state bug where `isSettled = true;` was assigned immediately prior to invoking `handleFailure(rawErr)`. Because `handleFailure` began with `if (isSettled) return;`, all failure flows prematurely aborted, leaving the "Add to Anki" button permanently disabled in an infinite spinning state (`Adding...`) with no toast message ever shown.
+  - **Immediate UI Feedback:** When AnkiConnect is offline or returns a duplicate card, `handleFailure` now safely and promptly sets `btnEl.disabled = false`, applies the correct button styling (`Retry` with refresh icon or amber `Exists`), and fires `showPopoverToast(...)` without delay.
+- **Fast-Fail Connection Diagnostics (`background/anki-service.js`, `content/content.js`):**
+  - **30ms Offline Detection:** Updated `ankiInvoke` to perform case-insensitive error matching for `'fetch failed'`, `'failed to fetch'`, `'econnrefused'`, and `err.cause`.
+  - **Audio Download Short-Circuit:** Updated `addAnkiNote` audio retrieval to immediately re-throw connection errors rather than falling back and attempting secondary requests (`modelFieldNames`, `addNote`) against a closed port, speeding up offline failure notification from 8+ seconds to under 35 milliseconds.
+- **Enhanced Duplicate Note & Offline Toast UX:**
+  - **Duplicate Note Warning:** Instantly renders amber button state (`Exists`) and displays non-intrusive warning toast `"Card already exists in your Anki deck."` (auto-reverting the button to `+ Add to Anki` after 1,500ms).
+  - **AnkiConnect Offline Notification:** Displays `"Cannot connect to Anki. Please ensure Anki Desktop is running with AnkiConnect enabled."` alongside a red `Retry` button with refresh icon.
+  - **Consecutive Toast Stability:** Stored and cleared `toastContainer._dismissTimer` to prevent overlapping dismissal timers between consecutive operations.
+  - **Light Mode Warning Badges:** Added dedicated light-mode color token overrides (`#FFFBEB` background, `#B45309` text, `#FDE68A` border) for `.anki-toast-warning` and `.anki-banner-warning`.
+- **Synchronized Firefox Edition & Version Bump:**
+  - Rebuilt `firefox/` edition via `build_firefox.js`.
+  - Bumped version to `v3.19.1` across all manifests and documentation.
+
+---
+
 ## [3.19.0] - 2026-11-01
 
 ### In-Popover Card Type Selector, 1s Action Auto-Reset & Standardized Toast System

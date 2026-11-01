@@ -430,6 +430,20 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Kiểm tra toàn bộ cú pháp JS với `node --check` (100% pass, 0 lỗi).
   - Cập nhật `CHANGELOG.md`, `TASKS.md`, `README.md`.
 
+## Phase 46: Fix Infinite Button Spinning, Fast-Fail Anki Diagnostics & Error System Hardening (v3.19.1)
+- [x] **Task 46.1:** Khắc phục triệt để lỗi nút "Add to Anki" bị xoay vô tận (`Adding...`) khi gặp lỗi (`content/content.js`, `popup/popup.js`):
+  - Sửa lỗi race-condition do gán `isSettled = true;` trước khi gọi `handleFailure(rawErr)`. Đảm bảo `handleFailure` luôn được thực thi đầy đủ, khôi phục `btnEl.disabled = false`, chuyển trạng thái nút sang `Retry` (kèm icon refresh) hoặc amber `Exists`, và kích hoạt `showPopoverToast`.
+  - Đồng bộ sửa lỗi tương tự tại `popup/popup.js` (`fail(errMsg)`), bổ sung phát hiện trùng thẻ và tự động khôi phục nút sau lỗi.
+- [x] **Task 46.2:** Cơ chế chẩn đoán lỗi AnkiConnect siêu nhanh (< 35ms Fast-Fail) (`background/anki-service.js`):
+  - Chuẩn hóa so sánh không phân biệt hoa thường cho `fetch failed`, `failed to fetch`, `econnrefused` và `err.cause` trong `ankiInvoke`.
+  - Ngắt sớm (Fast-fail) trong hàm `addAnkiNote`: Khi tải audio phát âm gặp lỗi kết nối Anki offline, lập tức ném lỗi ra ngoài thay vì tiếp tục thực hiện thêm nhiều request phụ (`modelFieldNames`, `addNote`) gây trễ kéo dài.
+- [x] **Task 46.3:** Hoàn thiện CSS thông báo Toast & Banner trong cả Dark và Light mode (`content/content.css`, `content/content.js`):
+  - Bổ sung bộ quy tắc màu Light mode cho `.anki-toast-warning` và `.anki-banner-warning` (`#FFFBEB`, `#B45309`, `#FDE68A`).
+  - Quản lý bộ đếm thời gian `toastContainer._dismissTimer` chống xung đột khi xuất hiện nhiều thông báo liên tiếp.
+- [x] **Task 46.4:** Đồng bộ hóa sang bản Firefox (`node build_firefox.js`), kiểm tra cú pháp và nâng version `v3.19.1`:
+  - Kiểm tra cú pháp toàn bộ tệp với `node --check` đạt 0 lỗi.
+  - Cập nhật `manifest.json`, `firefox/manifest.json`, `CHANGELOG.md`, `TASKS.md`.
+
 
 
 

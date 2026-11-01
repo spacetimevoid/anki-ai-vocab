@@ -658,12 +658,30 @@ function renderQuickResult(data) {
         settled = true;
         if (watchdog) clearTimeout(watchdog);
         btnAdd.disabled = false;
-        btnAdd.style.backgroundColor = 'var(--danger)';
-        btnAdd.style.color = '#FFFFFF';
-        btnAdd.innerHTML = `
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>Failed: ${escapeHtml(errMsg || 'Anki Error')}</span>
-        `;
+
+        const isDup = (errMsg || '').toLowerCase().includes('duplicate') || (errMsg || '').toLowerCase().includes('already exists');
+        if (isDup) {
+          btnAdd.style.backgroundColor = '#F59E0B';
+          btnAdd.style.color = '#09090B';
+          btnAdd.innerHTML = `
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Exists (Duplicate)</span>
+          `;
+          setTimeout(() => {
+            btnAdd.style.backgroundColor = '';
+            btnAdd.style.color = '';
+            btnAdd.innerHTML = `<span>+ Add to Anki</span>`;
+          }, 1500);
+        } else {
+          btnAdd.style.backgroundColor = 'var(--danger)';
+          btnAdd.style.color = '#FFFFFF';
+          const isConn = (errMsg || '').toLowerCase().includes('connect') || (errMsg || '').toLowerCase().includes('fetch');
+          const displayMsg = isConn ? 'Anki Offline' : 'Failed to Add';
+          btnAdd.innerHTML = `
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>${displayMsg} (Retry)</span>
+          `;
+        }
       };
 
       watchdog = setTimeout(() => {
@@ -716,20 +734,31 @@ function renderQuickResult(data) {
           }
         }, (addRes) => {
           if (settled) return;
+
+          if (chrome.runtime.lastError || !addRes || !addRes.success) {
+            fail(chrome.runtime.lastError?.message || addRes?.error || 'Anki Error');
+            return;
+          }
+
           if (watchdog) clearTimeout(watchdog);
           settled = true;
 
-          if (addRes?.success) {
-            btnAdd.classList.add('added');
-            btnAdd.style.backgroundColor = 'var(--success)';
-            btnAdd.style.color = '#FFFFFF';
-            btnAdd.innerHTML = `
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span>Added</span>
-            `;
-          } else {
-            fail(addRes?.error || 'Anki Error');
-          }
+          btnAdd.classList.add('added');
+          btnAdd.style.backgroundColor = 'var(--success)';
+          btnAdd.style.color = '#FFFFFF';
+          btnAdd.innerHTML = `
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Added</span>
+          `;
+          setTimeout(() => {
+            if (btnAdd && btnAdd.classList.contains('added')) {
+              btnAdd.disabled = false;
+              btnAdd.classList.remove('added');
+              btnAdd.style.backgroundColor = '';
+              btnAdd.style.color = '';
+              btnAdd.innerHTML = `<span>+ Add to Anki</span>`;
+            }
+          }, 1000);
         });
       } catch (err) {
         fail(err.message);

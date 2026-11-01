@@ -918,6 +918,12 @@ svg.anki-spinning,
   border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
+:host([data-theme="light"]) .anki-toast-warning {
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
 .anki-toast-content {
   display: flex;
   align-items: center;
@@ -1015,6 +1021,18 @@ svg.anki-spinning,
   background: var(--danger-bg);
   color: var(--danger);
   border: 1px solid var(--danger);
+}
+
+.anki-banner-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+:host([data-theme="light"]) .anki-banner-warning {
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
 }
 
 /* Minimal Spinner */
@@ -1456,6 +1474,7 @@ svg.anki-spinning,
     // 2. AnkiConnect Connection Error / Anki Not Running
     if (lower.includes('unable to connect') || 
         lower.includes('failed to fetch') || 
+        lower.includes('fetch failed') || 
         lower.includes('connection refused') || 
         lower.includes('econnrefused') || 
         lower.includes('127.0.0.1:8765') || 
@@ -1584,13 +1603,18 @@ svg.anki-spinning,
       }
     };
 
+    if (toastContainer._dismissTimer) {
+      clearTimeout(toastContainer._dismissTimer);
+      toastContainer._dismissTimer = null;
+    }
+
     toastEl.querySelector('.anki-toast-close')?.addEventListener('click', (e) => {
       e.stopPropagation();
       dismissToast();
     });
 
     if (duration > 0) {
-      setTimeout(dismissToast, duration);
+      toastContainer._dismissTimer = setTimeout(dismissToast, duration);
     }
   }
 
@@ -3274,11 +3298,15 @@ svg.anki-spinning,
       }, (res) => {
         if (!activePopoverEl) return;
         if (!res || !res.success) {
-          if (meaningEl) meaningEl.textContent = 'Failed to analyze word or phrase.';
+          const errText = res?.error || 'Failed to analyze word or phrase.';
+          if (meaningEl) meaningEl.textContent = errText;
           if (btnAdd) {
             btnAdd.disabled = false;
+            btnAdd.className = 'anki-btn-add';
+            btnAdd.style.background = '';
             btnAdd.innerHTML = `<span>+ Add to Anki</span>`;
           }
+          showPopoverToast(errText, 'error', 4000);
           return;
         }
 
@@ -3562,7 +3590,7 @@ svg.anki-spinning,
         // Error state
         btnEl.disabled = false;
         btnEl.className = 'anki-btn-add anki-btn-error';
-        btnEl.innerHTML = `<span>Retry</span>`;
+        btnEl.innerHTML = `${ICONS.refresh} <span>Retry</span>`;
         showPopoverToast(formatted.message, 'error', 4000);
       }
     };
@@ -3619,17 +3647,18 @@ svg.anki-spinning,
         }
       }, (res) => {
         if (isSettled) return;
-        if (watchdogTimer) {
-          clearTimeout(watchdogTimer);
-          watchdogTimer = null;
-        }
-        isSettled = true;
 
         if (chrome.runtime.lastError || !res || !res.success) {
           const rawErr = chrome.runtime.lastError?.message || res?.error || 'Failed to add card';
           handleFailure(rawErr);
           return;
         }
+
+        if (watchdogTimer) {
+          clearTimeout(watchdogTimer);
+          watchdogTimer = null;
+        }
+        isSettled = true;
 
         // Success! Transition to "Added!" state
         btnEl.disabled = true;

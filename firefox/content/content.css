@@ -896,6 +896,12 @@ svg.anki-spinning,
   border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
+:host([data-theme="light"]) .anki-toast-warning {
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
 .anki-toast-content {
   display: flex;
   align-items: center;
@@ -993,6 +999,18 @@ svg.anki-spinning,
   background: var(--danger-bg);
   color: var(--danger);
   border: 1px solid var(--danger);
+}
+
+.anki-banner-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+:host([data-theme="light"]) .anki-banner-warning {
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
 }
 
 /* Minimal Spinner */
