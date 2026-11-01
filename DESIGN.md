@@ -314,6 +314,30 @@ To support uninterrupted reading, note-taking, and studying workflows:
    - **Real-Time Hover Preview:** Holding `Ctrl` and moving the mouse across words highlights the previewed phrase in cyan (`.anki-ctx-range-preview`) and displays `Ctrl+Click: Look up "..."` in the header in real-time.
    - **Bidirectional:** Works forward (start -> end) and backward (end -> start) seamlessly.
 
+---
+
+## 12. Minimalist Options Architecture & Frictionless Setup (shadcn/ui + Tailwind)
+
+### ❌ Anti-Patterns Replaced
+1. **Endless Vertical Scrolling Wall:** Previously, the options page displayed all sections (AI, Anki, CORS JSON, General, Audio, Timing, Tokens, Field Mapping, System Prompt) in one continuous 2,000px column. Users felt overwhelmed by advanced settings when all they wanted was to enter their API key.
+2. **Accidental Tab Closure & Data Loss:** If a user spent time customizing note type field mappings or tailoring their system prompt and accidentally closed or refreshed the browser tab, all unsaved changes were silently lost with zero warning.
+3. **No Direct Setup Guidance:** Beginners were forced to search external docs to find where to get a free Google Gemini key or how to configure CORS in AnkiConnect.
+
+### ✅ Minimalist Segmented Tabs & Instant Setup
+1. **Four Focused Segmented Tabs (Linear / shadcn/ui Aesthetic):**
+   - **Tab 1: AI Engine (`#tab-ai`):** Focused setup featuring a prominent onboarding callout for a 100% free Google Gemini key (500 req/day, no credit card required), segmented provider selector (Gemini / OpenAI / Custom), model selector, and inline API key test button.
+   - **Tab 2: Anki Sync (`#tab-anki`):** Live connection card with real-time status dot (`Online (v6)` / `Offline`), URL/key inputs, live deck selector with refresh button, target note type selector, test connection button, and an expandable `<details>` CORS setup guide with 1-click JSON copy.
+   - **Tab 3: Preferences (`#tab-preferences`):** Target translation language, Anki tags, pronunciation voice gender, and modern shadcn switch cards for floating triggers, auto-pronunciation, auto-close, and close-only-on-X.
+   - **Tab 4: Advanced (`#tab-advanced`):** Output token budget slider with one-click Auto toggle, auto-dismiss delay slider, Anki note type card field mapping table with reset button, and editable system prompt with reset button.
+
+2. **Unsaved Changes Detection & Multi-Layer Warning:**
+   - **Intelligent Dirty Tracking (`isDirty`):** Automatically detects user changes across all input fields, radio buttons, sliders, switches, and field mappings after initial load.
+   - **Visual Pulse Warning:** The bottom floating status bar dynamically shifts its ready indicator to an amber pulsing dot (`.status-ready-dot.dot-unsaved`) with `Unsaved changes` label, while the Save button highlights with accent color (`.btn-primary-action.has-unsaved`).
+   - **Native Browser Unload Interception (`beforeunload`):** Warns users with the browser's native leave confirmation dialog before they can close the tab or navigate away without saving.
+   - **Keyboard Shortcut (`Ctrl+S` / `Cmd+S`):** Enables instant saving from anywhere within the options tab without reaching for the mouse.
+   - **Clean State Reset:** Automatically clears the dirty flag and updates the status bar to `✓ Settings saved successfully` upon confirmed storage persistence.
+
+
 
 
 

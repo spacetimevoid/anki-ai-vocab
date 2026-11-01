@@ -68,11 +68,73 @@ const themeBtnDark = document.getElementById('theme-btn-dark');
 // Save Bar
 const btnSaveSettings = document.getElementById('btn-save-settings');
 const saveStatusMsg = document.getElementById('save-status-msg');
+const saveStatusDot = document.getElementById('save-status-dot');
+const saveStatusLabel = document.getElementById('save-status-label');
+const settingsForm = document.getElementById('settings-form');
 
 // In-memory state
 let currentConfig = { ...DEFAULT_CONFIG };
 let currentModelFields = [];
 let statusFadeTimeout = null;
+let isDirty = false;
+let isInitialLoad = true;
+
+/**
+ * Tab Switching Controller (Linear / Shadcn segmented style)
+ */
+function switchTab(tabId) {
+  if (!tabId) return;
+
+  const triggers = document.querySelectorAll('.tab-trigger');
+  const panes = document.querySelectorAll('.tab-pane');
+
+  triggers.forEach(trig => {
+    const isActive = trig.getAttribute('data-tab') === tabId;
+    trig.classList.toggle('active', isActive);
+    trig.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+
+  panes.forEach(pane => {
+    const isActive = pane.id === tabId;
+    pane.classList.toggle('active', isActive);
+  });
+
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState(null, '', '#' + tabId);
+  }
+}
+
+/**
+ * Dirty State Management (Unsaved Changes Warning)
+ */
+function updateSaveStatusUI() {
+  if (!saveStatusDot || !saveStatusLabel || !btnSaveSettings) return;
+
+  if (isDirty) {
+    saveStatusDot.className = 'status-ready-dot dot-unsaved';
+    saveStatusLabel.className = 'status-unsaved-text';
+    saveStatusLabel.textContent = 'Unsaved changes';
+    btnSaveSettings.classList.add('has-unsaved');
+  } else {
+    saveStatusDot.className = 'status-ready-dot';
+    saveStatusLabel.className = '';
+    saveStatusLabel.textContent = 'All changes saved';
+    btnSaveSettings.classList.remove('has-unsaved');
+  }
+}
+
+function markDirty() {
+  if (isInitialLoad) return;
+  if (!isDirty) {
+    isDirty = true;
+    updateSaveStatusUI();
+  }
+}
+
+function markClean() {
+  isDirty = false;
+  updateSaveStatusUI();
+}
 
 /**
  * Recalculate dynamic track fill percentage for smooth modern range slider
@@ -86,29 +148,84 @@ function updateSliderProgress(slider) {
   slider.style.setProperty('--slider-progress', `${pct}%`);
 }
 
+const AUTO_TOKEN_VAL = 1025;
+
 /**
- * Updates UI and slider accessibility based on Auto token mode
+ * Updates UI and slider accessibility based on Auto token mode (Integrated into Slider)
  */
-function updateTokenBudgetUI(isAuto) {
-  if (autoTokenBudgetCheckbox) autoTokenBudgetCheckbox.checked = isAuto;
+function updateTokenBudgetUI(isAuto, tokens) {
+  if (autoTokenBudgetCheckbox) {
+    autoTokenBudgetCheckbox.checked = isAuto;
+  }
+
   if (maxOutputTokensSlider) {
-    maxOutputTokensSlider.disabled = isAuto;
+    maxOutputTokensSlider.disabled = false;
     const wrap = document.getElementById('token-slider-wrap') || maxOutputTokensSlider.parentElement;
     if (wrap) {
-      wrap.style.opacity = isAuto ? '0.38' : '1';
-      wrap.style.filter = isAuto ? 'grayscale(0.4)' : 'none';
-      wrap.style.pointerEvents = isAuto ? 'none' : 'auto';
+      wrap.style.opacity = '1';
+      wrap.style.filter = 'none';
+      wrap.style.pointerEvents = 'auto';
+    }
+
+    if (isAuto) {
+      maxOutputTokensSlider.value = AUTO_TOKEN_VAL;
+    } else if (tokens !== undefined) {
+      maxOutputTokensSlider.value = Math.min(1000, Math.max(150, tokens));
     }
     updateSliderProgress(maxOutputTokensSlider);
   }
+
   if (tokenBudgetVal) {
-    tokenBudgetVal.textContent = isAuto ? 'Auto' : `${maxOutputTokensSlider?.value || 500} tokens`;
-    tokenBudgetVal.style.color = isAuto ? 'var(--success)' : 'var(--text-primary)';
+    if (isAuto) {
+      tokenBudgetVal.textContent = 'Auto (Recommended)';
+      tokenBudgetVal.className = 'slider-value-pill pill-auto';
+    } else {
+      const val = maxOutputTokensSlider ? maxOutputTokensSlider.value : (tokens || 500);
+      tokenBudgetVal.textContent = `${val} tokens`;
+      tokenBudgetVal.className = 'slider-value-pill';
+    }
   }
+
   if (tokenBudgetCaption) {
     tokenBudgetCaption.textContent = isAuto
-      ? 'Auto dynamically allocates token headroom, preventing definitions, meanings, and examples from being truncated. Click Auto to set a manual cap.'
-      : 'Fixed token budget. Values below 400 may cause long Vietnamese translations or English definitions to be cut off.';
+      ? 'Auto dynamically allocates token headroom, preventing definitions, meanings, and examples from being truncated. Drag slider left to set a fixed manual limit.'
+      : `Fixed limit: ${maxOutputTokensSlider?.value || tokens || 500} tokens. Values below 400 may cause long Vietnamese translations or definitions to be cut off. Drag all the way right to switch to Auto.`;
+  }
+}
+
+/**
+ * Updates UI and slider accessibility for Auto-Dismiss Card Timer
+ */
+function updateAutoCloseUI(isEnabled, delayMs) {
+  if (autoCloseOnSuccessInput) {
+    autoCloseOnSuccessInput.checked = isEnabled;
+  }
+
+  const wrap = document.getElementById('autoclose-slider-wrap') || autoCloseDelaySlider?.parentElement;
+  if (wrap) {
+    wrap.style.opacity = isEnabled ? '1' : '0.38';
+    wrap.style.filter = isEnabled ? 'none' : 'grayscale(0.4)';
+    wrap.style.pointerEvents = isEnabled ? 'auto' : 'none';
+  }
+  if (autoCloseDelaySlider) {
+    autoCloseDelaySlider.disabled = !isEnabled;
+    if (delayMs !== undefined) {
+      autoCloseDelaySlider.value = delayMs;
+    }
+    updateSliderProgress(autoCloseDelaySlider);
+  }
+
+  if (autocloseDelayVal) {
+    const curVal = autoCloseDelaySlider ? autoCloseDelaySlider.value : (delayMs || 1400);
+    autocloseDelayVal.textContent = isEnabled ? `${(curVal / 1000).toFixed(1)}s` : 'Off';
+    autocloseDelayVal.style.color = isEnabled ? 'var(--text-primary)' : 'var(--text-muted)';
+  }
+
+  const caption = document.getElementById('autoclose-delay-caption');
+  if (caption) {
+    caption.textContent = isEnabled
+      ? 'Duration before the popover card automatically dismisses after successfully adding to Anki.'
+      : 'Auto-dismiss is turned off in Preferences. Flashcard popovers will remain open on screen until you click outside, press Esc, or click "×".';
   }
 }
 
@@ -118,6 +235,12 @@ function updateTokenBudgetUI(isAuto) {
  */
 async function init() {
   setupEventListeners();
+
+  // Handle URL hash tab if specified
+  const initialHash = window.location.hash?.replace('#', '');
+  if (initialHash && document.getElementById(initialHash)) {
+    switchTab(initialHash);
+  }
 
   // 1. Immediately populate form synchronously with DEFAULT_CONFIG
   // Guarantees UI is never blank or missing fields on initial paint or reload
@@ -130,6 +253,8 @@ async function init() {
       currentConfig = storedConfig;
       populateForm(currentConfig);
       await checkAndFetchAnki(false);
+      isInitialLoad = false;
+      markClean();
       return;
     }
   } catch (err) {
@@ -143,6 +268,8 @@ async function init() {
       populateForm(currentConfig);
       await checkAndFetchAnki(false);
     }
+    isInitialLoad = false;
+    markClean();
   });
 }
 
@@ -156,23 +283,26 @@ function setupEventListeners() {
     themeBtnDark.addEventListener('click', () => setTheme('dark'));
   }
 
-  // Token Budget Auto Toggle
-  if (autoTokenBudgetCheckbox) {
-    autoTokenBudgetCheckbox.addEventListener('change', (e) => {
-      updateTokenBudgetUI(e.target.checked);
-    });
-  }
-
-  // Sliders Live Update & Smooth Track Progression
+  // Sliders Live Update & Smooth Track Progression (Token Slider includes Auto at 1025)
   if (maxOutputTokensSlider) {
     updateSliderProgress(maxOutputTokensSlider);
     maxOutputTokensSlider.addEventListener('input', (e) => {
-      updateSliderProgress(e.target);
-      if (!autoTokenBudgetCheckbox?.checked && tokenBudgetVal) {
-        tokenBudgetVal.textContent = `${e.target.value} tokens`;
-      }
+      const val = parseInt(e.target.value, 10);
+      const isAuto = val >= AUTO_TOKEN_VAL;
+      updateTokenBudgetUI(isAuto, val);
+      markDirty();
     });
   }
+
+  // Token scale mark direct click (150, 300, 500, 750, 1000, Auto)
+  document.querySelectorAll('.slider-scale-row span[data-tokens]').forEach(mark => {
+    mark.addEventListener('click', () => {
+      const targetVal = parseInt(mark.getAttribute('data-tokens'), 10);
+      const isAuto = targetVal >= AUTO_TOKEN_VAL;
+      updateTokenBudgetUI(isAuto, targetVal);
+      markDirty();
+    });
+  });
 
   if (autoCloseDelaySlider) {
     updateSliderProgress(autoCloseDelaySlider);
@@ -181,6 +311,14 @@ function setupEventListeners() {
       if (autocloseDelayVal) {
         autocloseDelayVal.textContent = `${(e.target.value / 1000).toFixed(1)}s`;
       }
+    });
+  }
+
+  // Auto-Close Switch in Tab 3 (Preferences)
+  if (autoCloseOnSuccessInput) {
+    autoCloseOnSuccessInput.addEventListener('change', (e) => {
+      updateAutoCloseUI(e.target.checked);
+      markDirty();
     });
   }
 
@@ -233,13 +371,46 @@ function setupEventListeners() {
       delete currentConfig.fieldMappings[model];
     }
     loadFieldMappingForModel(model);
+    markDirty();
     showInlineToast('Restored default mapping for ' + model, 'normal');
   });
 
   // Reset Prompt
   btnResetPrompt.addEventListener('click', () => {
     customPromptInput.value = DEFAULT_PROMPT;
+    markDirty();
     showInlineToast('Restored default System Prompt', 'normal');
+  });
+
+  // Segmented Tab Switching
+  document.querySelectorAll('.tab-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+      const targetTab = trigger.getAttribute('data-tab');
+      if (targetTab) switchTab(targetTab);
+    });
+  });
+
+  // Dirty Tracking for Unsaved Changes
+  if (settingsForm) {
+    settingsForm.addEventListener('input', () => markDirty());
+    settingsForm.addEventListener('change', () => markDirty());
+  }
+
+  // Prevent accidental tab closing when there are unsaved changes
+  window.addEventListener('beforeunload', (e) => {
+    if (isDirty) {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  });
+
+  // Keyboard shortcut: Ctrl+S / Cmd+S to immediately save changes
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      handleSave();
+    }
   });
 
   // Save Settings
@@ -301,28 +472,21 @@ function populateForm(config) {
   ankiUrlInput.value = config.ankiUrl || 'http://127.0.0.1:8765';
   ankiApiKeyInput.value = config.ankiApiKey || '';
 
-  // Sliders & Token Budget
+  // Sliders & Token Budget (Slider reaches Auto at 1025)
   const isAutoTokens = config.autoTokenBudget !== false;
   const tokens = config.maxOutputTokens || 500;
-  if (maxOutputTokensSlider) {
-    maxOutputTokensSlider.value = tokens;
-    updateSliderProgress(maxOutputTokensSlider);
-  }
-  updateTokenBudgetUI(isAutoTokens);
+  updateTokenBudgetUI(isAutoTokens, tokens);
 
-  if (autoCloseDelaySlider && autocloseDelayVal) {
-    const delay = config.autoCloseDelayMs || 1400;
-    autoCloseDelaySlider.value = delay;
-    updateSliderProgress(autoCloseDelaySlider);
-    autocloseDelayVal.textContent = `${(delay / 1000).toFixed(1)}s`;
-  }
+  // Auto Close Delay Slider & Toggle
+  const isAutoCloseEnabled = config.autoCloseOnSuccess !== false;
+  const autoCloseDelay = config.autoCloseDelayMs || 1400;
+  updateAutoCloseUI(isAutoCloseEnabled, autoCloseDelay);
 
   targetLanguageInput.value = config.targetLanguage || 'Vietnamese';
   tagsInput.value = config.tags || 'anki-ai-vocab';
   showQuickTooltipInput.checked = config.showQuickTooltip !== false;
   autoPronounceInput.checked = config.autoPronounce === true;
   audioVoiceSelect.value = config.audioVoice || 'random';
-  autoCloseOnSuccessInput.checked = config.autoCloseOnSuccess !== false;
   if (closeOnlyOnXInput) {
     closeOnlyOnXInput.checked = config.closeOnlyOnX === true;
   }
@@ -596,7 +760,7 @@ async function handleTestAI() {
  */
 async function handleSave() {
   btnSaveSettings.disabled = true;
-  btnSaveSettings.textContent = 'Saving...';
+  btnSaveSettings.innerHTML = '<span>Saving...</span>';
 
   const provider = document.querySelector('input[name="apiProvider"]:checked').value;
   const selectedModel = noteTypeSelect.value;
@@ -635,8 +799,10 @@ async function handleSave() {
     audioVoice: audioVoiceSelect.value || 'random',
     autoCloseOnSuccess: autoCloseOnSuccessInput.checked,
     closeOnlyOnX: closeOnlyOnXInput ? closeOnlyOnXInput.checked : false,
-    autoTokenBudget: autoTokenBudgetCheckbox ? autoTokenBudgetCheckbox.checked : true,
-    maxOutputTokens: parseInt(maxOutputTokensSlider?.value || '500', 10),
+    autoTokenBudget: parseInt(maxOutputTokensSlider?.value || '1025', 10) >= AUTO_TOKEN_VAL,
+    maxOutputTokens: parseInt(maxOutputTokensSlider?.value || '1025', 10) >= AUTO_TOKEN_VAL
+      ? (currentConfig.maxOutputTokens || 500)
+      : parseInt(maxOutputTokensSlider?.value || '500', 10),
     autoCloseDelayMs: parseInt(autoCloseDelaySlider?.value || '1400', 10),
     theme: currentConfig.theme || 'dark',
     customPrompt: (customPromptInput.value && customPromptInput.value.trim().length > 0)
@@ -649,10 +815,11 @@ async function handleSave() {
     payload: { config: newConfig }
   }, (res) => {
     btnSaveSettings.disabled = false;
-    btnSaveSettings.textContent = 'Save Changes';
+    btnSaveSettings.innerHTML = '<span>Save Changes</span><span class="btn-kbd-hint">Ctrl+S</span>';
 
     if (res?.success) {
       currentConfig = newConfig;
+      markClean();
       showInlineToast('✓ Settings saved successfully', 'success');
     } else {
       showInlineToast('✗ Failed to save: ' + (res?.error || 'Unknown error'), 'error');
@@ -666,17 +833,35 @@ async function handleSave() {
 function showInlineToast(msg, type = 'normal') {
   if (statusFadeTimeout) clearTimeout(statusFadeTimeout);
 
-  if (type === 'success') {
-    saveStatusMsg.innerHTML = `<span class="status-ready-dot" style="background:var(--success);"></span> <span style="color:var(--success); font-weight:500;">${msg}</span>`;
-  } else if (type === 'error') {
-    saveStatusMsg.innerHTML = `<span class="status-ready-dot" style="background:var(--danger);"></span> <span style="color:var(--danger); font-weight:500;">${msg}</span>`;
-  } else {
-    saveStatusMsg.innerHTML = `<span class="status-ready-dot"></span> <span style="color:var(--text-primary); font-weight:500;">${msg}</span>`;
-  }
+  if (saveStatusDot && saveStatusLabel) {
+    if (type === 'success') {
+      saveStatusDot.className = 'status-ready-dot';
+      saveStatusDot.style.backgroundColor = 'var(--success)';
+      saveStatusLabel.className = '';
+      saveStatusLabel.style.color = 'var(--success)';
+      saveStatusLabel.textContent = msg;
+    } else if (type === 'error') {
+      saveStatusDot.className = 'status-ready-dot';
+      saveStatusDot.style.backgroundColor = 'var(--danger)';
+      saveStatusLabel.className = '';
+      saveStatusLabel.style.color = 'var(--danger)';
+      saveStatusLabel.textContent = msg;
+    } else {
+      saveStatusDot.className = 'status-ready-dot';
+      saveStatusDot.style.backgroundColor = '';
+      saveStatusLabel.className = '';
+      saveStatusLabel.style.color = 'var(--text-primary)';
+      saveStatusLabel.textContent = msg;
+    }
 
-  statusFadeTimeout = setTimeout(() => {
-    saveStatusMsg.innerHTML = `<span class="status-ready-dot"></span> <span>Ready to save</span>`;
-  }, 2200);
+    statusFadeTimeout = setTimeout(() => {
+      saveStatusDot.style.backgroundColor = '';
+      saveStatusLabel.style.color = '';
+      updateSaveStatusUI();
+    }, 2400);
+  } else if (saveStatusMsg) {
+    saveStatusMsg.textContent = msg;
+  }
 }
 
 function escapeAttr(str) {

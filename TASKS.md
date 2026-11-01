@@ -391,6 +391,26 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Kiểm tra cú pháp toàn bộ file với 0 lỗi (`node --check`).
   - Cập nhật `DESIGN.md`, `TASKS.md` và `CHANGELOG.md`.
 
+## Phase 44: Minimalist Options Architecture, Quick Onboarding & Unsaved Changes Protection (v3.18.0)
+- [x] **Task 44.1:** Thiết kế lại toàn bộ giao diện Options theo chuẩn Minimalism (shadcn/ui + Tailwind):
+  - Thay thế danh sách cuộn dọc dài 2,000px bằng thanh điều hướng phân đoạn 4 Tab (`.settings-tabs-bar`): **AI Engine**, **Anki Sync**, **Preferences**, **Advanced**.
+  - Thiết kế thẻ onboarding trực quan với đường dẫn nhận API Key Google Gemini miễn phí (500 req/ngày, không cần thẻ tín dụng) giúp cài đặt trong 30 giây.
+  - Bổ sung thẻ trạng thái AnkiConnect trực tiếp (`Online (v6)` / `Offline`) và khối hướng dẫn cấu hình CORS có thể mở rộng (`<details>`) kèm nút copy 1-click JSON.
+  - Giữ thanh **Auto-Dismiss Card Timer** tinh gọn với nhãn thời gian phản hồi nhạy, loại bỏ nút toggle thừa và quản lý bật/tắt thống nhất thông qua switch ở Tab Preferences.
+  - Tái thiết kế thanh trượt **Desired Output Token Budget** cho phép kéo trực tiếp đến mức **Auto** (tại mốc ngoài cùng bên phải) kèm thanh chia vạch hiển thị trực quan (150 - 1000 - Auto), loại bỏ hoàn toàn nút Auto thừa.
+  - Tối ưu hóa các switch card theo phong cách shadcn hiện đại và giữ nguyên 100% ID phần tử, backward compatibility và schema cấu hình.
+- [x] **Task 44.2:** Triển khai cơ chế phát hiện và cảnh báo chưa lưu (Unsaved Changes Protection):
+  - Xây dựng hệ thống theo dõi trạng thái thay đổi (`isDirty`) tự động kích hoạt khi người dùng chỉnh sửa bất kỳ trường nhập liệu nào.
+  - Thanh trạng thái cố định phía dưới (Floating Save Bar) tự động hiển thị chấm cảnh báo màu hổ phách xung nhịp (`.status-ready-dot.dot-unsaved`), nhãn `Unsaved changes` và nút Save nổi bật.
+  - Chặn đóng tab / tải lại trang với sự kiện `beforeunload` native, ngăn chặn hoàn toàn mất dữ liệu cấu hình ngoài ý muốn.
+  - Tích hợp phím tắt `Ctrl+S` / `Cmd+S` cho phép lưu thay đổi tức thì từ mọi vị trí trong trang cài đặt.
+  - Tự động đặt lại trạng thái sạch (`markClean()`) ngay sau khi lưu thành công vào `chrome.storage.sync`.
+- [x] **Task 44.3:** Kiểm tra cú pháp toàn diện, đồng bộ hóa sang bản Firefox và cập nhật tài liệu:
+  - Đồng bộ hóa toàn bộ sang bản Firefox (`firefox/options/options.html`, `options.css`, `options.js`) thông qua `build_firefox.js`.
+  - Kiểm tra cú pháp với `node --check` trên toàn bộ tệp JavaScript, đạt 0 lỗi.
+  - Nâng version lên `v3.18.0` trên `manifest.json` và `firefox/manifest.json`.
+  - Cập nhật `DESIGN.md`, `TASKS.md` và `CHANGELOG.md`.
+
 
 
 

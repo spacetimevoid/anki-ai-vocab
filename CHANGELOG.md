@@ -4,6 +4,30 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.18.0] - 2026-10-31
+
+### Minimalist Options Architecture, Quick Onboarding & Unsaved Changes Protection
+- **Minimalist Segmented Tabs & Frictionless Setup (`options/options.html`, `options/options.css`, `options/options.js`):**
+  - **Replaced 2,000px Vertical Scroll Wall:** Organized settings into 4 clean, focused segmented tabs styled according to the Linear and shadcn/ui design language:
+    - **Tab 1: AI Engine (`#tab-ai`):** Instant setup with a 1-click free Google Gemini API key callout banner (500 req/day, no credit card required), segmented provider selector (Gemini / OpenAI / Custom), model selector, and inline API key test button.
+    - **Tab 2: Anki Sync (`#tab-anki`):** Live Anki connection status card (`Online (v6)` / `Offline`), URL/key inputs, dynamic deck selector with refresh button, note type selector, connection test button, and expandable `<details>` CORS setup guide with 1-click JSON copy.
+    - **Tab 3: Preferences (`#tab-preferences`):** Target translation language, Anki tags, pronunciation voice gender, and modern shadcn switch cards for floating triggers, auto-pronunciation, auto-close, and close-only-on-X.
+    - **Tab 4: Advanced (`#tab-advanced`):** Output token budget slider with integrated Auto mark on scale (150 - 1000 - Auto), auto-dismiss delay slider, Anki note type card field mapping table with reset button, and editable system prompt with reset button.
+  - **Clean Token Scale Labels:** Streamlined the token budget slider scale tick to display a clean `Auto` label, removing redundant star decorations.
+  - **100% Backward Compatibility:** Preserved all existing element IDs, event handlers, and storage schemas, ensuring zero runtime regressions.
+- **Unsaved Changes Detection & Protection (`options/options.js`, `options/options.css`):**
+  - **Dynamic Dirty Tracking (`isDirty`):** Bound change listeners to `#settings-form` to track modifications across inputs, selects, switches, sliders, and field mappings.
+  - **Visual Unsaved Warning:** Bottom floating save bar dynamically pulses an amber warning dot (`.status-ready-dot.dot-unsaved`) with `Unsaved changes` text and highlights the Save button.
+  - **Accidental Tab Close Interception (`beforeunload`):** Triggers the native browser confirmation dialog if the user attempts to close the tab, refresh, or navigate away while changes remain unsaved.
+  - **Fast Save Keyboard Shortcut (`Ctrl+S` / `Cmd+S`):** Users can save settings instantly at any time from anywhere in the page via keyboard.
+  - **Clean State Reset:** Automatically clears the dirty state upon confirmed storage persistence with a smooth green confirmation message.
+- **Firefox Edition Synchronization & Verification (`build_firefox.js`, `firefox/`):**
+  - Synchronized all options redesign updates and scripts to `firefox/options/` via `build_firefox.js`.
+  - Verified 100% syntax compliance across all JavaScript files with `node --check`.
+  - Bumped version to `v3.18.0` in `manifest.json` and `firefox/manifest.json`.
+
+---
+
 ## [3.17.0] - 2026-10-31
 
 ### Redesigned Captured Context: Ctrl+Click Phrase Range Selection & 1-Click Lookup
