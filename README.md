@@ -7,7 +7,7 @@
 
   [![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=flat-square&logo=google-chrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
   [![Firefox Add-on](https://img.shields.io/badge/Firefox_Add--on-Manifest_V3-FF7139?style=flat-square&logo=firefox&logoColor=white)](https://addons.mozilla.org/)
-  [![Release](https://img.shields.io/badge/Release-v3.20.0-10B981?style=flat-square)](https://github.com)
+  [![Release](https://img.shields.io/badge/Release-v3.21.0-10B981?style=flat-square)](https://github.com)
   [![License: MIT](https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square)](LICENSE)
   [![AI Engine](https://img.shields.io/badge/AI_Engine-Gemini_%7C_Claude_%7C_OpenAI-8B5CF6?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
   [![AnkiConnect](https://img.shields.io/badge/Anki-AnkiConnect_Ready-F59E0B?style=flat-square&logo=anki&logoColor=white)](https://ankiweb.net/shared/info/2055492159)

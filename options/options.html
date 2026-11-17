@@ -115,29 +115,32 @@
         <div class="form-row">
           <label class="field-label">Provider</label>
           <div class="provider-pill-group" role="radiogroup">
-            <label class="provider-pill">
+            <label class="provider-pill" id="pill-gemini">
               <input type="radio" name="apiProvider" id="provider-gemini" value="gemini" checked>
               <span class="pill-inner">
                 <span class="pill-title">Google Gemini</span>
-                <span class="pill-badge-rec">Recommended</span>
+                <span class="pill-badge-rec" id="badge-gemini">Recommended</span>
               </span>
             </label>
-            <label class="provider-pill">
+            <label class="provider-pill" id="pill-claude">
               <input type="radio" name="apiProvider" id="provider-claude" value="claude">
               <span class="pill-inner">
                 <span class="pill-title">Anthropic Claude</span>
+                <span class="pill-badge-key" id="badge-claude" style="display: none;">Key Set</span>
               </span>
             </label>
-            <label class="provider-pill">
+            <label class="provider-pill" id="pill-openai">
               <input type="radio" name="apiProvider" id="provider-openai" value="openai">
               <span class="pill-inner">
                 <span class="pill-title">OpenAI</span>
+                <span class="pill-badge-key" id="badge-openai" style="display: none;">Key Set</span>
               </span>
             </label>
-            <label class="provider-pill">
+            <label class="provider-pill" id="pill-custom">
               <input type="radio" name="apiProvider" id="provider-custom" value="custom">
               <span class="pill-inner">
                 <span class="pill-title">Custom / Ollama</span>
+                <span class="pill-badge-key" id="badge-custom" style="display: none;">Key Set</span>
               </span>
             </label>
           </div>
@@ -146,7 +149,7 @@
         <!-- API Key with Eye Toggle -->
         <div class="form-row">
           <div class="label-with-aside">
-            <label class="field-label" for="apiKey">API Key</label>
+            <label class="field-label" for="apiKey" id="api-key-label">Google Gemini API Key</label>
             <span id="api-key-link" class="aside-link">
               <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Free Google AI Key ↗</a>
             </span>
@@ -164,7 +167,7 @@
               </svg>
             </button>
           </div>
-          <p class="field-caption">Your API key is securely encrypted and stored locally in your browser extension storage.</p>
+          <p class="field-caption" id="api-key-caption">API key is saved specifically for Google Gemini and will be retained when switching providers.</p>
         </div>
 
         <!-- Google Gemini Model Dropdown -->

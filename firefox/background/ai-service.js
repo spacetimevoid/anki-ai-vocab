@@ -422,34 +422,50 @@ async function lookupGeminiFast(word, sentence, apiKey, model = PRIMARY_GEMINI_M
     const safeTrans = existingTranslation.trim().replace(/"/g, '\\"');
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
 
-STRICT ANALYSIS PRIORITIES:
-1. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi): HIGHEST PRIORITY. You MUST provide the exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context dictionary meaning.
-2. PRIORITY 2 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
-3. CONTEXT REUSE (CRITICAL): The sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Do NOT re-translate the sentence. Output "example_en" as the context sentence and "example_vi" exactly as "${safeTrans}".
-4. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.
-5. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
-6. CONTEXT NORMALIZATION: If Context is in ALL CAPS or has OCR glitches, normalize "example_en" into natural sentence casing, keeping all original words.`;
+STRICT TRANSLATION QUALITY & ANALYSIS PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - All translations ("meaning_vi" and "example_vi") MUST sound natural, fluent, and idiomatic in ${targetLang}, matching authentic everyday native speech.
+   - Strictly avoid stiff word-for-word machine translation ("translationese").
+   - Eliminate awkward passive voice ("được/bị" when unnatural), clumsy literal pronouns ("của nó/chúng nó"), and robotic phrasing.
+   - For dialogs, colloquial expressions, subtitles, slang, or idioms, translate with natural conversational tone (e.g. adapt naturally like high-quality movie subtitles or professional human translators).
+2. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi - HIGHEST PRIORITY):
+   - Concise, natural translation in ${targetLang} fitting the EXACT REAL-LIFE CONTEXT of the sentence. Never return an out-of-context, academic, or rigid primary dictionary headword if it does not fit this context.
+3. PRIORITY 2 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
+4. CONTEXT REUSE (CRITICAL): The sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Do NOT re-translate the sentence. Output "example_en" as the context sentence and "example_vi" exactly as "${safeTrans}".
+5. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.
+6. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+7. CONTEXT NORMALIZATION: If Context is in ALL CAPS or has OCR glitches, normalize "example_en" into natural sentence casing, keeping all original words.`;
     prompt = `Word: "${cleanWord}"\nContext: "${rawSentence}"\nExisting Translation: "${safeTrans}"`;
   } else if (isRealContext) {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
 
-STRICT ANALYSIS PRIORITIES:
-1. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi): HIGHEST PRIORITY. You MUST provide the exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context dictionary meaning.
-2. PRIORITY 2 - CONTEXT SENTENCE & 100% TRANSLATION (example_en & example_vi): Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting, dropping, or summarizing any clause or conjunction.
-3. PRIORITY 3 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
-4. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.
-5. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
-6. CONTEXT NORMALIZATION: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED") or has OCR glitches, normalize "example_en" into natural, standard English sentence casing, keeping all original words.`;
+STRICT TRANSLATION QUALITY & ANALYSIS PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - All translations ("meaning_vi" and "example_vi") MUST sound natural, fluent, and idiomatic in ${targetLang}, matching authentic everyday native speech.
+   - Strictly avoid stiff word-for-word machine translation ("translationese").
+   - Eliminate awkward passive voice ("được/bị" when unnatural), clumsy literal pronouns ("của nó/chúng nó"), and robotic phrasing.
+   - For dialogs, colloquial expressions, subtitles, slang, or idioms, translate with natural conversational tone (e.g. adapt naturally like high-quality movie subtitles or professional human translators).
+2. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi - HIGHEST PRIORITY):
+   - Concise, natural translation in ${targetLang} fitting the EXACT REAL-LIFE CONTEXT of the sentence. Never return an out-of-context, academic, or rigid primary dictionary headword if it does not fit this context.
+3. PRIORITY 2 - CONTEXT SENTENCE & NATURAL FULL TRANSLATION (example_en & example_vi):
+   - Set "example_en" to the exact Context sentence.
+   - Translate the entire meaning and nuances of the full sentence into smooth, natural, conversational ${targetLang} for "example_vi". Convey all clauses naturally without mechanical word-by-word conversion.
+4. PRIORITY 3 - CONCISE DEFINITION (definition_en): Concise English definition explaining the word/phrase specifically AS USED in this context.
+5. Lemmatization: "word" must be the base dictionary lemma in lowercase (e.g. "families" -> "family", "stepping stones" -> "stepping stone"). "phonetic" must match this base lemma.
+6. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+7. CONTEXT NORMALIZATION: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED") or has OCR glitches, normalize "example_en" into natural, standard English sentence casing, keeping all original words.`;
     prompt = `Word: "${cleanWord}"\nContext: "${rawSentence}"`;
   } else {
     defaultSystemInstruction = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: ${targetLang}.
 
-STRICT ANALYSIS PRIORITIES:
-1. PRIORITY 1 - ACCURATE MEANING (meaning_vi): Natural, high-frequency translation in ${targetLang}.
-2. PRIORITY 2 - AUTHENTIC EXAMPLE SENTENCE & 100% TRANSLATION (example_en & example_vi): Generate a practical B1-B2 English example sentence containing the lemma in "example_en", and translate 100% of it into ${targetLang} for "example_vi".
-3. PRIORITY 3 - CONCISE DEFINITION (definition_en): Clear English learner definition for flashcards.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
+STRICT TRANSLATION QUALITY & ANALYSIS PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY:
+   - Natural, high-frequency, idiomatic translation in ${targetLang} matching authentic everyday native speech.
+2. PRIORITY 1 - ACCURATE MEANING (meaning_vi): Concise, natural translation in ${targetLang}.
+3. PRIORITY 2 - AUTHENTIC EXAMPLE SENTENCE & NATURAL TRANSLATION (example_en & example_vi): Generate a practical B1-B2 English example sentence containing the lemma in "example_en", and provide a smooth, natural conversational translation into ${targetLang} for "example_vi".
+4. PRIORITY 3 - CONCISE DEFINITION (definition_en): Clear English learner definition for flashcards.
+5. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+6. Part of Speech Standardization (pos): "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
     prompt = `Word: "${cleanWord}"\nContext: none. Generate an authentic example sentence containing the lemma.`;
   }
 
@@ -563,9 +579,9 @@ STRICT ANALYSIS PRIORITIES:
  * Query Google Gemini with Max 1 Quick Fallback (Fail-Fast Policy)
  */
 async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = false, existingTranslation = '', reuseTranslation = false }) {
-  const apiKey = (config.apiKey || '').trim();
+  const apiKey = (config.geminiApiKey || (config.apiProvider === 'gemini' ? config.apiKey : '') || '').trim();
   if (!apiKey) {
-    throw new Error('Gemini API Key is not configured. Please open Settings to enter your API Key.');
+    throw new Error('Google Gemini API Key is not configured. Please open Settings to enter your Gemini API Key.');
   }
 
   const primaryModel = config.geminiModel || PRIMARY_GEMINI_MODEL;
@@ -623,9 +639,11 @@ async function queryGemini({ word, sentence, sourceUrl, config, bypassCache = fa
  * Query OpenAI or OpenAI-Compatible API with Configurable Token Budget
  */
 async function queryOpenAI({ word, sentence, sourceUrl, config, isCustom = false, bypassCache = false, existingTranslation = '', reuseTranslation = false }) {
-  const apiKey = (config.apiKey || '').trim();
+  const apiKey = (isCustom
+    ? (config.customApiKey || (config.apiProvider === 'custom' ? config.apiKey : ''))
+    : (config.openaiApiKey || (config.apiProvider === 'openai' ? config.apiKey : '')) || '').trim();
   if (!apiKey && !isCustom) {
-    throw new Error('OpenAI API Key is not configured. Please open Settings to enter your API Key.');
+    throw new Error('OpenAI API Key is not configured. Please open Settings to enter your OpenAI API Key.');
   }
 
   const targetLang = config.targetLanguage || 'Vietnamese';
@@ -655,32 +673,41 @@ async function queryOpenAI({ word, sentence, sourceUrl, config, isCustom = false
   if (isRealContext && reuseTranslation && existingTranslation && existingTranslation.trim()) {
     const safeTrans = existingTranslation.trim().replace(/"/g, '\\"');
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
-STRICT PRIORITIES:
-1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact translation in ${targetLang} fitting the SPECIFIC CONTEXT.
-2. PRIORITY 2: "definition_en" - Concise English definition for this context.
-3. CONTEXT REUSE: Sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Set "example_en" to Context and "example_vi" to "${safeTrans}". Do NOT re-translate.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
-6. Context Normalization: Clean up noisy capitalization or spacing into natural sentence casing.`;
+STRICT TRANSLATION QUALITY & PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - All translations ("meaning_vi" and "example_vi") MUST sound natural, fluent, and idiomatic in ${targetLang}, matching authentic everyday native speech.
+   - Avoid stiff word-for-word translation ("translationese"), awkward passive voice ("được/bị"), and clumsy literal pronouns ("của nó").
+   - Adapt tone naturally for dialogue, subtitles, and colloquial expressions.
+2. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT.
+3. PRIORITY 2: "definition_en" - Concise English definition for this context.
+4. CONTEXT REUSE: Sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Set "example_en" to Context and "example_vi" to "${safeTrans}". Do NOT re-translate.
+5. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+6. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+7. Context Normalization: Clean up noisy capitalization or spacing into natural sentence casing.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}". Existing Translation: "${safeTrans}".`;
   } else if (isRealContext) {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
-STRICT PRIORITIES:
-1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context meaning.
-2. PRIORITY 2: Context sentence & 100% Translation - Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting any clause or conjunction.
-3. PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase as used in this context.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
-6. Context Normalization: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED"), normalize "example_en" into standard sentence casing.`;
+STRICT TRANSLATION QUALITY & PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - All translations ("meaning_vi" and "example_vi") MUST sound natural, fluent, and idiomatic in ${targetLang}, matching authentic everyday native speech.
+   - Avoid stiff word-for-word translation ("translationese"), awkward passive voice ("được/bị"), and clumsy literal pronouns ("của nó").
+   - Adapt tone naturally for dialogue, subtitles, and colloquial expressions.
+2. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return an out-of-context or rigid meaning.
+3. PRIORITY 2: Context sentence & Natural Translation - Set "example_en" to Context sentence. Translate 100% of the entire Context sentence into smooth, natural, conversational ${targetLang} for "example_vi" without mechanical word-by-word conversion.
+4. PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase as used in this context.
+5. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+6. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+7. Context Normalization: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED"), normalize "example_en" into standard sentence casing.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}".`;
   } else {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}.
-STRICT PRIORITIES:
-1. PRIORITY 1: "meaning_vi" - Natural, high-frequency translation in ${targetLang}.
-2. PRIORITY 2: Authentic example sentence & 100% Translation - Practical B1-B2 example in "example_en", translated 100% into ${targetLang} for "example_vi".
-3. PRIORITY 3: "definition_en" - Clear English learner definition for flashcards.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
+STRICT TRANSLATION QUALITY & PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY: Natural, high-frequency, idiomatic translation in ${targetLang} matching everyday speech.
+2. PRIORITY 1: "meaning_vi" - Natural, high-frequency translation in ${targetLang}.
+3. PRIORITY 2: Authentic example sentence & Natural Translation - Practical B1-B2 example in "example_en", translated smoothly and naturally into ${targetLang} for "example_vi".
+4. PRIORITY 3: "definition_en" - Clear English learner definition for flashcards.
+5. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+6. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
     prompt = `Word: "${cleanWord}". Context: none. Generate a natural English example sentence for this word.`;
   }
 
@@ -752,9 +779,9 @@ STRICT PRIORITIES:
  * Query Anthropic Claude API (Native /v1/messages or Gateway compatible)
  */
 async function queryClaude({ word, sentence, sourceUrl, config, bypassCache = false, existingTranslation = '', reuseTranslation = false }) {
-  const apiKey = (config.apiKey || '').trim();
+  const apiKey = (config.claudeApiKey || (config.apiProvider === 'claude' ? config.apiKey : '') || '').trim();
   if (!apiKey) {
-    throw new Error('Claude API Key is not configured. Please open Settings to enter your API Key.');
+    throw new Error('Anthropic Claude API Key is not configured. Please open Settings to enter your Claude API Key.');
   }
 
   const targetLang = config.targetLanguage || 'Vietnamese';
@@ -781,32 +808,41 @@ async function queryClaude({ word, sentence, sourceUrl, config, bypassCache = fa
   if (isRealContext && reuseTranslation && existingTranslation && existingTranslation.trim()) {
     const safeTrans = existingTranslation.trim().replace(/"/g, '\\"');
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}. Return ONLY valid JSON with no markdown and no thinking.
-STRICT PRIORITIES:
-1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact translation in ${targetLang} fitting the SPECIFIC CONTEXT.
-2. PRIORITY 2: "definition_en" - Concise English definition for this context.
-3. CONTEXT REUSE: Sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Set "example_en" to Context and "example_vi" to "${safeTrans}". Do NOT re-translate.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
-6. Context Normalization: Clean up noisy capitalization or spacing into natural sentence casing.`;
+STRICT TRANSLATION QUALITY & PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - All translations ("meaning_vi" and "example_vi") MUST sound natural, fluent, and idiomatic in ${targetLang}, matching authentic everyday native speech.
+   - Avoid stiff word-for-word translation ("translationese"), awkward passive voice ("được/bị"), and clumsy literal pronouns ("của nó").
+   - Adapt tone naturally for dialogue, subtitles, and colloquial expressions.
+2. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT.
+3. PRIORITY 2: "definition_en" - Concise English definition for this context.
+4. CONTEXT REUSE: Sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Set "example_en" to Context and "example_vi" to "${safeTrans}". Do NOT re-translate.
+5. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+6. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+7. Context Normalization: Clean up noisy capitalization or spacing into natural sentence casing.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}". Existing Translation: "${safeTrans}". Output JSON only:`;
   } else if (isRealContext) {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}. Return ONLY valid JSON with no markdown and no thinking.
-STRICT PRIORITIES:
-1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context meaning.
-2. PRIORITY 2: Context sentence & 100% Translation - Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting any clause or conjunction.
-3. PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase as used in this context.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
-6. Context Normalization: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED"), normalize "example_en" into standard sentence casing.`;
+STRICT TRANSLATION QUALITY & PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - All translations ("meaning_vi" and "example_vi") MUST sound natural, fluent, and idiomatic in ${targetLang}, matching authentic everyday native speech.
+   - Avoid stiff word-for-word translation ("translationese"), awkward passive voice ("được/bị"), and clumsy literal pronouns ("của nó").
+   - Adapt tone naturally for dialogue, subtitles, and colloquial expressions.
+2. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return an out-of-context or rigid meaning.
+3. PRIORITY 2: Context sentence & Natural Translation - Set "example_en" to Context sentence. Translate 100% of the entire Context sentence into smooth, natural, conversational ${targetLang} for "example_vi" without mechanical word-by-word conversion.
+4. PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase as used in this context.
+5. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+6. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+7. Context Normalization: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED"), normalize "example_en" into standard sentence casing.`;
     prompt = `Word: "${cleanWord}". Context: "${rawSentence}". Output JSON only:`;
   } else {
     systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}. Return ONLY valid JSON with no markdown and no thinking.
-STRICT PRIORITIES:
-1. PRIORITY 1: "meaning_vi" - Natural, high-frequency translation in ${targetLang}.
-2. PRIORITY 2: Authentic example sentence & 100% Translation - Practical B1-B2 example in "example_en", translated 100% into ${targetLang} for "example_vi".
-3. PRIORITY 3: "definition_en" - Clear English learner definition for flashcards.
-4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
-5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
+STRICT TRANSLATION QUALITY & PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY: Natural, high-frequency, idiomatic translation in ${targetLang} matching everyday speech.
+2. PRIORITY 1: "meaning_vi" - Natural, high-frequency translation in ${targetLang}.
+3. PRIORITY 2: Authentic example sentence & Natural Translation - Practical B1-B2 example in "example_en", translated smoothly and naturally into ${targetLang} for "example_vi".
+4. PRIORITY 3: "definition_en" - Clear English learner definition for flashcards.
+5. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+6. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
     prompt = `Word: "${cleanWord}". Context: none. Generate a natural English example sentence for this word. Output JSON only:`;
   }
 
@@ -919,12 +955,23 @@ export async function explainWord({ word, sentence, sourceUrl, config, bypassCac
  */
 export async function testAIConnection(config) {
   const provider = config.apiProvider || 'gemini';
-  const apiKey = (config.apiKey || '').trim();
+  let apiKey = '';
+  if (provider === 'gemini') {
+    apiKey = (config.geminiApiKey || (config.apiProvider === 'gemini' ? config.apiKey : '') || '').trim();
+  } else if (provider === 'claude') {
+    apiKey = (config.claudeApiKey || (config.apiProvider === 'claude' ? config.apiKey : '') || '').trim();
+  } else if (provider === 'openai') {
+    apiKey = (config.openaiApiKey || (config.apiProvider === 'openai' ? config.apiKey : '') || '').trim();
+  } else if (provider === 'custom') {
+    apiKey = (config.customApiKey || (config.apiProvider === 'custom' ? config.apiKey : '') || '').trim();
+  } else {
+    apiKey = (config.apiKey || '').trim();
+  }
 
   if (!apiKey && provider !== 'custom') {
     return {
       ok: false,
-      error: 'Please enter an API Key before testing.'
+      error: `Please enter an API Key for ${provider === 'claude' ? 'Claude' : provider === 'gemini' ? 'Gemini' : 'OpenAI'} before testing.`
     };
   }
 
@@ -1151,9 +1198,9 @@ Examine this cropped image (e.g. video subtitles, movie line, article text, or P
 Task:
 1. OCR & Normalization: Transcribe all visible text accurately into a coherent, complete English sentence: "detected_sentence". If the text is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED") or has OCR spacing glitches, normalize it into natural, standard English sentence casing, keeping all original words.
 2. Key Vocab Selection: From "detected_sentence", select the most valuable or challenging vocabulary word or key phrase (B1-C2 level) to learn: "word".
-3. STRICT PRIORITIES OF ANALYSIS:
-   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of "detected_sentence". Never return an out-of-context generic meaning.
-   - PRIORITY 2: Context & Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be 100% full, complete translation of "detected_sentence" into ${targetLang} without omitting any clause.
+3. STRICT PRIORITIES (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural, conversational translation in ${targetLang} fitting the SPECIFIC REAL-LIFE CONTEXT of "detected_sentence". Never return an out-of-context generic meaning or stiff translationese.
+   - PRIORITY 2: Context & Natural Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be a smooth, natural, and complete translation of "detected_sentence" into idiomatic ${targetLang} (like high-quality movie subtitles or everyday dialogue, avoiding clumsy literal passive voice or robotic pronouns).
    - PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase specifically as used in this context.
 4. Lemmatization: Set "word" to its dictionary base/lemma form in lowercase (e.g. "families" -> "family", "ran" -> "run", "better" -> "good", "stepping stones" -> "stepping stone"). Store the exact original word or phrase from the sentence in "raw_selected_word".
 5. "phonetic": accurate IPA pronunciation for the lemma.
@@ -1293,9 +1340,9 @@ async function queryOpenAIVision({ base64Image, apiKey, targetLang, sourceUrl, c
 Examine this cropped image.
 1. OCR & Normalization: Transcribe visible text into "detected_sentence". Normalize ALL CAPS or noisy spacing into natural English sentence casing.
 2. Select key vocabulary/phrase to learn: "word".
-3. STRICT PRIORITIES:
-   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of "detected_sentence".
-   - PRIORITY 2: Context & Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be 100% full translation in ${targetLang}.
+3. STRICT PRIORITIES (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural, conversational translation in ${targetLang} fitting the SPECIFIC REAL-LIFE CONTEXT of "detected_sentence". Never return an out-of-context generic meaning or stiff translationese.
+   - PRIORITY 2: Context & Natural Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be a smooth, natural, and complete translation of "detected_sentence" into idiomatic ${targetLang} (like high-quality movie subtitles or everyday dialogue, avoiding clumsy literal passive voice or robotic pronouns).
    - PRIORITY 3: "definition_en" - Concise English definition as used in context.
 4. Lemmatize "word" to base dictionary form (lowercase). Original token in "raw_selected_word".
 5. "phonetic": IPA pronunciation.
@@ -1373,9 +1420,9 @@ async function queryClaudeVision({ base64Image, apiKey, targetLang, sourceUrl, c
 Examine this cropped image.
 1. OCR & Normalization: Transcribe visible text into "detected_sentence". Normalize ALL CAPS or noisy spacing into natural English sentence casing.
 2. Select key vocabulary/phrase to learn: "word".
-3. STRICT PRIORITIES:
-   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of "detected_sentence".
-   - PRIORITY 2: Context & Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be 100% full translation in ${targetLang}.
+3. STRICT PRIORITIES (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural, conversational translation in ${targetLang} fitting the SPECIFIC REAL-LIFE CONTEXT of "detected_sentence". Never return an out-of-context generic meaning or stiff translationese.
+   - PRIORITY 2: Context & Natural Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be a smooth, natural, and complete translation of "detected_sentence" into idiomatic ${targetLang} (like high-quality movie subtitles or everyday dialogue, avoiding clumsy literal passive voice or robotic pronouns).
    - PRIORITY 3: "definition_en" - Concise English definition as used in context.
 4. Lemmatize "word" to base dictionary form (lowercase). Original token in "raw_selected_word".
 5. "phonetic": IPA pronunciation.
@@ -1460,11 +1507,22 @@ Return ONLY valid JSON matching schema, with NO markdown formatting, NO backtick
  */
 export async function analyzeCroppedImage({ base64Image, sourceUrl, config }) {
   const provider = config?.apiProvider || 'gemini';
-  const apiKey = (config?.apiKey || '').trim();
+  let apiKey = '';
+  if (provider === 'gemini') {
+    apiKey = (config?.geminiApiKey || (config?.apiProvider === 'gemini' ? config?.apiKey : '') || '').trim();
+  } else if (provider === 'claude') {
+    apiKey = (config?.claudeApiKey || (config?.apiProvider === 'claude' ? config?.apiKey : '') || '').trim();
+  } else if (provider === 'openai') {
+    apiKey = (config?.openaiApiKey || (config?.apiProvider === 'openai' ? config?.apiKey : '') || '').trim();
+  } else if (provider === 'custom') {
+    apiKey = (config?.customApiKey || (config?.apiProvider === 'custom' ? config?.apiKey : '') || '').trim();
+  } else {
+    apiKey = (config?.apiKey || '').trim();
+  }
   const targetLang = config?.targetLanguage || 'Vietnamese';
 
   if (!apiKey && provider !== 'custom') {
-    throw new Error('Please configure your AI API Key in Extension Settings.');
+    throw new Error(`Please configure your ${provider === 'claude' ? 'Claude' : provider === 'gemini' ? 'Gemini' : 'OpenAI'} API Key in Extension Settings.`);
   }
 
   if (provider === 'gemini') {

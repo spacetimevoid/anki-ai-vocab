@@ -317,8 +317,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function updateAIStatus(config) {
-  const hasKey = !!(config.apiKey && config.apiKey.trim());
   const provider = config.apiProvider || 'gemini';
+  let activeKey = '';
+  if (provider === 'gemini') activeKey = config.geminiApiKey || config.apiKey;
+  else if (provider === 'claude') activeKey = config.claudeApiKey || (config.apiProvider === 'claude' ? config.apiKey : '');
+  else if (provider === 'openai') activeKey = config.openaiApiKey || (config.apiProvider === 'openai' ? config.apiKey : '');
+  else if (provider === 'custom') activeKey = config.customApiKey || (config.apiProvider === 'custom' ? config.apiKey : '');
+  else activeKey = config.apiKey;
+
+  const hasKey = provider === 'custom' ? true : !!(activeKey && activeKey.trim());
   let modelName = '3.5-flash-lite';
   if (provider === 'gemini') {
     modelName = config.geminiModel || '3.5-flash-lite';

@@ -4,6 +4,26 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.21.0] - 2026-11-17
+
+### Independent Multi-Provider API Key Architecture & Natural Conversational Prompt
+- **Independent API Key Storage per Provider (`background/config.js`, `background/ai-service.js`, `options/options.js`):**
+  - Eliminated API key collisions when switching providers: each provider (`geminiApiKey`, `claudeApiKey`, `openaiApiKey`, `customApiKey`) maintains its own independent storage key.
+  - Switching between Google Gemini, Anthropic Claude, OpenAI, and Custom models seamlessly preserves all previously entered API keys with zero data loss.
+  - Automatically migrates existing single `apiKey` values without requiring user re-entry.
+  - Added visual `Key Set` indicators with glowing emerald dots on provider pills in Options to immediately show which providers have configured keys.
+  - Dynamic API key field label, placeholder, and caption update contextually based on the active provider.
+- **Natural Conversational Translation Prompts (Sát đời sống, Thuần Việt, Không máy móc):**
+  - Overhauled translation instructions across all text queries (`lookupGeminiFast`, `queryOpenAI`, `queryClaude`), default user prompt (`DEFAULT_PROMPT`), and multimodal vision OCR (`queryGeminiVision`, `queryOpenAIVision`, `queryClaudeVision`).
+  - Instructed AI to prioritize fluent, idiomatic, conversational Vietnamese matching authentic real-world native speech rather than stiff, literal word-by-word machine translation ("translationese").
+  - Explicitly banned awkward passive voice ("được/bị" when unnatural), clumsy literal pronouns ("của nó/chúng nó"), and robotic connective phrasing.
+  - Optimized for dialogues, movie subtitles, video contexts, and colloquial speech with natural conversational tone.
+- **Cross-Platform Firefox Synchronization:**
+  - Synchronized all updates to `firefox/` via `build_firefox.js`.
+  - Passed 100% syntax compliance check (`node --check`) with 0 errors.
+
+---
+
 ## [3.20.0] - 2026-11-17
 
 ### Anthropic Claude Provider Integration with Dedicated Gateway Support

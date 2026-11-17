@@ -10,20 +10,27 @@ export const FALLBACK_GEMINI_MODEL = 'gemini-3.1-flash-lite';
  */
 export const DEFAULT_PROMPT = `Dictionary parser. Output JSON strictly adhering to schema. No thoughts. No markdown. Translation language: {{target_lang}}.
 
-STRICT PRIORITY OF ANALYSIS:
-1. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi):
-   The "meaning_vi" property is your HIGHEST priority. It MUST be the exact, natural translation of the target word/phrase fitting the SPECIFIC CONTEXT of the provided sentence. Never output a generic, out-of-context, or primary dictionary meaning if it does not fit this sentence.
-2. PRIORITY 2 - CONTEXT SENTENCE & 100% TRANSLATION (example_sentence & example_vi):
-   If Context is provided, preserve 100% of the original Context sentence for "example_sentence" (or "example_en"). You MUST translate 100% of the entire Context sentence completely into {{target_lang}} for "example_vi" without omitting, dropping, or summarizing any clause, conjunction, or relative phrase.
-3. PRIORITY 3 - CONCISE DEFINITION (definition_en):
-   Provide a concise, clear English learner definition explaining the target word/phrase specifically AS USED in this context.
-4. Lemmatization (Base Form):
+STRICT TRANSLATION QUALITY & ANALYSIS PRIORITIES:
+1. NATURAL CONVERSATIONAL QUALITY (SÁT ĐỜI SỐNG, THUẦN VIỆT, KHÔNG MÁY MÓC):
+   - All translations ("meaning_vi" and "example_vi") MUST sound natural, fluent, and idiomatic in {{target_lang}}, matching authentic everyday native speech.
+   - Strictly avoid stiff word-for-word machine translation ("translationese").
+   - Eliminate awkward passive voice ("được/bị" when unnatural), clumsy literal pronouns ("của nó/chúng nó"), and robotic phrasing.
+   - For dialogs, colloquial expressions, subtitles, slang, or idioms, translate with natural conversational tone (e.g. adapt naturally like high-quality movie subtitles or professional human translators).
+2. PRIORITY 1 - CONTEXTUAL MEANING (meaning_vi - HIGHEST PRIORITY):
+   - Concise, natural translation of the target word/phrase fitting the EXACT REAL-LIFE CONTEXT of the sentence.
+   - Never output an out-of-context, academic, or rigid primary dictionary headword if it does not fit this specific context.
+3. PRIORITY 2 - CONTEXT SENTENCE & NATURAL FULL TRANSLATION (example_sentence & example_vi):
+   - "example_sentence" (or "example_en"): Preserve 100% of the complete original context sentence.
+   - "example_vi": Translate the entire meaning and nuances of the full sentence into smooth, natural, conversational {{target_lang}}. Convey all clauses naturally without mechanical word-by-word conversion.
+4. PRIORITY 3 - CONCISE DEFINITION (definition_en):
+   - Clear, concise English learner definition explaining the target word/phrase specifically AS USED in this context.
+5. Lemmatization (Base Form):
    The "word" property in the output MUST ALWAYS be the base dictionary form (lemma) in lowercase (e.g., "families" -> "family", "studied" -> "study", "running" -> "run", "better" -> "good", "went" -> "go", "ran" -> "run", "caught up" -> "catch up", "stepping stones" -> "stepping stone"). The "phonetic" field must correspond to this base lemma.
-5. Part of Speech Standardization (pos):
+6. Part of Speech Standardization (pos):
    The "pos" property MUST ALWAYS be one single full English word in lowercase from standard categories: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER output abbreviations like "prep", "n", "v", "adj", "adv", or "conj" (e.g. use "preposition" never "prep", "noun" never "n").
-6. Standalone Word Lookup:
-   If Context is missing, "none", or empty, generate an authentic B1-B2 English example sentence for "example_en" and translate 100% of it into {{target_lang}} for "example_vi".
-7. Context Normalization:
+7. Standalone Word Lookup:
+   If Context is missing, "none", or empty, generate an authentic B1-B2 English example sentence for "example_en" and provide a natural, conversational translation for "example_vi".
+8. Context Normalization:
    If Context is in ALL CAPS (e.g., "PASS THE BALL BRO, I AM INTERESTED"), has excessive capitalization, strange spaces before punctuation, or noisy artifacts, normalize "example_sentence" into natural, standard English sentence casing (e.g., "Pass the ball bro, I am interested.") with standard punctuation spacing, while preserving all original words.
 
 Word: "{{word}}"
@@ -32,7 +39,11 @@ Context: "{{sentence}}"`;
 export const DEFAULT_CONFIG = {
   // AI Engine Settings (Quota & Speed Optimized)
   apiProvider: 'gemini', // 'gemini' | 'claude' | 'openai' | 'custom'
-  apiKey: '',
+  apiKey: '', // Active provider's key (backward compatibility)
+  geminiApiKey: '',
+  claudeApiKey: '',
+  openaiApiKey: '',
+  customApiKey: '',
   geminiModel: PRIMARY_GEMINI_MODEL,
   fallbackGeminiModel: FALLBACK_GEMINI_MODEL,
   claudeModel: 'claude-haiku-5-5',
@@ -100,6 +111,18 @@ export const DEFAULT_CONFIG = {
 };
 
 /**
+ * Get active API key corresponding to the configured or requested provider
+ */
+export function getProviderApiKey(config, provider) {
+  const activeProvider = provider || config?.apiProvider || 'gemini';
+  if (activeProvider === 'gemini') return config?.geminiApiKey || (config?.apiProvider === 'gemini' ? config?.apiKey : '') || '';
+  if (activeProvider === 'claude') return config?.claudeApiKey || (config?.apiProvider === 'claude' ? config?.apiKey : '') || '';
+  if (activeProvider === 'openai') return config?.openaiApiKey || (config?.apiProvider === 'openai' ? config?.apiKey : '') || '';
+  if (activeProvider === 'custom') return config?.customApiKey || (config?.apiProvider === 'custom' ? config?.apiKey : '') || '';
+  return config?.apiKey || '';
+}
+
+/**
  * Load user settings with dual fallback (local + sync) to defaults
  * Ensures complete reliability, prevents storage quota failures, and guarantees non-empty prompts
  */
@@ -135,6 +158,23 @@ export async function getConfig() {
         ...(localItems?.fieldMappings || {})
       };
 
+      // Automatic backward compatibility & migration for separate provider keys
+      if (!merged.geminiApiKey && (merged.apiProvider === 'gemini' || (merged.apiKey && merged.apiKey.startsWith('AIzaSy')))) {
+        merged.geminiApiKey = merged.apiKey;
+      }
+      if (!merged.claudeApiKey && merged.apiProvider === 'claude' && merged.apiKey) {
+        merged.claudeApiKey = merged.apiKey;
+      }
+      if (!merged.openaiApiKey && merged.apiProvider === 'openai' && merged.apiKey) {
+        merged.openaiApiKey = merged.apiKey;
+      }
+      if (!merged.customApiKey && merged.apiProvider === 'custom' && merged.apiKey) {
+        merged.customApiKey = merged.apiKey;
+      }
+
+      // Always synchronize merged.apiKey with the active provider's specific key
+      merged.apiKey = getProviderApiKey(merged, merged.apiProvider);
+
       // Strict safeguard: customPrompt must never be blank or whitespace
       if (!merged.customPrompt || typeof merged.customPrompt !== 'string' || !merged.customPrompt.trim()) {
         merged.customPrompt = DEFAULT_PROMPT;
@@ -152,6 +192,10 @@ export async function getConfig() {
  */
 export async function saveConfig(newConfig) {
   const safeConfig = { ...newConfig };
+
+  // Synchronize active provider's key to apiKey for backward compatibility
+  const provider = safeConfig.apiProvider || 'gemini';
+  safeConfig.apiKey = getProviderApiKey(safeConfig, provider);
 
   // Safeguard: Ensure customPrompt is never saved as blank or empty whitespace
   if (!safeConfig.customPrompt || typeof safeConfig.customPrompt !== 'string' || !safeConfig.customPrompt.trim()) {

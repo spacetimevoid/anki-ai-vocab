@@ -83,6 +83,47 @@ let statusFadeTimeout = null;
 let isDirty = false;
 let isInitialLoad = true;
 
+// Provider-specific API Key storage (guarantees switching providers never loses keys)
+const providerApiKeys = {
+  gemini: '',
+  claude: '',
+  openai: '',
+  custom: ''
+};
+let currentSelectedProvider = 'gemini';
+
+function updatePillKeyIndicators() {
+  const badgeGemini = document.getElementById('badge-gemini');
+  const badgeClaude = document.getElementById('badge-claude');
+  const badgeOpenai = document.getElementById('badge-openai');
+  const badgeCustom = document.getElementById('badge-custom');
+
+  if (badgeGemini) {
+    if (providerApiKeys.gemini && providerApiKeys.gemini.trim()) {
+      badgeGemini.textContent = 'Key Set';
+      badgeGemini.className = 'pill-badge-key';
+    } else {
+      badgeGemini.textContent = 'Recommended';
+      badgeGemini.className = 'pill-badge-rec';
+    }
+  }
+
+  if (badgeClaude) {
+    const hasKey = !!(providerApiKeys.claude && providerApiKeys.claude.trim());
+    badgeClaude.style.display = hasKey ? 'inline-flex' : 'none';
+  }
+
+  if (badgeOpenai) {
+    const hasKey = !!(providerApiKeys.openai && providerApiKeys.openai.trim());
+    badgeOpenai.style.display = hasKey ? 'inline-flex' : 'none';
+  }
+
+  if (badgeCustom) {
+    const hasKey = !!(providerApiKeys.custom && providerApiKeys.custom.trim());
+    badgeCustom.style.display = hasKey ? 'inline-flex' : 'none';
+  }
+}
+
 /**
  * Tab Switching Controller (Linear / Shadcn segmented style)
  */
@@ -326,10 +367,29 @@ function setupEventListeners() {
     });
   }
 
-  // Provider radio change
+  // Live input on API key: immediately sync to active provider's key store
+  apiKeyInput.addEventListener('input', () => {
+    providerApiKeys[currentSelectedProvider] = apiKeyInput.value.trim();
+    updatePillKeyIndicators();
+    markDirty();
+  });
+
+  // Provider radio change: seamlessly switch to provider's own key without losing previous key
   document.querySelectorAll('input[name="apiProvider"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
-      updateProviderUI(e.target.value);
+      // 1. Save current input text to previous provider
+      providerApiKeys[currentSelectedProvider] = apiKeyInput.value.trim();
+
+      // 2. Switch to new provider
+      currentSelectedProvider = e.target.value;
+
+      // 3. Load new provider's key into input
+      apiKeyInput.value = providerApiKeys[currentSelectedProvider] || '';
+
+      // 4. Update UI labels and badges
+      updateProviderUI(currentSelectedProvider);
+      updatePillKeyIndicators();
+      markDirty();
     });
   });
 
@@ -445,15 +505,24 @@ function populateForm(config) {
   const savedTheme = config.theme || 'dark';
   setTheme(savedTheme);
 
-  // Provider
-  const provider = config.apiProvider || 'gemini';
-  if (provider === 'gemini') providerGemini.checked = true;
-  else if (provider === 'claude' && providerClaude) providerClaude.checked = true;
-  else if (provider === 'openai') providerOpenai.checked = true;
-  else if (provider === 'custom') providerCustom.checked = true;
-  updateProviderUI(provider);
+  // Provider and separate API Keys
+  currentSelectedProvider = config.apiProvider || 'gemini';
+  providerApiKeys.gemini = config.geminiApiKey || (config.apiProvider === 'gemini' ? config.apiKey : '') || '';
+  if (!providerApiKeys.gemini && config.apiKey && config.apiKey.startsWith('AIzaSy')) {
+    providerApiKeys.gemini = config.apiKey;
+  }
+  providerApiKeys.claude = config.claudeApiKey || (config.apiProvider === 'claude' ? config.apiKey : '') || '';
+  providerApiKeys.openai = config.openaiApiKey || (config.apiProvider === 'openai' ? config.apiKey : '') || '';
+  providerApiKeys.custom = config.customApiKey || (config.apiProvider === 'custom' ? config.apiKey : '') || '';
 
-  apiKeyInput.value = config.apiKey || '';
+  if (currentSelectedProvider === 'gemini') providerGemini.checked = true;
+  else if (currentSelectedProvider === 'claude' && providerClaude) providerClaude.checked = true;
+  else if (currentSelectedProvider === 'openai') providerOpenai.checked = true;
+  else if (currentSelectedProvider === 'custom') providerCustom.checked = true;
+
+  apiKeyInput.value = providerApiKeys[currentSelectedProvider] || '';
+  updateProviderUI(currentSelectedProvider);
+  updatePillKeyIndicators();
 
   if (claudeBaseUrlInput) claudeBaseUrlInput.value = config.claudeBaseUrl || 'https://1gw.gwai.cloud/v1';
   if (claudeModelInput) claudeModelInput.value = config.claudeModel || 'claude-haiku-5-5';
@@ -513,18 +582,29 @@ function updateProviderUI(provider) {
   groupOpenaiModel.style.display = provider === 'openai' ? 'block' : 'none';
   groupCustomModel.style.display = provider === 'custom' ? 'grid' : 'none';
 
+  const labelEl = document.getElementById('api-key-label');
+  const captionEl = document.getElementById('api-key-caption');
+
   if (provider === 'gemini') {
+    if (labelEl) labelEl.textContent = 'Google Gemini API Key';
     apiKeyLink.innerHTML = `<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Free Google AI Studio Key ↗</a>`;
     apiKeyInput.placeholder = 'AIzaSy...';
+    if (captionEl) captionEl.textContent = 'Saved independently for Google Gemini. Will not be lost when switching to other providers.';
   } else if (provider === 'claude') {
+    if (labelEl) labelEl.textContent = 'Anthropic Claude API Key';
     apiKeyLink.innerHTML = `<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">Get Anthropic API Key ↗</a>`;
     apiKeyInput.placeholder = 'sk-ant-... or gateway key';
+    if (captionEl) captionEl.textContent = 'Saved independently for Anthropic Claude. Works with official Anthropic keys or custom proxy/gateway.';
   } else if (provider === 'openai') {
+    if (labelEl) labelEl.textContent = 'OpenAI API Key';
     apiKeyLink.innerHTML = `<a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">Get OpenAI API Key ↗</a>`;
     apiKeyInput.placeholder = 'sk-...';
+    if (captionEl) captionEl.textContent = 'Saved independently for OpenAI. Will not be lost when switching to other providers.';
   } else {
-    apiKeyLink.innerHTML = `<span>(Enter API Key per your provider requirements)</span>`;
-    apiKeyInput.placeholder = 'sk-... or custom token';
+    if (labelEl) labelEl.textContent = 'Custom Provider API Key / Token';
+    apiKeyLink.innerHTML = `<span>(Leave blank if endpoint requires no auth)</span>`;
+    apiKeyInput.placeholder = 'sk-... or Bearer token (optional)';
+    if (captionEl) captionEl.textContent = 'Saved independently for your custom / local OpenAI-compatible endpoint.';
   }
 }
 
@@ -736,11 +816,18 @@ async function handleTestAI() {
   aiTestStatus.textContent = 'Testing API Key...';
   btnTestAi.disabled = true;
 
-  const provider = document.querySelector('input[name="apiProvider"]:checked').value;
+  providerApiKeys[currentSelectedProvider] = apiKeyInput.value.trim();
+  updatePillKeyIndicators();
+
+  const provider = currentSelectedProvider;
   const draftConfig = {
     ...currentConfig,
     apiProvider: provider,
-    apiKey: apiKeyInput.value.trim(),
+    apiKey: providerApiKeys[provider] || '',
+    geminiApiKey: providerApiKeys.gemini || '',
+    claudeApiKey: providerApiKeys.claude || '',
+    openaiApiKey: providerApiKeys.openai || '',
+    customApiKey: providerApiKeys.custom || '',
     geminiModel: geminiModelSelect.value,
     claudeModel: (claudeModelInput?.value || '').trim() || 'claude-haiku-5-5',
     claudeBaseUrl: (claudeBaseUrlInput?.value || '').trim() || 'https://1gw.gwai.cloud/v1',
@@ -776,7 +863,10 @@ async function handleSave() {
   btnSaveSettings.disabled = true;
   btnSaveSettings.innerHTML = '<span>Saving...</span>';
 
-  const provider = document.querySelector('input[name="apiProvider"]:checked').value;
+  providerApiKeys[currentSelectedProvider] = apiKeyInput.value.trim();
+  updatePillKeyIndicators();
+
+  const provider = currentSelectedProvider;
   const selectedModel = noteTypeSelect.value;
 
   // Collect Field Mappings from UI
@@ -795,7 +885,11 @@ async function handleSave() {
   const newConfig = {
     ...currentConfig,
     apiProvider: provider,
-    apiKey: apiKeyInput.value.trim(),
+    apiKey: providerApiKeys[provider] || '',
+    geminiApiKey: providerApiKeys.gemini || '',
+    claudeApiKey: providerApiKeys.claude || '',
+    openaiApiKey: providerApiKeys.openai || '',
+    customApiKey: providerApiKeys.custom || '',
     geminiModel: geminiModelSelect.value,
     claudeModel: (claudeModelInput?.value || '').trim() || 'claude-haiku-5-5',
     claudeBaseUrl: (claudeBaseUrlInput?.value || '').trim() || 'https://1gw.gwai.cloud/v1',

@@ -458,6 +458,24 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Đồng bộ hóa toàn bộ sang thư mục `firefox/` với `node build_firefox.js`.
   - Kiểm tra cú pháp toàn bộ tệp đạt 0 lỗi (`node --check`) và nâng version lên `v3.20.0`.
 
+## Phase 48: Independent Multi-Provider API Key Architecture & Natural Conversational Prompt (v3.21.0)
+- [x] **Task 48.1:** Tách biệt hoàn toàn API Key cho từng nhà cung cấp AI (`background/config.js`, `background/ai-service.js`):
+  - Khởi tạo các trường lưu trữ độc lập trong `DEFAULT_CONFIG`: `geminiApiKey`, `claudeApiKey`, `openaiApiKey`, `customApiKey`.
+  - Tự động di chuyển dữ liệu (auto-migration) từ `apiKey` cũ sang trường tương ứng mà không làm mất thông tin.
+  - Cập nhật các hàm truy vấn `queryGemini`, `queryClaude`, `queryOpenAI`, `testAIConnection` và `analyzeCroppedImage` sử dụng đúng key của từng provider.
+- [x] **Task 48.2:** Nâng cấp giao diện Options với bộ nhớ key riêng và chỉ báo trực quan (`options/options.html`, `options/options.css`, `options/options.js`):
+  - Lưu giữ và chuyển đổi giá trị API key theo thời gian thực khi chuyển đổi giữa các pill provider mà không bao giờ ghi đè làm mất key của bên khác.
+  - Thêm nhãn động `#api-key-label`, chú thích `#api-key-caption` và link lấy key tương ứng với từng bên.
+  - Bổ sung huy hiệu trực quan `● Key Set` (`.pill-badge-key`) trên từng pill provider để người dùng biết bên nào đã cấu hình key.
+- [x] **Task 48.3:** Tối ưu hóa toàn diện Prompt dịch thuật theo hướng tự nhiên, sát đời sống (`background/config.js`, `background/ai-service.js`):
+  - Cập nhật hướng dẫn `NATURAL CONVERSATIONAL QUALITY`: Ưu tiên văn phong thuần Việt, tự nhiên, sát ngữ cảnh đời sống thường ngày; loại bỏ triệt để lối dịch thô word-by-word máy móc ("translationese").
+  - Loại bỏ các cấu trúc bị động ngượng gạo ("được/bị"), đại từ thô ("của nó/chúng nó") và các liên từ gượng ép.
+  - Áp dụng đồng bộ cho `DEFAULT_PROMPT`, các nhánh prompt hệ thống của Gemini, OpenAI, Claude và OCR Vision.
+- [x] **Task 48.4:** Đồng bộ hóa sang Firefox Add-on, kiểm tra cú pháp và nâng version `v3.21.0`:
+  - Đồng bộ hóa toàn bộ sang `firefox/` bằng `node build_firefox.js`.
+  - Kiểm tra cú pháp toàn bộ codebase với `node --check` đạt 0 lỗi.
+  - Nâng version lên `3.21.0` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+
 
 
 
