@@ -4,6 +4,28 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.20.0] - 2026-11-17
+
+### Anthropic Claude Provider Integration with Dedicated Gateway Support
+- **First-Class Anthropic Claude Provider (`background/config.js`, `background/ai-service.js`):**
+  - Added native Claude API provider (`apiProvider: 'claude'`) utilizing the Anthropic Messages protocol (`/v1/messages`) with dual header authentication (`x-api-key` and `Authorization: Bearer`).
+  - Configured default endpoint gateway: `CLAUDE_BASE_URL=https://1gw.gwai.cloud/v1`.
+  - Configured default high-speed model: `CLAUDE_MODEL=claude-haiku-5-5`.
+  - Added support for multimodal screenshot OCR & vocabulary extraction (`queryClaudeVision`) through Claude's image content blocks.
+  - Implemented instant connection test verification in `testAIConnection` for Claude models.
+- **Enhanced Settings UI (`options/options.html`, `options/options.css`, `options/options.js`):**
+  - Added **Anthropic Claude** to the Provider Pill Group with responsive 4-column layout (`Google Gemini`, `Anthropic Claude`, `OpenAI`, `Custom / Ollama`).
+  - Added custom Claude configuration group with editable Base URL (`claudeBaseUrl`) and Model selector (`claudeModel` with datalist suggestions: `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, etc.).
+  - Added direct navigation link to Anthropic console keys and dynamic placeholder updating.
+- **Popup & Content Script Status Updates (`popup/popup.js`, `content/content.js`):**
+  - Updated AI status badge in popup to reflect active Claude model readiness.
+  - Standardized vision OCR loading message across all providers.
+- **Cross-Platform Firefox Synchronization:**
+  - Synchronized all changes to `firefox/` via `build_firefox.js`.
+  - Passed 100% syntax compliance check (`node --check`) with 0 errors.
+
+---
+
 ## [3.19.1] - 2026-11-01
 
 ### Critical Fix: Popover Error Toast Dispatch, Fast-Fail Anki Connection & Duplicate State Resolution

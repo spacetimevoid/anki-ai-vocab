@@ -444,6 +444,20 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Kiểm tra cú pháp toàn bộ tệp với `node --check` đạt 0 lỗi.
   - Cập nhật `manifest.json`, `firefox/manifest.json`, `CHANGELOG.md`, `TASKS.md`.
 
+## Phase 47: Anthropic Claude Provider Integration with Dedicated Gateway (v3.20.0)
+- [x] **Task 47.1:** Tích hợp provider Anthropic Claude (`apiProvider: 'claude'`) vào lõi xử lý AI (`background/config.js`, `background/ai-service.js`):
+  - Khởi tạo hằng số cấu hình mặc định: `CLAUDE_BASE_URL=https://1gw.gwai.cloud/v1` và `CLAUDE_MODEL=claude-haiku-5-5`.
+  - Xây dựng hàm `queryClaude` chuẩn hóa theo giao thức `/v1/messages` của Anthropic, hỗ trợ song song hai header `x-api-key` và `Authorization: Bearer`.
+  - Tích hợp kiểm tra kết nối API key trong `testAIConnection` và tính năng nhận diện ảnh/phụ đề với `queryClaudeVision` trong `analyzeCroppedImage`.
+- [x] **Task 47.2:** Nâng cấp giao diện Settings (`options/options.html`, `options/options.css`, `options/options.js`):
+  - Bổ sung tùy chọn radio card `Anthropic Claude` vào Provider Pill Group, mở rộng layout responsive dạng 4 cột.
+  - Thêm cụm cấu hình riêng cho Claude (`group-claude-model`) cho phép chỉnh sửa Endpoint Base URL và Model Name (kèm datalist gợi ý `claude-haiku-5-5`, `claude-sonnet-5-5`, `claude-opus-5-5`, etc.).
+  - Lưu trữ và đồng bộ hóa các trường cấu hình `claudeBaseUrl` và `claudeModel` vào storage.
+- [x] **Task 47.3:** Đồng bộ trạng thái tiện ích và bản Firefox (`popup/popup.js`, `content/content.js`, `build_firefox.js`):
+  - Cập nhật badge hiển thị model trong popup khi người dùng chọn Claude.
+  - Đồng bộ hóa toàn bộ sang thư mục `firefox/` với `node build_firefox.js`.
+  - Kiểm tra cú pháp toàn bộ tệp đạt 0 lỗi (`node --check`) và nâng version lên `v3.20.0`.
+
 
 
 

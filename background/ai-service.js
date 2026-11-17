@@ -749,6 +749,144 @@ STRICT PRIORITIES:
 }
 
 /**
+ * Query Anthropic Claude API (Native /v1/messages or Gateway compatible)
+ */
+async function queryClaude({ word, sentence, sourceUrl, config, bypassCache = false, existingTranslation = '', reuseTranslation = false }) {
+  const apiKey = (config.apiKey || '').trim();
+  if (!apiKey) {
+    throw new Error('Claude API Key is not configured. Please open Settings to enter your API Key.');
+  }
+
+  const targetLang = config.targetLanguage || 'Vietnamese';
+
+  // Check Context-Aware Cache first (0ms)
+  const cached = await getFromCache(word, sentence, targetLang, bypassCache);
+  if (cached) {
+    return cached;
+  }
+
+  const baseUrl = (config.claudeBaseUrl || 'https://1gw.gwai.cloud/v1').replace(/\/+$/, '');
+  const model = config.claudeModel || 'claude-haiku-5-5';
+  const endpoint = `${baseUrl}/messages`;
+
+  const cleanWord = (word || '').trim();
+  const rawSentence = (sentence || '').trim();
+  const isRealContext = rawSentence && 
+    rawSentence.toLowerCase() !== cleanWord.toLowerCase() && 
+    rawSentence.split(/\s+/).length >= 3;
+
+  let systemInstruction = '';
+  let prompt = '';
+
+  if (isRealContext && reuseTranslation && existingTranslation && existingTranslation.trim()) {
+    const safeTrans = existingTranslation.trim().replace(/"/g, '\\"');
+    systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}. Return ONLY valid JSON with no markdown and no thinking.
+STRICT PRIORITIES:
+1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact translation in ${targetLang} fitting the SPECIFIC CONTEXT.
+2. PRIORITY 2: "definition_en" - Concise English definition for this context.
+3. CONTEXT REUSE: Sentence is ALREADY translated into ${targetLang} as: "${safeTrans}". Set "example_en" to Context and "example_vi" to "${safeTrans}". Do NOT re-translate.
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+6. Context Normalization: Clean up noisy capitalization or spacing into natural sentence casing.`;
+    prompt = `Word: "${cleanWord}". Context: "${rawSentence}". Existing Translation: "${safeTrans}". Output JSON only:`;
+  } else if (isRealContext) {
+    systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}. Return ONLY valid JSON with no markdown and no thinking.
+STRICT PRIORITIES:
+1. PRIORITY 1: "meaning_vi" - HIGHEST PRIORITY. Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of the sentence. Never return a generic or out-of-context meaning.
+2. PRIORITY 2: Context sentence & 100% Translation - Set "example_en" to the exact Context sentence. Translate 100% of the entire Context sentence completely into ${targetLang} for "example_vi" without omitting any clause or conjunction.
+3. PRIORITY 3: "definition_en" - Concise English definition explaining the word/phrase as used in this context.
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").
+6. Context Normalization: If Context is in ALL CAPS (e.g. "PASS THE BALL BRO, I AM INTERESTED"), normalize "example_en" into standard sentence casing.`;
+    prompt = `Word: "${cleanWord}". Context: "${rawSentence}". Output JSON only:`;
+  } else {
+    systemInstruction = `You are a high-speed dictionary parser. Output JSON strictly adhering to schema: {"word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_en":"","example_vi":""}. Translation language: ${targetLang}. Return ONLY valid JSON with no markdown and no thinking.
+STRICT PRIORITIES:
+1. PRIORITY 1: "meaning_vi" - Natural, high-frequency translation in ${targetLang}.
+2. PRIORITY 2: Authentic example sentence & 100% Translation - Practical B1-B2 example in "example_en", translated 100% into ${targetLang} for "example_vi".
+3. PRIORITY 3: "definition_en" - Clear English learner definition for flashcards.
+4. Lemmatization: "word" must be base dictionary lemma in lowercase. "phonetic" must match this base lemma.
+5. Part of Speech Standardization: "pos" MUST be one single full lowercase standard word: "noun", "verb", "adjective", "adverb", "preposition", "conjunction", "pronoun", "interjection", "phrasal verb", "idiom". NEVER use abbreviations (e.g. use "preposition" never "prep", "noun" never "n").`;
+    prompt = `Word: "${cleanWord}". Context: none. Generate a natural English example sentence for this word. Output JSON only:`;
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'anthropic-version': '2023-06-01'
+  };
+  if (apiKey) {
+    headers['x-api-key'] = apiKey;
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  // Token budget: In auto mode, use 1000 tokens to prevent truncating definitions/translations
+  const isAuto = config?.autoTokenBudget !== false;
+  const maxTokens = isAuto ? 1000 : Math.max(150, parseInt(config?.maxOutputTokens || '500', 10));
+
+  const payload = {
+    model,
+    system: systemInstruction,
+    messages: [
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.1,
+    max_tokens: maxTokens
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  const startTime = performance.now();
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Claude API rate limit reached. Please wait a few seconds and retry.');
+      }
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData.error?.message || errData.error || response.statusText;
+      throw new Error(`Claude server error (${response.status}): ${errMsg}`);
+    }
+
+    const data = await response.json();
+    const elapsed = Math.round(performance.now() - startTime);
+    console.log(`[Timer] Lookup (${model}) succeeded in: ${elapsed}ms`);
+
+    let rawText = '';
+    if (Array.isArray(data.content)) {
+      const textBlock = data.content.find(c => c.type === 'text') || data.content[0];
+      rawText = textBlock?.text || '';
+    } else if (typeof data.content === 'string') {
+      rawText = data.content;
+    }
+
+    if (!rawText) throw new Error('Claude server did not return any content.');
+
+    const parsed = safeParseAIJson(rawText);
+    const normalized = normalizeSchema(parsed, word, sentence, sourceUrl, existingTranslation);
+    saveToCache(word, sentence, targetLang, normalized);
+    if (normalized.word && normalized.word.toLowerCase() !== word.toLowerCase()) {
+      saveToCache(normalized.word, sentence, targetLang, normalized);
+    }
+    return normalized;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Request timed out (> 10s). Claude server did not respond in time.');
+    }
+    throw err;
+  }
+}
+
+/**
  * Main dispatcher to query AI
  */
 export async function explainWord({ word, sentence, sourceUrl, config, bypassCache = false, existingTranslation = '', reuseTranslation = false }) {
@@ -765,6 +903,8 @@ export async function explainWord({ word, sentence, sourceUrl, config, bypassCac
 
   if (provider === 'gemini') {
     return await queryGemini({ word, sentence, sourceUrl, config, bypassCache, existingTranslation, reuseTranslation });
+  } else if (provider === 'claude') {
+    return await queryClaude({ word, sentence, sourceUrl, config, bypassCache, existingTranslation, reuseTranslation });
   } else if (provider === 'openai') {
     return await queryOpenAI({ word, sentence, sourceUrl, config, isCustom: false, bypassCache, existingTranslation, reuseTranslation });
   } else if (provider === 'custom') {
@@ -835,6 +975,60 @@ export async function testAIConnection(config) {
       return {
         ok: true,
         message: `Connected successfully to ${model}! Ultra-low latency.`
+      };
+
+    } else if (provider === 'claude') {
+      const baseUrl = (config.claudeBaseUrl || 'https://1gw.gwai.cloud/v1').replace(/\/+$/, '');
+      const model = config.claudeModel || 'claude-haiku-5-5';
+      const endpoint = `${baseUrl}/messages`;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      };
+      if (apiKey) {
+        headers['x-api-key'] = apiKey;
+        headers['Authorization'] = `Bearer ${apiKey}`;
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model,
+          max_tokens: 5,
+          messages: [{ role: 'user', content: 'ping' }]
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          return {
+            ok: true,
+            warning: true,
+            message: `API Key is valid! Note: Model ${model} is temporarily rate-limited.`
+          };
+        }
+        let errText = '';
+        try {
+          const errJson = await response.json();
+          errText = errJson.error?.message || errJson.error || response.statusText;
+        } catch {
+          errText = await response.text();
+        }
+
+        return {
+          ok: false,
+          error: `Claude error (${response.status}): ${errText}`
+        };
+      }
+
+      return {
+        ok: true,
+        message: `Connected successfully to Claude (${model})!`
       };
 
     } else {
@@ -1163,6 +1357,105 @@ Return STRICT JSON matching schema:
 }
 
 /**
+ * Query Anthropic Claude Vision API (multimodal image analysis)
+ */
+async function queryClaudeVision({ base64Image, apiKey, targetLang, sourceUrl, config }) {
+  const baseUrl = (config?.claudeBaseUrl || 'https://1gw.gwai.cloud/v1').replace(/\/+$/, '');
+  const model = config?.claudeModel || 'claude-haiku-5-5';
+  const endpoint = `${baseUrl}/messages`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 16000);
+
+  const cleanBase64 = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+
+  const systemPrompt = `You are an expert OCR & bilingual dictionary AI.
+Examine this cropped image.
+1. OCR & Normalization: Transcribe visible text into "detected_sentence". Normalize ALL CAPS or noisy spacing into natural English sentence casing.
+2. Select key vocabulary/phrase to learn: "word".
+3. STRICT PRIORITIES:
+   - PRIORITY 1: "meaning_vi" (HIGHEST PRIORITY) - Exact, natural translation in ${targetLang} fitting the SPECIFIC CONTEXT of "detected_sentence".
+   - PRIORITY 2: Context & Translation - "example_sentence" MUST be identical to "detected_sentence". "example_vi" MUST be 100% full translation in ${targetLang}.
+   - PRIORITY 3: "definition_en" - Concise English definition as used in context.
+4. Lemmatize "word" to base dictionary form (lowercase). Original token in "raw_selected_word".
+5. "phonetic": IPA pronunciation.
+6. "pos": full lowercase standard part of speech: noun, verb, adjective, adverb, preposition, conjunction, pronoun, interjection, phrasal verb, idiom. Never abbreviated (e.g. use "preposition" never "prep").
+
+Return ONLY valid JSON matching schema, with NO markdown formatting, NO backticks, and NO reasoning:
+{"detected_sentence":"","word":"","raw_selected_word":"","phonetic":"","pos":"","meaning_vi":"","definition_en":"","example_sentence":"","example_vi":""}`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'anthropic-version': '2023-06-01'
+  };
+  if (apiKey) {
+    headers['x-api-key'] = apiKey;
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: 'image/jpeg',
+                  data: cleanBase64
+                }
+              },
+              {
+                type: 'text',
+                text: 'Extract subtitle/text and analyze. Return strict JSON only.'
+              }
+            ]
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 1024
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      const errMsg = errData.error?.message || errData.error || response.statusText;
+      throw new Error(`Claude Vision error (${response.status}): ${errMsg}`);
+    }
+
+    const data = await response.json();
+    let rawText = '';
+    if (Array.isArray(data.content)) {
+      const textBlock = data.content.find(c => c.type === 'text') || data.content[0];
+      rawText = textBlock?.text || '';
+    } else if (typeof data.content === 'string') {
+      rawText = data.content;
+    }
+
+    if (!rawText) throw new Error('Claude Vision did not return any content.');
+
+    const parsed = safeParseAIJson(rawText);
+    return normalizeSchema(parsed, parsed.word, parsed.detected_sentence, sourceUrl);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') {
+      throw new Error('Claude Vision timed out (> 16s).');
+    }
+    throw err;
+  }
+}
+
+/**
  * Analyze Cropped Screenshot: OCR + Vocab Selection + Translation + Lemma
  */
 export async function analyzeCroppedImage({ base64Image, sourceUrl, config }) {
@@ -1202,6 +1495,14 @@ export async function analyzeCroppedImage({ base64Image, sourceUrl, config }) {
       }
     }
     throw lastError || new Error('All Gemini Vision models failed to process image.');
+  } else if (provider === 'claude') {
+    return await queryClaudeVision({
+      base64Image,
+      apiKey,
+      targetLang,
+      sourceUrl,
+      config
+    });
   } else {
     return await queryOpenAIVision({
       base64Image,

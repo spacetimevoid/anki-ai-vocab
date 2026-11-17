@@ -2459,7 +2459,7 @@ svg.anki-spinning,
             <span class="anki-pos-badge pos-badge pos-other" style="opacity:0.8;">Vision OCR</span>
           </div>
           <div class="anki-header-row2 header-row-2">
-            <span class="anki-ipa-text phonetic-text ipa" style="opacity:0.5;font-family:inherit;font-size:12px;">Analyzing crop area with Gemini Vision...</span>
+            <span class="anki-ipa-text phonetic-text ipa" style="opacity:0.5;font-family:inherit;font-size:12px;">Analyzing crop area with AI Vision...</span>
           </div>
         </div>
         <div class="anki-header-controls">

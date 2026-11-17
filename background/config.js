@@ -31,10 +31,12 @@ Context: "{{sentence}}"`;
 
 export const DEFAULT_CONFIG = {
   // AI Engine Settings (Quota & Speed Optimized)
-  apiProvider: 'gemini', // 'gemini' | 'openai' | 'custom'
+  apiProvider: 'gemini', // 'gemini' | 'claude' | 'openai' | 'custom'
   apiKey: '',
   geminiModel: PRIMARY_GEMINI_MODEL,
   fallbackGeminiModel: FALLBACK_GEMINI_MODEL,
+  claudeModel: 'claude-haiku-5-5',
+  claudeBaseUrl: 'https://1gw.gwai.cloud/v1',
   openaiModel: 'gpt-4o-mini',
   customModel: 'gpt-4o-mini',
   customBaseUrl: 'https://api.openai.com/v1',

@@ -8,10 +8,12 @@ import { DEFAULT_PROMPT, DEFAULT_CONFIG, getConfig } from '../background/config.
 
 // DOM Elements
 const providerGemini = document.getElementById('provider-gemini');
+const providerClaude = document.getElementById('provider-claude');
 const providerOpenai = document.getElementById('provider-openai');
 const providerCustom = document.getElementById('provider-custom');
 
 const groupGeminiModel = document.getElementById('group-gemini-model');
+const groupClaudeModel = document.getElementById('group-claude-model');
 const groupOpenaiModel = document.getElementById('group-openai-model');
 const groupCustomModel = document.getElementById('group-custom-model');
 
@@ -22,6 +24,8 @@ const eyeOffIcon = document.getElementById('eye-off-icon');
 const apiKeyLink = document.getElementById('api-key-link');
 
 const geminiModelSelect = document.getElementById('geminiModel');
+const claudeBaseUrlInput = document.getElementById('claudeBaseUrl');
+const claudeModelInput = document.getElementById('claudeModel');
 const openaiModelSelect = document.getElementById('openaiModel');
 const customBaseUrlInput = document.getElementById('customBaseUrl');
 const customModelInput = document.getElementById('customModel');
@@ -444,11 +448,15 @@ function populateForm(config) {
   // Provider
   const provider = config.apiProvider || 'gemini';
   if (provider === 'gemini') providerGemini.checked = true;
+  else if (provider === 'claude' && providerClaude) providerClaude.checked = true;
   else if (provider === 'openai') providerOpenai.checked = true;
   else if (provider === 'custom') providerCustom.checked = true;
   updateProviderUI(provider);
 
   apiKeyInput.value = config.apiKey || '';
+
+  if (claudeBaseUrlInput) claudeBaseUrlInput.value = config.claudeBaseUrl || 'https://1gw.gwai.cloud/v1';
+  if (claudeModelInput) claudeModelInput.value = config.claudeModel || 'claude-haiku-5-5';
 
   // Select Gemini Model
   const storedGemini = config.geminiModel;
@@ -501,12 +509,16 @@ function populateForm(config) {
  */
 function updateProviderUI(provider) {
   groupGeminiModel.style.display = provider === 'gemini' ? 'block' : 'none';
+  if (groupClaudeModel) groupClaudeModel.style.display = provider === 'claude' ? 'grid' : 'none';
   groupOpenaiModel.style.display = provider === 'openai' ? 'block' : 'none';
   groupCustomModel.style.display = provider === 'custom' ? 'grid' : 'none';
 
   if (provider === 'gemini') {
     apiKeyLink.innerHTML = `<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Free Google AI Studio Key ↗</a>`;
     apiKeyInput.placeholder = 'AIzaSy...';
+  } else if (provider === 'claude') {
+    apiKeyLink.innerHTML = `<a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">Get Anthropic API Key ↗</a>`;
+    apiKeyInput.placeholder = 'sk-ant-... or gateway key';
   } else if (provider === 'openai') {
     apiKeyLink.innerHTML = `<a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">Get OpenAI API Key ↗</a>`;
     apiKeyInput.placeholder = 'sk-...';
@@ -730,6 +742,8 @@ async function handleTestAI() {
     apiProvider: provider,
     apiKey: apiKeyInput.value.trim(),
     geminiModel: geminiModelSelect.value,
+    claudeModel: (claudeModelInput?.value || '').trim() || 'claude-haiku-5-5',
+    claudeBaseUrl: (claudeBaseUrlInput?.value || '').trim() || 'https://1gw.gwai.cloud/v1',
     openaiModel: openaiModelSelect.value,
     customBaseUrl: customBaseUrlInput.value.trim(),
     customModel: customModelInput.value.trim(),
@@ -783,6 +797,8 @@ async function handleSave() {
     apiProvider: provider,
     apiKey: apiKeyInput.value.trim(),
     geminiModel: geminiModelSelect.value,
+    claudeModel: (claudeModelInput?.value || '').trim() || 'claude-haiku-5-5',
+    claudeBaseUrl: (claudeBaseUrlInput?.value || '').trim() || 'https://1gw.gwai.cloud/v1',
     openaiModel: openaiModelSelect.value,
     customBaseUrl: customBaseUrlInput.value.trim(),
     customModel: customModelInput.value.trim(),

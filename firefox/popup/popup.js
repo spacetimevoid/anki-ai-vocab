@@ -319,9 +319,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 function updateAIStatus(config) {
   const hasKey = !!(config.apiKey && config.apiKey.trim());
   const provider = config.apiProvider || 'gemini';
-  const modelName = provider === 'gemini' 
-    ? (config.geminiModel || '3.5-flash-lite')
-    : (config.openaiModel || 'gpt-4o-mini');
+  let modelName = '3.5-flash-lite';
+  if (provider === 'gemini') {
+    modelName = config.geminiModel || '3.5-flash-lite';
+  } else if (provider === 'claude') {
+    modelName = config.claudeModel || 'claude-haiku-5-5';
+  } else if (provider === 'custom') {
+    modelName = config.customModel || 'custom';
+  } else {
+    modelName = config.openaiModel || 'gpt-4o-mini';
+  }
 
   const displayModel = modelName.replace('gemini-', '');
 

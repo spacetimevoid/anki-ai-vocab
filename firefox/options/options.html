@@ -123,6 +123,12 @@
               </span>
             </label>
             <label class="provider-pill">
+              <input type="radio" name="apiProvider" id="provider-claude" value="claude">
+              <span class="pill-inner">
+                <span class="pill-title">Anthropic Claude</span>
+              </span>
+            </label>
+            <label class="provider-pill">
               <input type="radio" name="apiProvider" id="provider-openai" value="openai">
               <span class="pill-inner">
                 <span class="pill-title">OpenAI</span>
@@ -175,6 +181,26 @@
             <svg class="select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"/>
             </svg>
+          </div>
+        </div>
+
+        <!-- Anthropic Claude Model Group (hidden by default) -->
+        <div class="form-row two-cols" id="group-claude-model" style="display:none;">
+          <div class="form-col">
+            <label class="field-label" for="claudeBaseUrl">Claude Endpoint Base URL</label>
+            <input type="text" id="claudeBaseUrl" class="custom-input" value="https://1gw.gwai.cloud/v1" placeholder="https://1gw.gwai.cloud/v1">
+          </div>
+          <div class="form-col">
+            <label class="field-label" for="claudeModel">Claude Model Name</label>
+            <input type="text" list="claude-model-list" id="claudeModel" class="custom-input" value="claude-haiku-5-5" placeholder="claude-haiku-5-5">
+            <datalist id="claude-model-list">
+              <option value="claude-haiku-5-5">claude-haiku-5-5 (Recommended • High Speed)</option>
+              <option value="claude-sonnet-5-5">claude-sonnet-5-5 (Balanced Intelligence & Speed)</option>
+              <option value="claude-opus-5-5">claude-opus-5-5 (Maximum Intelligence Flagship)</option>
+              <option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022 (Anthropic Standard)</option>
+              <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022 (Anthropic Standard)</option>
+              <option value="claude-3-7-sonnet">claude-3-7-sonnet (Hybrid Reasoning)</option>
+            </datalist>
           </div>
         </div>
 

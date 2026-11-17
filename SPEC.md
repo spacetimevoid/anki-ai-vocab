@@ -85,9 +85,15 @@ Google Gemini Flash Lite được cấu hình ép trả về JSON cấu trúc th
 ## 2. Cấu hình AI Engine & Prompt Constraints
 
 ### 2.1. Cấu hình Mô hình (Engine Configuration)
-- **Primary Model:** `gemini-3.5-flash-lite`
-- **Fallback Model:** `gemini-3.1-flash-lite`
-- **Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}`
+- **Primary Model (Gemini):** `gemini-3.5-flash-lite`
+- **Fallback Model (Gemini):** `gemini-3.1-flash-lite`
+- **Anthropic Claude Support:**
+  - **Default Base URL:** `https://1gw.gwai.cloud/v1`
+  - **Default Model:** `claude-haiku-5-5`
+  - **Protocol:** Anthropic `/v1/messages` (Headers: `x-api-key`, `Authorization: Bearer`, `anthropic-version: 2023-06-01`)
+  - **Multimodal Support:** Full support for image/screenshot OCR through Claude image content blocks
+- **OpenAI & Custom Providers:** Full OpenAI Chat Completions compatible format (`/v1/chat/completions`)
+- **Gemini Endpoint:** `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}`
 - **Generation Config:**
   ```json
   {

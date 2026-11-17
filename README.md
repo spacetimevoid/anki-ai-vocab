@@ -7,9 +7,9 @@
 
   [![Manifest V3](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=flat-square&logo=google-chrome&logoColor=white)](https://developer.chrome.com/docs/extensions/mv3/intro/)
   [![Firefox Add-on](https://img.shields.io/badge/Firefox_Add--on-Manifest_V3-FF7139?style=flat-square&logo=firefox&logoColor=white)](https://addons.mozilla.org/)
-  [![Release](https://img.shields.io/badge/Release-v3.19.0-10B981?style=flat-square)](https://github.com)
+  [![Release](https://img.shields.io/badge/Release-v3.20.0-10B981?style=flat-square)](https://github.com)
   [![License: MIT](https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square)](LICENSE)
-  [![AI Engine](https://img.shields.io/badge/AI_Engine-Gemini_Flash--Lite_%7C_OpenAI-8B5CF6?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
+  [![AI Engine](https://img.shields.io/badge/AI_Engine-Gemini_%7C_Claude_%7C_OpenAI-8B5CF6?style=flat-square&logo=google&logoColor=white)](https://ai.google.dev/)
   [![AnkiConnect](https://img.shields.io/badge/Anki-AnkiConnect_Ready-F59E0B?style=flat-square&logo=anki&logoColor=white)](https://ankiweb.net/shared/info/2055492159)
 
   <p align="center">
@@ -39,7 +39,7 @@ Traditional dictionary extensions translate words in isolation, ignoring surroun
 - **Precise Polysemy Resolution**: Extracts surrounding sentences to resolve word meanings in real context rather than returning generic dictionary headwords.
 - **Quota-Optimized Engine**: Defaults to `gemini-3.5-flash-lite` on Google AI Studio's free tier (500 RPD, 15 RPM) with sub-500ms latency. Automatic fallback to `gemini-3.1-flash-lite` seamlessly handles transient HTTP 429 rate limits.
 - **Dynamic Auto Token Budget**: Automatically allocates token headroom to prevent truncated definitions and meanings, with manual slider adjustment when desired.
-- **Provider Flexibility**: Supports Google Gemini, OpenAI (`gpt-4o-mini`), and custom OpenAI-compatible endpoints (e.g., local Ollama or vLLM instances).
+- **Provider Flexibility**: Supports Google Gemini (`gemini-3.5-flash-lite`, `gemini-2.5-flash`), Anthropic Claude (`claude-haiku-5-5`, custom gateways via `/v1/messages`), OpenAI (`gpt-4o-mini`), and custom OpenAI-compatible endpoints (e.g., local Ollama or vLLM instances).
 
 ### Screen Crop & Look Up (Hybrid OCR + Vision AI)
 - **Visual Cropping Overlay (`Alt + S`)**: Draw a crop box over YouTube video subtitles, Netflix frames, image infographics, and PDF pages.
