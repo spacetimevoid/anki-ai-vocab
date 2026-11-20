@@ -455,6 +455,8 @@ svg.anki-spinning,
 
 /* High-Legibility Meaning Row */
 .anki-meaning-row {
+  display: block;
+  width: 100%;
   flex-shrink: 0;
   font-size: 15.5px;
   font-weight: 600;
@@ -462,30 +464,38 @@ svg.anki-spinning,
   line-height: 1.45;
   word-break: break-word;
   overflow-wrap: anywhere;
+  box-sizing: border-box;
+  clear: both;
 }
 
 /* English Definition */
 .anki-def-row {
+  display: block;
+  width: 100%;
   flex-shrink: 0;
   font-size: 13.5px;
   color: var(--text-secondary);
   line-height: 1.5;
   word-break: break-word;
   overflow-wrap: anywhere;
+  box-sizing: border-box;
+  clear: both;
 }
 
 /* Context Example with Spacious Padding & Border */
 .anki-example-box {
-  flex-shrink: 0;
-  margin-top: 2px;
-  border-left: 2px solid rgba(255, 255, 255, 0.18);
-  padding: 6px 0 6px 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+  flex-shrink: 0;
+  margin-top: 4px;
+  border-left: 2px solid rgba(255, 255, 255, 0.18);
+  padding: 6px 0 6px 12px;
   background-color: transparent;
   border-radius: 0;
   box-sizing: border-box;
+  clear: both;
 }
 
 :host([data-theme="light"]) .anki-example-box {
@@ -573,7 +583,8 @@ svg.anki-spinning,
 }
 
 .anki-def-row.anki-editable {
-  min-height: 20px;
+  min-height: 18px;
+  overflow: visible;
 }
 
 .anki-example-en.anki-editable {

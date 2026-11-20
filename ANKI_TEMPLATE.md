@@ -266,6 +266,94 @@ Note Type `Anki AI Vocab` sử dụng đúng 8 trường dữ liệu dưới đ�
     {{/Tags}}
   </div>
 </div>
+
+<!-- SCRIPT ÂM THANH & HIỆU ỨNG ĐÚNG/SAI CHO THẺ GÕ CHỮ (WEB AUDIO API + MP3) -->
+<script>
+(function() {
+  var typeans = document.getElementById("typeans");
+  if (!typeans) return;
+
+  var hasBad = !!typeans.querySelector(".typeBad, .typeMissed");
+  var hasGood = !!typeans.querySelector(".typeGood");
+  var isCorrect = hasGood && !hasBad;
+
+  // Hiệu ứng viền phát sáng và rung thẻ (Visual Feedback)
+  var compSection = document.querySelector(".card-comparison-section");
+  if (compSection) {
+    compSection.classList.add(isCorrect ? "typing-feedback-correct" : "typing-feedback-wrong");
+  }
+
+  // Phát âm thanh: Tự động chạy Web Audio API (không cần tải file) hoặc phát file mp3 nếu có
+  function playFeedbackSound() {
+    var audioFile = isCorrect ? "_correct.mp3" : "_wrong.mp3";
+    var customAudio = new Audio(audioFile);
+    var played = false;
+
+    customAudio.play().then(function() {
+      played = true;
+    }).catch(function() {
+      playSynthSound(isCorrect);
+    });
+
+    setTimeout(function() {
+      if (!played) playSynthSound(isCorrect);
+    }, 150);
+  }
+
+  var synthPlayed = false;
+  function playSynthSound(correct) {
+    if (synthPlayed) return;
+    synthPlayed = true;
+
+    try {
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      var ctx = new AudioCtx();
+      var now = ctx.currentTime;
+
+      if (correct) {
+        // Hợp âm trưởng 3 nốt ngân vang tươi vui (C5 -> E5 -> G5)
+        var notes = [523.25, 659.25, 783.99];
+        notes.forEach(function(freq, i) {
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, now + i * 0.08);
+
+          gain.gain.setValueAtTime(0, now + i * 0.08);
+          gain.gain.linearRampToValueAtTime(0.22, now + i * 0.08 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.35);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 0.36);
+        });
+      } else {
+        // Tiếng buzz trầm êm ái khi gõ sai: 220Hz (A3) -> 140Hz
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.28);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.28, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.33);
+      }
+    } catch(e) {}
+  }
+
+  setTimeout(playFeedbackSound, 80);
+})();
+</script>
 ```
 
 ---
@@ -381,6 +469,94 @@ Note Type `Anki AI Vocab` sử dụng đúng 8 trường dữ liệu dưới đ�
     {{/Tags}}
   </div>
 </div>
+
+<!-- SCRIPT ÂM THANH & HIỆU ỨNG ĐÚNG/SAI CHO THẺ GÕ CHỮ (WEB AUDIO API + MP3) -->
+<script>
+(function() {
+  var typeans = document.getElementById("typeans");
+  if (!typeans) return;
+
+  var hasBad = !!typeans.querySelector(".typeBad, .typeMissed");
+  var hasGood = !!typeans.querySelector(".typeGood");
+  var isCorrect = hasGood && !hasBad;
+
+  // Hiệu ứng viền phát sáng và rung thẻ (Visual Feedback)
+  var compSection = document.querySelector(".card-comparison-section");
+  if (compSection) {
+    compSection.classList.add(isCorrect ? "typing-feedback-correct" : "typing-feedback-wrong");
+  }
+
+  // Phát âm thanh: Tự động chạy Web Audio API (không cần tải file) hoặc phát file mp3 nếu có
+  function playFeedbackSound() {
+    var audioFile = isCorrect ? "_correct.mp3" : "_wrong.mp3";
+    var customAudio = new Audio(audioFile);
+    var played = false;
+
+    customAudio.play().then(function() {
+      played = true;
+    }).catch(function() {
+      playSynthSound(isCorrect);
+    });
+
+    setTimeout(function() {
+      if (!played) playSynthSound(isCorrect);
+    }, 150);
+  }
+
+  var synthPlayed = false;
+  function playSynthSound(correct) {
+    if (synthPlayed) return;
+    synthPlayed = true;
+
+    try {
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      var ctx = new AudioCtx();
+      var now = ctx.currentTime;
+
+      if (correct) {
+        // Hợp âm trưởng 3 nốt ngân vang tươi vui (C5 -> E5 -> G5)
+        var notes = [523.25, 659.25, 783.99];
+        notes.forEach(function(freq, i) {
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(freq, now + i * 0.08);
+
+          gain.gain.setValueAtTime(0, now + i * 0.08);
+          gain.gain.linearRampToValueAtTime(0.22, now + i * 0.08 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.35);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(now + i * 0.08);
+          osc.stop(now + i * 0.08 + 0.36);
+        });
+      } else {
+        // Tiếng buzz trầm êm ái khi gõ sai: 220Hz (A3) -> 140Hz
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.28);
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.28, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.33);
+      }
+    } catch(e) {}
+  }
+
+  setTimeout(playFeedbackSound, 80);
+})();
+</script>
 ```
 
 ---
@@ -972,6 +1148,28 @@ code#typeans {
   color: var(--badge-text);
   border: 1px solid var(--badge-border);
 }
+
+/* ========================================================
+   SOUND & TYPING FEEDBACK ANIMATIONS (ĐÚNG / SAI)
+   ======================================================== */
+.card-comparison-section.typing-feedback-correct {
+  border-color: #10B981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+  transition: all 0.25s ease;
+}
+
+.card-comparison-section.typing-feedback-wrong {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
+  animation: card-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes card-shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+  40%, 60% { transform: translate3d(3px, 0, 0); }
+}
 ```
 
 ---
@@ -998,14 +1196,14 @@ code#typeans {
 2. Anki sẽ hỏi xác nhận tạo thêm thẻ cho các note hiện có, nhấn **OK**.
 3. Đổi tên thẻ mới này thành `2: Type from Meaning` (**Options ➔ Rename Card Type**).
 4. Sao chép mã nguồn ở **Mục 4.1** dán vào ô **Front Template**.
-5. Sao chép mã nguồn ở **Mục 4.2** dán vào ô **Back Template**.
+5. Sao chép mã nguồn ở **Mục 4.2** dán vào ô **Back Template** (đã bao gồm script phát âm thanh gõ đúng/sai tự động).
 *(Lưu ý: Ô Styling đã tự động đồng bộ từ Card 1, bạn không cần dán lại).*
 
 ### Bước 4: Thêm Card 3 (Listening & Dictation)
 1. Tiếp tục nhấn **Options (Tùy chọn) ➔ Add Card Type (Thêm loại thẻ)**.
 2. Đổi tên thẻ mới thành `3: Listen & Type`.
 3. Sao chép mã nguồn ở **Mục 5.1** dán vào ô **Front Template**.
-4. Sao chép mã nguồn ở **Mục 5.2** dán vào ô **Back Template**.
+4. Sao chép mã nguồn ở **Mục 5.2** dán vào ô **Back Template** (đã bao gồm script phát âm thanh gõ đúng/sai tự động).
 5. Nhấn **Save (Lưu)** để hoàn tất.
 
 ---
@@ -1015,3 +1213,39 @@ code#typeans {
 - **Bật / Tắt Linh Hoạt:** Nếu bạn chỉ muốn học dạng Đọc và Nghe gõ chữ mà không muốn học dạng Đánh chữ từ nghĩa, bạn chỉ cần vào **Browse (Trình duyệt thẻ)** trong Anki, tìm `card:2` và nhấn `Suspend (Tạm dừng)` mà không cần sửa code.
 - **Tự Động Phát Âm Thanh:** Trong cài đặt Deck (Deck Options) của Anki, hãy bật tính năng *"Don't play audio automatically"* nếu bạn muốn tự bấm nghe trên Card 3, hoặc tắt đi nếu muốn vừa mở thẻ là nghe phát âm ngay.
 - **1-Click Tạo 3 Thẻ:** Từ Chrome Extension, mỗi khi bạn nhấn **Add to Anki**, Anki sẽ tự động tạo đủ cả 3 thẻ học cho từ vựng đó mà không tốn thêm bất kỳ thao tác nào!
+
+---
+
+## 9. Hướng Dẫn Cài Đặt Âm Thanh Đúng / Sai (Sound Feedback Guide)
+
+Hệ thống cung cấp **2 giải pháp âm thanh** tối ưu cho quá trình ôn tập:
+
+### Cách 1: Âm Thanh Tự Động Cho Thẻ Gõ Chữ (Card 2 & Card 3) — Hoàn Toàn Tự Động (0 Cần Cài Đặt)
+
+Mặt sau của **Card 2 (Type from Meaning)** và **Card 3 (Listen & Type)** đã được nhúng sẵn **Web Audio API Synthesizer**:
+- **Khi gõ đúng hoàn toàn:** Thẻ phát chuông reo hợp âm trưởng 3 nốt ngân vang vui vẻ (*C5 523Hz ➔ E5 659Hz ➔ G5 784Hz*) kèm viền xanh ngọc phát sáng (`#10B981`).
+- **Khi gõ sai hoặc sót chữ:** Thẻ phát tiếng buzz hạ âm nhẹ nhàng (*220Hz ➔ 140Hz*) kèm hiệu ứng rung lắc nhẹ (`card-shake`).
+- **Ưu điểm vượt trội:** Chạy mượt mà trực tiếp trên **Anki Desktop**, **AnkiMobile (iOS)**, và **AnkiDroid (Android)** mà **không cần tải bất kỳ tệp âm thanh nào**.
+
+> **Mẹo tùy biến file âm thanh riêng (Tùy chọn):**
+> Nếu bạn thích dùng hiệu ứng âm thanh game (ví dụ tiếng ting ting Duolingo hoặc Mario):
+> 1. Chuẩn bị 2 tệp âm thanh định dạng `.mp3`: đặt tên là `_correct.mp3` (cho đúng) và `_wrong.mp3` (cho sai).
+> 2. Mở thư mục dữ liệu Anki:
+>    - **Windows:** Bấm `Win + R` ➔ gõ `%APPDATA%\Anki2` ➔ Vào thư mục Profile của bạn (ví dụ: `User 1`) ➔ mở thư mục `collection.media`.
+>    - **macOS:** `~/Library/Application Support/Anki2/<User>/collection.media`
+> 3. Dán 2 tệp `_correct.mp3` và `_wrong.mp3` vào đó. Thẻ sẽ tự động ưu tiên phát file mp3 của bạn, nếu không tìm thấy sẽ tự động quay về Web Audio API.
+
+---
+
+### Cách 2: Âm Thanh Cho Tất Cả Các Nút Đánh Giá (Card 1 Recognition & Nút 1/2/3/4) Trên Anki Desktop
+
+Đối với **Card 1 (Recognition)** hoặc khi bạn bấm các nút đánh giá: `1` (Again / Học lại), `2` (Hard / Khó), `3` (Good / Tốt), `4` (Easy / Dễ), Anki Desktop chuyển thẻ ngay lập tức nên giải pháp hoàn hảo nhất là sử dụng Add-on chính thức được cộng đồng Anki tin dùng:
+
+#### Cài đặt Add-on "Advanced Answer Sounds (Fixed by Shige)" (Mã: `978869609`)
+1. Mở **Anki Desktop**.
+2. Trên thanh menu, chọn **Tools (Công cụ) ➔ Add-ons (Tiện ích)** (phím tắt `Ctrl + Shift + A` / `Cmd + Shift + A`).
+3. Nhấn nút **Get Add-ons... (Tải tiện ích...)** ở góc phải.
+4. Nhập mã code: **`978869609`** rồi nhấn **OK**.
+5. Chờ Anki tải xong thông báo thành công, nhấn **OK** và **Khởi động lại Anki**.
+6. **Xong!** Ngay sau khi khởi động lại, mỗi khi bạn bấm nút `Again` (sai/chưa nhớ), `Good` (đúng), hay `Easy`, Anki sẽ tự động phát các âm thanh tương ứng cực kỳ vui tai và đã tai.
+7. *(Tùy chọn cấu hình)*: Bạn có thể vào **Tools ➔ Advanced Answer Sounds** để đổi bộ âm thanh (Game SFX, Chime, v.v.) hoặc chỉnh âm lượng theo ý thích.

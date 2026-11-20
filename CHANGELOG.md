@@ -4,6 +4,26 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 
 ---
 
+## [3.22.0] - 2026-11-20
+
+### Anki Flashcards Audio Feedback Engine & Popover Layout Hardening
+- **Interactive Audio Feedback System for Anki Flashcards (`ANKI_TEMPLATE.md`):**
+  - **Embedded Web Audio API Sound Synthesizer:** Built a zero-dependency, cross-platform audio feedback script directly inside the Back Templates of Card 2 (Typing from Meaning) and Card 3 (Listening & Dictation).
+    - **Correct Answer Chime:** Cheerful 3-tone major chord sequence (*C5 523.25Hz -> E5 659.25Hz -> G5 783.99Hz*) accompanied by an emerald glowing border feedback (`.typing-feedback-correct`).
+    - **Wrong Answer Buzzer:** Warm descending error tone (*220Hz -> 140Hz*) accompanied by a gentle card shake animation (`.typing-feedback-wrong` with `@keyframes card-shake`).
+    - **Zero Audio Files Required:** Fully synthesizes tones in real time via native Web Audio API, functioning out-of-the-box on Anki Desktop (Windows/macOS/Linux), AnkiMobile (iOS), and AnkiDroid (Android).
+    - **Custom MP3 Audio Support:** Automatically checks and prioritizes user-defined audio files (`_correct.mp3` & `_wrong.mp3`) placed in Anki's `collection.media`, gracefully falling back to Web Audio API synthesizer.
+  - **Comprehensive Anki Desktop Review Buttons Audio Guide (Section 9):**
+    - Detailed step-by-step installation instructions for button-press audio feedback on Card 1 (Recognition) and standard review buttons (1=Again, 2=Hard, 3=Good, 4=Easy) using community add-on **Advanced Answer Sounds (Fixed by Shige)** (Code: `978869609`).
+- **Hardened Popover Typography & Zero Overlap Layout (`content/content.js`, `content/content.css`):**
+  - Enforced strict block isolation and vertical flow on `.anki-meaning-row`, `.anki-def-row`, and `.anki-example-box` with `display: block; width: 100%; box-sizing: border-box; clear: both;` to guarantee zero text collision or line overlap between multiline English definitions and example sentence blocks.
+  - Set `.anki-def-row.anki-editable` to `min-height: 18px; overflow: visible;`.
+- **Cross-Platform Firefox Synchronization:**
+  - Synchronized all extension code and assets to `firefox/` via `build_firefox.js`.
+  - Bumped version to `v3.22.0` in `manifest.json` and `popup/popup.html`.
+
+---
+
 ## [3.21.0] - 2026-11-17
 
 ### Independent Multi-Provider API Key Architecture & Natural Conversational Prompt

@@ -476,6 +476,23 @@ Kế hoạch chia nhỏ công việc thành các micro-tasks (mỗi task từ 15
   - Kiểm tra cú pháp toàn bộ codebase với `node --check` đạt 0 lỗi.
   - Nâng version lên `3.21.0` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
 
+## Phase 49: Anki Flashcards Audio Feedback Engine & Popover Layout Hardening (v3.22.0)
+- [x] **Task 49.1:** Xây dựng bộ phát âm thanh & phản hồi trực quan đúng/sai cho Thẻ Gõ Chữ Anki (`ANKI_TEMPLATE.md`):
+  - Nhúng mã nguồn Web Audio API Synthesizer vào Back Template của Card 2 (Typing from Meaning) và Card 3 (Listening & Dictation).
+  - Tự động phát hợp âm trưởng 3 nốt ngân vang tươi vui (C5 -> E5 -> G5) kèm viền xanh ngọc khi gõ đúng 100%.
+  - Tự động phát tiếng buzz trầm êm ái (220Hz -> 140Hz) kèm animation rung lắc thẻ (`card-shake`) khi gõ sai hoặc sót chữ.
+  - Hỗ trợ ưu tiên phát file mp3 tùy biến của người dùng (`_correct.mp3` & `_wrong.mp3`) nếu được đặt trong thư mục `collection.media`.
+- [x] **Task 49.2:** Soạn thảo tài liệu hướng dẫn cài đặt âm thanh toàn diện (Mục 9 trong `ANKI_TEMPLATE.md`):
+  - Hướng dẫn chế độ tự động cho thẻ gõ chữ hoạt động không cần file trên Desktop, AnkiMobile và AnkiDroid.
+  - Hướng dẫn cài đặt Add-on Anki Desktop `978869609` (Advanced Answer Sounds) để phát âm thanh khi bấm nút đánh giá (Card 1 Recognition và các nút 1-Again, 2-Hard, 3-Good, 4-Easy).
+- [x] **Task 49.3:** Khắc phục triệt để lỗi chen chúc/tràn chữ trên giao diện Popover (`content/content.js`, `content/content.css`):
+  - Bổ sung cấu trúc khối cách ly `display: block; width: 100%; box-sizing: border-box; clear: both;` cho `.anki-meaning-row`, `.anki-def-row` và `.anki-example-box`.
+  - Đảm bảo các hàng văn bản dài không bao giờ bị đè hoặc lệch dòng nhau.
+- [x] **Task 49.4:** Đồng bộ hóa sang Firefox Add-on, kiểm tra cú pháp và nâng version `v3.22.0`:
+  - Đồng bộ hóa toàn bộ sang `firefox/` bằng `node build_firefox.js`.
+  - Kiểm tra cú pháp toàn bộ codebase với `node --check` đạt 0 lỗi.
+  - Nâng version lên `3.22.0` trong `manifest.json`, `popup/popup.html`, cập nhật `CHANGELOG.md` và `TASKS.md`.
+
 
 
 
