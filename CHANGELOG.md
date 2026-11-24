@@ -9,7 +9,7 @@ Tất cả các thay đổi đáng chú ý của dự án Anki AI Vocab Chrome E
 ### Anki Flashcards Audio Feedback Engine & Popover Layout Hardening
 - **Interactive Audio Feedback System for Anki Flashcards (`ANKI_TEMPLATE.md`):**
   - **Embedded Web Audio API Sound Synthesizer:** Built a zero-dependency, cross-platform audio feedback script directly inside the Back Templates of Card 2 (Typing from Meaning) and Card 3 (Listening & Dictation).
-    - **Correct Answer Chime:** Cheerful 3-tone major chord sequence (*C5 523.25Hz -> E5 659.25Hz -> G5 783.99Hz*) accompanied by an emerald glowing border feedback (`.typing-feedback-correct`).
+    - **Correct Answer Chime:** Cheerful 3-tone major chord sequence (*C5 523.25Hz -> E5 659.25Hz -> G5 783.99Hz*) keeping the card interface clean and borderless.
     - **Wrong Answer Buzzer:** Warm descending error tone (*220Hz -> 140Hz*) accompanied by a gentle card shake animation (`.typing-feedback-wrong` with `@keyframes card-shake`).
     - **Zero Audio Files Required:** Fully synthesizes tones in real time via native Web Audio API, functioning out-of-the-box on Anki Desktop (Windows/macOS/Linux), AnkiMobile (iOS), and AnkiDroid (Android).
     - **Custom MP3 Audio Support:** Automatically checks and prioritizes user-defined audio files (`_correct.mp3` & `_wrong.mp3`) placed in Anki's `collection.media`, gracefully falling back to Web Audio API synthesizer.

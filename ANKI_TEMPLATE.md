@@ -277,10 +277,10 @@ Note Type `Anki AI Vocab` sử dụng đúng 8 trường dữ liệu dưới đ�
   var hasGood = !!typeans.querySelector(".typeGood");
   var isCorrect = hasGood && !hasBad;
 
-  // Hiệu ứng viền phát sáng và rung thẻ (Visual Feedback)
+  // Hiệu ứng rung thẻ khi gõ sai (Visual Feedback)
   var compSection = document.querySelector(".card-comparison-section");
-  if (compSection) {
-    compSection.classList.add(isCorrect ? "typing-feedback-correct" : "typing-feedback-wrong");
+  if (compSection && !isCorrect) {
+    compSection.classList.add("typing-feedback-wrong");
   }
 
   // Phát âm thanh: Tự động chạy Web Audio API (không cần tải file) hoặc phát file mp3 nếu có
@@ -480,10 +480,10 @@ Note Type `Anki AI Vocab` sử dụng đúng 8 trường dữ liệu dưới đ�
   var hasGood = !!typeans.querySelector(".typeGood");
   var isCorrect = hasGood && !hasBad;
 
-  // Hiệu ứng viền phát sáng và rung thẻ (Visual Feedback)
+  // Hiệu ứng rung thẻ khi gõ sai (Visual Feedback)
   var compSection = document.querySelector(".card-comparison-section");
-  if (compSection) {
-    compSection.classList.add(isCorrect ? "typing-feedback-correct" : "typing-feedback-wrong");
+  if (compSection && !isCorrect) {
+    compSection.classList.add("typing-feedback-wrong");
   }
 
   // Phát âm thanh: Tự động chạy Web Audio API (không cần tải file) hoặc phát file mp3 nếu có
@@ -1152,15 +1152,7 @@ code#typeans {
 /* ========================================================
    SOUND & TYPING FEEDBACK ANIMATIONS (ĐÚNG / SAI)
    ======================================================== */
-.card-comparison-section.typing-feedback-correct {
-  border-color: #10B981 !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
-  transition: all 0.25s ease;
-}
-
 .card-comparison-section.typing-feedback-wrong {
-  border-color: #EF4444 !important;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25) !important;
   animation: card-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
@@ -1223,7 +1215,7 @@ Hệ thống cung cấp **2 giải pháp âm thanh** tối ưu cho quá trình �
 ### Cách 1: Âm Thanh Tự Động Cho Thẻ Gõ Chữ (Card 2 & Card 3) — Hoàn Toàn Tự Động (0 Cần Cài Đặt)
 
 Mặt sau của **Card 2 (Type from Meaning)** và **Card 3 (Listen & Type)** đã được nhúng sẵn **Web Audio API Synthesizer**:
-- **Khi gõ đúng hoàn toàn:** Thẻ phát chuông reo hợp âm trưởng 3 nốt ngân vang vui vẻ (*C5 523Hz ➔ E5 659Hz ➔ G5 784Hz*) kèm viền xanh ngọc phát sáng (`#10B981`).
+- **Khi gõ đúng hoàn toàn:** Thẻ phát chuông reo hợp âm trưởng 3 nốt ngân vang vui vẻ (*C5 523Hz ➔ E5 659Hz ➔ G5 784Hz*), giao diện giữ nguyên vẻ tối giản thanh lịch không bị viền bao quanh.
 - **Khi gõ sai hoặc sót chữ:** Thẻ phát tiếng buzz hạ âm nhẹ nhàng (*220Hz ➔ 140Hz*) kèm hiệu ứng rung lắc nhẹ (`card-shake`).
 - **Ưu điểm vượt trội:** Chạy mượt mà trực tiếp trên **Anki Desktop**, **AnkiMobile (iOS)**, và **AnkiDroid (Android)** mà **không cần tải bất kỳ tệp âm thanh nào**.
 
